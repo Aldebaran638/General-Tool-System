@@ -1,0 +1,7 @@
+{
+  "name": "ts-platform-kit",
+  "private": true,
+  "scripts": {
+    "lint": "echo lint-ok"
+  }
+}

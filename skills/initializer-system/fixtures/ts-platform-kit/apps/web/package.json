@@ -1,0 +1,8 @@
+{
+  "name": "web",
+  "private": true,
+  "scripts": {
+    "build": "echo build-ok",
+    "test": "echo web-test-ok"
+  }
+}

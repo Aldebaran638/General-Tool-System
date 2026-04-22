@@ -1,0 +1,188 @@
+{
+  "profile_version": "1.0",
+  "generated_at": "2026-04-22",
+  "project": {
+    "name": "TS Platform Kit",
+    "repository_root": ".",
+    "summary": "A sample TypeScript web and API monorepo initialized for an architect-led tool pipeline."
+  },
+  "system_target": {
+    "orchestration_model": "architect-led-multi-agent",
+    "canonical_group_key": "group",
+    "canonical_tool_key": "tool_key",
+    "supports_group_tool_pipeline": true
+  },
+  "technology": {
+    "surfaces": [
+      {
+        "surface_id": "web_ui",
+        "kind": "ui",
+        "language": "TypeScript",
+        "framework": "React Router"
+      },
+      {
+        "surface_id": "api",
+        "kind": "api",
+        "language": "TypeScript",
+        "framework": "Node HTTP"
+      }
+    ],
+    "database": {
+      "engine": "PostgreSQL",
+      "access_pattern": "service-local repositories",
+      "migration_mechanism": "Prisma Migrate"
+    },
+    "testing": {
+      "primary_frameworks": [
+        "Playwright",
+        "Vitest"
+      ]
+    }
+  },
+  "repository_mapping": {
+    "canonical_patterns": {
+      "tool_root": "src/tools/<group>/<tool_key>/",
+      "tool_test_root": "tests/<group>/<tool_key>/"
+    },
+    "executable_patterns": {
+      "web_tool_root": "apps/web/src/tools/<group>/<tool_key>/",
+      "web_test_root": "apps/web/tests/<group>/<tool_key>/",
+      "api_tool_root": "services/api/src/modules/<group>/<tool_key>/",
+      "api_test_root": "services/api/tests/<group>/<tool_key>/"
+    },
+    "integration_files": [
+      "apps/web/src/routes/_app.tsx",
+      "apps/web/src/navigation/tool-nav.ts",
+      "services/api/src/app.ts",
+      "docs/architecture/tool-system.md"
+    ]
+  },
+  "roles": [
+    {
+      "role_id": "architect",
+      "role_kind": "architect",
+      "scope": "project",
+      "skill_path": "skills/generated/architect-skill.md",
+      "builder_skill_path": null,
+      "allowed_path_patterns": [
+        "docs/",
+        "skills/",
+        "ai-system/"
+      ],
+      "forbidden_path_patterns": [
+        "apps/web/src/",
+        "services/api/src/"
+      ],
+      "required_inputs": [
+        "user requirement",
+        "project profile",
+        "generated skills manifest"
+      ],
+      "report_name": "architect packet"
+    },
+    {
+      "role_id": "web_tool_worker",
+      "role_kind": "executor",
+      "scope": "single-tool-web",
+      "skill_path": "skills/generated/web-tool-worker.md",
+      "builder_skill_path": "skills/generated/web-tool-builder.md",
+      "allowed_path_patterns": [
+        "apps/web/src/tools/",
+        "apps/web/src/routes/",
+        "apps/web/src/navigation/",
+        "apps/web/tests/"
+      ],
+      "forbidden_path_patterns": [
+        "services/api/",
+        "skills/"
+      ],
+      "required_inputs": [
+        "architect packet",
+        "design document",
+        "test document",
+        "task list"
+      ],
+      "report_name": "web report"
+    },
+    {
+      "role_id": "api_tool_worker",
+      "role_kind": "executor",
+      "scope": "single-tool-api",
+      "skill_path": "skills/generated/api-tool-worker.md",
+      "builder_skill_path": "skills/generated/api-tool-builder.md",
+      "allowed_path_patterns": [
+        "services/api/src/modules/",
+        "services/api/src/",
+        "services/api/tests/"
+      ],
+      "forbidden_path_patterns": [
+        "apps/web/",
+        "skills/"
+      ],
+      "required_inputs": [
+        "architect packet",
+        "design document",
+        "test document",
+        "task list"
+      ],
+      "report_name": "api report"
+    },
+    {
+      "role_id": "qa_worker",
+      "role_kind": "reviewer",
+      "scope": "single-tool-verification",
+      "skill_path": "skills/generated/qa-worker.md",
+      "builder_skill_path": null,
+      "allowed_path_patterns": [
+        "apps/web/tests/",
+        "services/api/tests/",
+        "docs/",
+        "ai-system/"
+      ],
+      "forbidden_path_patterns": [
+        "apps/web/src/",
+        "services/api/src/",
+        "skills/"
+      ],
+      "required_inputs": [
+        "architect packet",
+        "web report",
+        "api report",
+        "test document"
+      ],
+      "report_name": "qa report"
+    }
+  ],
+  "verification_commands": [
+    {
+      "command_id": "repo_lint",
+      "cwd": ".",
+      "command": "npm run lint",
+      "purpose": "Validate repository-wide script wiring."
+    },
+    {
+      "command_id": "web_build",
+      "cwd": "apps/web",
+      "command": "npm run build",
+      "purpose": "Validate the web tool build."
+    },
+    {
+      "command_id": "web_test",
+      "cwd": "apps/web",
+      "command": "npm run test",
+      "purpose": "Validate web tool tests."
+    },
+    {
+      "command_id": "api_test",
+      "cwd": "services/api",
+      "command": "npm run test",
+      "purpose": "Validate API tool tests."
+    }
+  ],
+  "initialization_outputs": {
+    "profile_path": "ai-system/project-skill-profile.json",
+    "manifest_path": "ai-system/generated-skills-manifest.json",
+    "skill_manual_path": "ai-system/skill-manual.md",
+    "migration_plan_path": "ai-system/migration-plan.md"
+  }
+}
