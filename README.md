@@ -7,6 +7,7 @@
 - 只想把项目跑起来：优先按 [docs/本地启动与排障说明.md](docs/%E6%9C%AC%E5%9C%B0%E5%90%AF%E5%8A%A8%E4%B8%8E%E6%8E%92%E9%9A%9C%E8%AF%B4%E6%98%8E.md) 执行。
 - 当前已经验证可走通的本地启动命令是 `docker compose watch`。
 - 当前仓库要求根目录存在 `.env`，不能只放 `.env-example`。
+- 为了让容器名称保持模板化前缀，建议在 `.env` 中保留 `COMPOSE_PROJECT_NAME=generic-demo-template`。
 
 ## 1. 推荐阅读顺序
 
@@ -49,12 +50,13 @@ curl http://localhost:8000/api/v1/utils/health-check/
 
 成功后可访问：
 
-- 前端：http://localhost:5173
+- 前端：http://localhost:15173
 - 后端：http://localhost:8000
 - Swagger：http://localhost:8000/docs
-- Adminer：http://localhost:8080
-- MailCatcher：http://localhost:1080
-- Traefik UI：http://localhost:8090
+- Adminer：http://localhost:18081
+- MailCatcher：http://localhost:1180
+- MailCatcher SMTP（宿主机）：localhost:11025
+- Traefik UI：http://localhost:18090
 
 补充：
 

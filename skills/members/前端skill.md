@@ -201,7 +201,7 @@
 10. 前端AI禁止无脑重复执行同一条失败的 Playwright 命令。
 11. 前端AI无法按后台模板稳定执行时，必须改用前台直跑并保留 `--reporter=line` 与超时控制。
 12. 前端AI在本项目中执行单文件 Playwright 测试时，必须优先使用以下 PowerShell 模板：
-    $wd = "D:\document\projects\aldebaran\Invoice-Management-System\frontend"
+  $wd = "D:\path\to\your\project\frontend"
     $spec = "tests\<spec-file>.spec.ts"
     $out = Join-Path $wd "playwright.out.log"
     $err = Join-Path $wd "playwright.err.log"

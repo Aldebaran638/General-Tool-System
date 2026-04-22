@@ -315,6 +315,6 @@ Before finishing, confirm all of the following:
 This skill should trigger for requests like:
 
 - "根据设计文档和测试文档，实现一个新的后端工具模块"
-- "修补 expense-category 模块，只以设计文档和测试文档为准"
+- "修补 item-management 模块，只以设计文档和测试文档为准"
 - "你现在是某个后端工具模块，只负责这个模块的代码和测试"
 - "忽略旧业务上下文，根据架构师任务完成一个模块"

@@ -58,10 +58,10 @@ target_metadata = SQLModel.metadata
 例如：
 
 ```python
-from app.modules.purchase_records.purchase_record_summary.models import PurchaseRecord
+from app.modules.items.item_management.models import ItemEntity
 ```
 
-这类导入的作用不是给业务代码用，而是为了让 `PurchaseRecord` 注册进 `SQLModel.metadata`，让 Alembic 能识别它。
+这类导入的作用不是给业务代码用，而是为了让 `ItemEntity` 注册进 `SQLModel.metadata`，让 Alembic 能识别它。
 
 ## backend/app/alembic 是如何发挥作用的
 
@@ -74,7 +74,7 @@ from app.modules.purchase_records.purchase_record_summary.models import Purchase
 1. 执行 `alembic` 命令，例如：
 
 ```bash
-alembic revision --autogenerate -m "add purchase_record"
+alembic revision --autogenerate -m "add item table"
 alembic upgrade head
 ```
 
@@ -173,7 +173,7 @@ alembic revision --autogenerate -m "..."
 例如：
 
 ```powershell
-uv run --project backend python .\skills\migration-review\review_migration.py "add purchase_record table"
+uv run --project backend python .\skills\migration-review\review_migration.py "add item table"
 ```
 
 建议：
@@ -190,8 +190,8 @@ uv run --project backend python .\skills\migration-review\review_migration.py "a
 更推荐：
 
 - `add test_amount to item`
-- `create invoice table`
-- `add purchase_record table`
+- `create report table`
+- `add item table`
 
 ## 这个脚本会做什么
 

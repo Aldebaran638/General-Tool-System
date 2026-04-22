@@ -1,5 +1,5 @@
-$wd = "D:\document\projects\aldebaran\Invoice-Management-System\frontend"
-$spec = "tests/purchase-records.spec.ts"
+$wd = "D:\path\to\your\project\frontend"
+$spec = "tests/navigation.spec.ts"
 $out = Join-Path $wd "playwright.out.log"
 $err = Join-Path $wd "playwright.err.log"
 if (Test-Path $out) { Remove-Item $out -Force }

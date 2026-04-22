@@ -1,5 +1,0 @@
-NAME                                      IMAGE                    COMMAND                   SERVICE       CREATED         STATUS                           PORTS
-invoice-management-system-adminer-1       adminer                  "entrypoint.sh docke…"   adminer       4 minutes ago   Up 1 second                      0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
-invoice-management-system-db-1            postgres:18              "docker-entrypoint.s…"   db            4 minutes ago   Up 1 second (health: starting)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
-invoice-management-system-mailcatcher-1   schickling/mailcatcher   "sh -c 'mailcatcher …"   mailcatcher   4 minutes ago   Up 1 second                      0.0.0.0:1025->1025/tcp, [::]:1025->1025/tcp, 0.0.0.0:1080->1080/tcp, [::]:1080->1080/tcp
-invoice-management-system-proxy-1         traefik:3.6              "/entrypoint.sh --pr…"   proxy         4 minutes ago   Up 1 second                      0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:8090->8080/tcp, [::]:8090->8080/tcp
