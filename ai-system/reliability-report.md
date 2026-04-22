@@ -32,3 +32,10 @@ python3 skills/initializer-system/scripts/validate_outputs.py ai-system/project-
 - 当前验证器验证的是“初始化输出是否自洽”，不是“任意新仓库都能零人工初始化成功”。
 - 当前仓库仍然存在历史遗留目录与测试路径，初始化体系已兼容，但未在本次任务中做物理迁移。
 - 若未来引入 `mobile`、`data`、`infra` 等新执行角色，需要扩充 profile 与 manifest，而不是依赖当前四角色集合。
+
+## 补充验证
+
+- 已额外执行外部临时仓库压测：
+  `python3 skills/initializer-system/scripts/run_smoke_tests.py`
+- 外部压测在 `/tmp/initializer-smoke-*` 下动态生成样本仓库并自动清理。
+- 当前已覆盖 `web + api`、`backend-only`、`mobile + api`、`data pipeline` 四类样本。
