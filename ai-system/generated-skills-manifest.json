@@ -1,0 +1,99 @@
+{
+  "manifest_version": "1.0",
+  "project_profile_path": "ai-system/project-skill-profile.json",
+  "shared_protocol_files": [
+    "skills/tool-system/README.md",
+    "skills/tool-system/system-principles.md",
+    "skills/tool-system/group-tool-contract.md",
+    "skills/tool-system/delivery-packet.md",
+    "skills/tool-system/validation-and-consistency.md",
+    "skills/initializer-system/references/core-protocol.md"
+  ],
+  "skills": [
+    {
+      "skill_id": "architect-main",
+      "role_id": "architect",
+      "role_kind": "architect",
+      "skill_path": "skills/members/架构师skill.md",
+      "builder_skill_path": null,
+      "status": "existing_project_skill",
+      "selection_reason": "The repository already contains a strict architect workflow that decomposes work into design, test, task, and dispatch artifacts for single-tool execution.",
+      "depends_on": [
+        "skills/tool-system/README.md",
+        "skills/tool-system/system-principles.md",
+        "skills/tool-system/group-tool-contract.md",
+        "skills/tool-system/delivery-packet.md",
+        "docs/tool-module-architecture.md",
+        "backend/app/MODULE_ARCHITECTURE.md",
+        "frontend/src/tools/README.md",
+        "backend/app/modules/README.md"
+      ],
+      "owned_scopes": [
+        "requirement clarification",
+        "task decomposition",
+        "dispatch packet generation",
+        "review"
+      ]
+    },
+    {
+      "skill_id": "frontend-tool-main",
+      "role_id": "frontend_tool_worker",
+      "role_kind": "executor",
+      "skill_path": "skills/members/前端skill.md",
+      "builder_skill_path": "skills/tool-frontend-builder/SKILL.md",
+      "status": "existing_project_skill",
+      "selection_reason": "The repository already has a frontend member skill plus a dedicated single-tool builder aligned with real route and navigation integration points.",
+      "depends_on": [
+        "skills/members/架构师skill.md",
+        "skills/tool-system/system-principles.md",
+        "skills/tool-system/group-tool-contract.md",
+        "skills/tool-frontend-builder/SKILL.md",
+        "frontend/src/config/tool-navigation.tsx",
+        "frontend/src/routes/_layout.tsx"
+      ],
+      "owned_scopes": [
+        "frontend tool implementation",
+        "frontend tool tests"
+      ]
+    },
+    {
+      "skill_id": "backend-tool-main",
+      "role_id": "backend_tool_worker",
+      "role_kind": "executor",
+      "skill_path": "skills/members/后端skill.md",
+      "builder_skill_path": "skills/tool-module-builder/SKILL.md",
+      "status": "existing_project_skill",
+      "selection_reason": "The repository already has a backend member skill plus a dedicated module builder aligned with the module architecture and backend module root mapping.",
+      "depends_on": [
+        "skills/members/架构师skill.md",
+        "skills/tool-system/system-principles.md",
+        "skills/tool-system/group-tool-contract.md",
+        "skills/tool-module-builder/SKILL.md",
+        "backend/app/MODULE_ARCHITECTURE.md",
+        "backend/app/modules/README.md"
+      ],
+      "owned_scopes": [
+        "backend tool implementation",
+        "backend tool tests"
+      ]
+    },
+    {
+      "skill_id": "test-worker-main",
+      "role_id": "test_worker",
+      "role_kind": "reviewer",
+      "skill_path": "skills/members/测试skill.md",
+      "builder_skill_path": null,
+      "status": "existing_project_skill",
+      "selection_reason": "The repository already contains a dedicated test worker skill that validates reports, file boundaries, and automated test execution for a single tool.",
+      "depends_on": [
+        "skills/members/架构师skill.md",
+        "skills/tool-system/validation-and-consistency.md"
+      ],
+      "owned_scopes": [
+        "acceptance",
+        "boundary checks",
+        "test verification"
+      ]
+    }
+  ]
+}

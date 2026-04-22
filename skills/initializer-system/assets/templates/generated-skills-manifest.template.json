@@ -1,0 +1,25 @@
+{
+  "manifest_version": "1.0",
+  "project_profile_path": "ai-system/project-skill-profile.json",
+  "shared_protocol_files": [
+    "<SHARED_RULE_PATH>"
+  ],
+  "skills": [
+    {
+      "skill_id": "architect-main",
+      "role_id": "architect",
+      "role_kind": "architect",
+      "skill_path": "skills/generated/architect-skill.md",
+      "builder_skill_path": null,
+      "status": "generated",
+      "selection_reason": "<WHY_THIS_SKILL_IS_ACTIVE>",
+      "depends_on": [
+        "<RULE_OR_ARCHITECTURE_DOC_PATH>"
+      ],
+      "owned_scopes": [
+        "task decomposition",
+        "review"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "profile_version": "1.0",
+  "generated_at": "<YYYY-MM-DD>",
+  "project": {
+    "name": "<PROJECT_NAME>",
+    "repository_root": ".",
+    "summary": "<SHORT_SUMMARY>"
+  },
+  "system_target": {
+    "orchestration_model": "architect-led-multi-agent",
+    "canonical_group_key": "group",
+    "canonical_tool_key": "tool_key",
+    "supports_group_tool_pipeline": true
+  },
+  "technology": {
+    "surfaces": [
+      {
+        "surface_id": "<SURFACE_ID>",
+        "kind": "<ui|api|mobile|data|infra>",
+        "language": "<LANGUAGE>",
+        "framework": "<FRAMEWORK>"
+      }
+    ],
+    "database": {
+      "engine": "<DATABASE_ENGINE>",
+      "access_pattern": "<ORM_OR_QUERY_LAYER>",
+      "migration_mechanism": "<MIGRATION_MECHANISM>"
+    },
+    "testing": {
+      "primary_frameworks": [
+        "<FRAMEWORK>"
+      ]
+    }
+  },
+  "repository_mapping": {
+    "canonical_patterns": {
+      "tool_root": "src/tools/<group>/<tool_key>/"
+    },
+    "executable_patterns": {
+      "tool_root_<surface_id>": "<REAL_PATH_PATTERN>"
+    },
+    "integration_files": [
+      "<REAL_PATH>"
+    ]
+  },
+  "roles": [
+    {
+      "role_id": "architect",
+      "role_kind": "architect",
+      "scope": "project",
+      "skill_path": "skills/generated/architect-skill.md",
+      "builder_skill_path": null,
+      "allowed_path_patterns": [
+        "docs/"
+      ],
+      "forbidden_path_patterns": [],
+      "required_inputs": [
+        "user requirement"
+      ],
+      "report_name": "architect packet"
+    }
+  ],
+  "verification_commands": [
+    {
+      "command_id": "<CHECK_ID>",
+      "cwd": "<RELATIVE_DIR>",
+      "command": "<COMMAND>",
+      "purpose": "<PURPOSE>"
+    }
+  ],
+  "initialization_outputs": {
+    "profile_path": "ai-system/project-skill-profile.json",
+    "manifest_path": "ai-system/generated-skills-manifest.json",
+    "skill_manual_path": "ai-system/skill-manual.md",
+    "migration_plan_path": "ai-system/migration-plan.md"
+  }
+}

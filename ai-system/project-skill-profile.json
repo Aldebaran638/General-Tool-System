@@ -1,0 +1,194 @@
+{
+  "profile_version": "1.0",
+  "generated_at": "2026-04-22",
+  "project": {
+    "name": "Invoice Management System",
+    "repository_root": ".",
+    "summary": "A tool-oriented full-stack repository with a React frontend, FastAPI backend, and an architect-led multi-agent skill system."
+  },
+  "system_target": {
+    "orchestration_model": "architect-led-multi-agent",
+    "canonical_group_key": "group",
+    "canonical_tool_key": "tool_key",
+    "supports_group_tool_pipeline": true
+  },
+  "technology": {
+    "surfaces": [
+      {
+        "surface_id": "web_ui",
+        "kind": "ui",
+        "language": "TypeScript",
+        "framework": "React 19 + Vite + TanStack Router"
+      },
+      {
+        "surface_id": "api",
+        "kind": "api",
+        "language": "Python",
+        "framework": "FastAPI + SQLModel"
+      }
+    ],
+    "database": {
+      "engine": "PostgreSQL",
+      "access_pattern": "SQLModel repositories plus legacy CRUD compatibility",
+      "migration_mechanism": "Alembic"
+    },
+    "testing": {
+      "primary_frameworks": [
+        "Playwright",
+        "pytest"
+      ]
+    }
+  },
+  "repository_mapping": {
+    "canonical_patterns": {
+      "tool_root": "src/tools/<group>/<tool_key>/",
+      "tool_test_root": "tests/<group>/<tool_key>/"
+    },
+    "executable_patterns": {
+      "frontend_tool_root": "frontend/src/tools/<group>/<tool_key>/",
+      "frontend_route_file": "frontend/src/routes/_layout/<tool_key>.tsx",
+      "frontend_test_root": "frontend/tests/<group>/<tool_key>/",
+      "backend_tool_root": "backend/app/modules/<group>/<tool_key>/",
+      "backend_test_root": "backend/tests/<group>/<tool_key>/"
+    },
+    "integration_files": [
+      "frontend/src/config/tool-navigation.tsx",
+      "frontend/src/routes/_layout.tsx",
+      "frontend/src/tools/README.md",
+      "backend/app/api/main.py",
+      "backend/app/MODULE_ARCHITECTURE.md",
+      "backend/app/modules/README.md",
+      "docs/tool-module-architecture.md"
+    ]
+  },
+  "roles": [
+    {
+      "role_id": "architect",
+      "role_kind": "architect",
+      "scope": "project",
+      "skill_path": "skills/members/架构师skill.md",
+      "builder_skill_path": null,
+      "allowed_path_patterns": [
+        "docs/",
+        "skills/",
+        "ai-system/"
+      ],
+      "forbidden_path_patterns": [
+        "frontend/src/",
+        "backend/app/"
+      ],
+      "required_inputs": [
+        "user requirement",
+        "skills/tool-system/README.md",
+        "skills/tool-system/system-principles.md",
+        "skills/tool-system/group-tool-contract.md",
+        "skills/tool-system/delivery-packet.md"
+      ],
+      "report_name": "architect packet"
+    },
+    {
+      "role_id": "frontend_tool_worker",
+      "role_kind": "executor",
+      "scope": "single-tool-frontend",
+      "skill_path": "skills/members/前端skill.md",
+      "builder_skill_path": "skills/tool-frontend-builder/SKILL.md",
+      "allowed_path_patterns": [
+        "frontend/src/tools/",
+        "frontend/src/routes/",
+        "frontend/src/config/",
+        "frontend/tests/"
+      ],
+      "forbidden_path_patterns": [
+        "backend/",
+        "skills/"
+      ],
+      "required_inputs": [
+        "architect packet",
+        "design document",
+        "test document",
+        "task list"
+      ],
+      "report_name": "frontend report"
+    },
+    {
+      "role_id": "backend_tool_worker",
+      "role_kind": "executor",
+      "scope": "single-tool-backend",
+      "skill_path": "skills/members/后端skill.md",
+      "builder_skill_path": "skills/tool-module-builder/SKILL.md",
+      "allowed_path_patterns": [
+        "backend/app/modules/",
+        "backend/app/api/",
+        "backend/tests/"
+      ],
+      "forbidden_path_patterns": [
+        "frontend/",
+        "skills/"
+      ],
+      "required_inputs": [
+        "architect packet",
+        "design document",
+        "test document",
+        "task list"
+      ],
+      "report_name": "backend report"
+    },
+    {
+      "role_id": "test_worker",
+      "role_kind": "reviewer",
+      "scope": "single-tool-verification",
+      "skill_path": "skills/members/测试skill.md",
+      "builder_skill_path": null,
+      "allowed_path_patterns": [
+        "frontend/tests/",
+        "backend/tests/",
+        "docs/",
+        "ai-system/"
+      ],
+      "forbidden_path_patterns": [
+        "frontend/src/",
+        "backend/app/",
+        "skills/"
+      ],
+      "required_inputs": [
+        "architect packet",
+        "frontend report",
+        "backend report",
+        "test document"
+      ],
+      "report_name": "test report"
+    }
+  ],
+  "verification_commands": [
+    {
+      "command_id": "frontend_build",
+      "cwd": "frontend",
+      "command": "npm run build",
+      "purpose": "Validate the frontend build for tool-based UI changes."
+    },
+    {
+      "command_id": "frontend_playwright",
+      "cwd": "frontend",
+      "command": "npm run test",
+      "purpose": "Run Playwright-based frontend verification."
+    },
+    {
+      "command_id": "backend_pytest",
+      "cwd": "backend",
+      "command": "pytest tests/workbench/project_management/index_test.py -q",
+      "purpose": "Run backend verification for a tool module."
+    },
+    {
+      "command_id": "initializer_validation",
+      "cwd": ".",
+      "command": "python3 skills/initializer-system/scripts/validate_outputs.py ai-system/project-skill-profile.json ai-system/generated-skills-manifest.json",
+      "purpose": "Validate initializer outputs before handoff."
+    }
+  ],
+  "initialization_outputs": {
+    "profile_path": "ai-system/project-skill-profile.json",
+    "manifest_path": "ai-system/generated-skills-manifest.json",
+    "skill_manual_path": "ai-system/skill-manual.md",
+    "migration_plan_path": "ai-system/migration-plan.md"
+  }
+}
