@@ -1,4 +1,4 @@
-﻿alembic==1.18.4
+alembic==1.18.4
 annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.13.0
@@ -37,7 +37,7 @@ psycopg-binary==3.3.3
 pwdlib==0.3.0
 pycparser==3.0
 pydantic==2.13.2
-pydantic-settings==2.13.1
+pydantic-settings==2.14.0
 pydantic_core==2.46.2
 PyJWT==2.12.1
 pytest==7.4.4
