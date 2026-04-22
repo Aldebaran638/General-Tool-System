@@ -1,0 +1,31 @@
+{
+  "request_type": "existing-tool-change",
+  "group": "workbench",
+  "group_name": "工作台",
+  "tool_key": "project-management",
+  "tool_name": "项目管理",
+  "route_path": "/items",
+  "navigation_label": "项目管理",
+  "object_key": "item",
+  "object_name": "项目",
+  "core_actions": [
+    "list",
+    "read",
+    "create",
+    "update",
+    "delete"
+  ],
+  "primary_actor": "authenticated-user",
+  "frontend_required": true,
+  "backend_required": true,
+  "summary": "将当前 /items 工具纳入新的 group/tool 流水线，在不改变用户可见路由和 API 契约的前提下，沉淀标准设计、测试和派单边界。",
+  "assumptions": [
+    "保留现有前端路由 /items 不变。",
+    "保留现有后端 API /api/v1/items/ 与 /api/v1/items/{id} 不变。",
+    "当前阶段允许在 legacy 路径上完成最小改动，不强制一次性迁移全部实现文件。"
+  ],
+  "open_questions": [
+    "本轮是否允许把 frontend/src/components/Items 整体迁移到 frontend/src/tools/workbench/project-management/。",
+    "本轮是否允许把 backend/app/api/routes/items.py 的业务逻辑下沉到 backend/app/modules/workbench/project-management/。"
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "object_key": "item",
+  "schema_strategy": "reuse",
+  "migration_required": false,
+  "tables": [
+    {
+      "table_name": "item",
+      "action": "reuse",
+      "description": "复用现有 Item 表，当前工具只使用 title、description、owner_id、created_at 和 id。",
+      "fields": [
+        {
+          "field_key": "id",
+          "field_name": "主键ID",
+          "type": "uuid",
+          "nullable": false,
+          "primary_key": true,
+          "unique": true,
+          "index": true,
+          "default": "uuid.uuid4",
+          "foreign_key": null,
+          "source": "existing-table"
+        },
+        {
+          "field_key": "title",
+          "field_name": "标题",
+          "type": "varchar(255)",
+          "nullable": false,
+          "primary_key": false,
+          "unique": false,
+          "index": false,
+          "default": null,
+          "foreign_key": null,
+          "source": "existing-table"
+        },
+        {
+          "field_key": "description",
+          "field_name": "描述",
+          "type": "varchar(255)",
+          "nullable": true,
+          "primary_key": false,
+          "unique": false,
+          "index": false,
+          "default": null,
+          "foreign_key": null,
+          "source": "existing-table"
+        },
+        {
+          "field_key": "owner_id",
+          "field_name": "所有者ID",
+          "type": "uuid",
+          "nullable": false,
+          "primary_key": false,
+          "unique": false,
+          "index": true,
+          "default": null,
+          "foreign_key": {
+            "table": "user",
+            "field": "id"
+          },
+          "source": "existing-table"
+        },
+        {
+          "field_key": "created_at",
+          "field_name": "创建时间",
+          "type": "datetime",
+          "nullable": true,
+          "primary_key": false,
+          "unique": false,
+          "index": false,
+          "default": "get_datetime_utc",
+          "foreign_key": null,
+          "source": "existing-table"
+        },
+        {
+          "field_key": "amount",
+          "field_name": "金额",
+          "type": "float",
+          "nullable": true,
+          "primary_key": false,
+          "unique": false,
+          "index": false,
+          "default": null,
+          "foreign_key": null,
+          "source": "existing-table"
+        },
+        {
+          "field_key": "test_amount",
+          "field_name": "测试金额",
+          "type": "float",
+          "nullable": true,
+          "primary_key": false,
+          "unique": false,
+          "index": false,
+          "default": null,
+          "foreign_key": null,
+          "source": "existing-table"
+        }
+      ]
+    }
+  ],
+  "relations": [
+    "item.owner_id -> user.id"
+  ],
+  "notes": [
+    "本轮不引入 schema 变更。",
+    "amount 与 test_amount 当前不在前端页面和公开接口中使用，不得在本轮迁移中擅自暴露。",
+    "删除 item 时依赖 owner_id 与 user 关系进行权限和归属校验。"
+  ]
+}
