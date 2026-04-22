@@ -2,7 +2,7 @@
   "request_type": "existing-tool-change",
   "group": "workbench",
   "group_name": "工作台",
-  "tool_key": "project-management",
+  "tool_key": "project_management",
   "tool_name": "项目管理",
   "route_path": "/items",
   "navigation_label": "项目管理",
@@ -25,7 +25,7 @@
     "当前阶段允许在 legacy 路径上完成最小改动，不强制一次性迁移全部实现文件。"
   ],
   "open_questions": [
-    "本轮是否允许把 frontend/src/components/Items 整体迁移到 frontend/src/tools/workbench/project-management/。",
-    "本轮是否允许把 backend/app/api/routes/items.py 的业务逻辑下沉到 backend/app/modules/workbench/project-management/。"
+    "本轮是否允许把 frontend/src/components/Items 整体迁移到 frontend/src/tools/workbench/project_management/。",
+    "本轮是否允许把 backend/app/api/routes/items.py 的业务逻辑下沉到 backend/app/modules/workbench/project_management/。"
   ]
 }

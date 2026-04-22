@@ -24,6 +24,9 @@
 12. 任务清单缺失时，前端AI禁止开工。
 13. API 地址未确定时，前端AI禁止开工。
 14. group 与 tool_key 未确定时，前端AI禁止开工。
+15. 前端AI必须先读取与当前工具最接近的已有工具代码或 legacy 实现位置。
+16. 前端AI必须先确认 @/client 中自动生成 Service 的方法签名和返回类型。
+17. 前端AI在新建 frontend/tests/<group>/<tool-key>/ 前，必须先读取最接近的现有 Playwright 测试示例。
 
 三. 前端AI允许修改的文件范围
 

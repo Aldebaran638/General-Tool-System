@@ -3,9 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
-import { z } from "zod"
 
-import { type ItemPublic, ItemsService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -28,14 +26,16 @@ import {
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
+import {
+  itemsQueryKey,
+  updateItem,
+} from "@/tools/workbench/project_management/api"
+import {
+  itemFormSchema,
+  type ItemFormValues,
+} from "@/tools/workbench/project_management/schemas"
+import type { ItemPublic } from "@/tools/workbench/project_management/types"
 import { handleError } from "@/utils"
-
-const formSchema = z.object({
-  title: z.string().min(1, { message: "Title is required" }),
-  description: z.string().optional(),
-})
-
-type FormData = z.infer<typeof formSchema>
 
 interface EditItemProps {
   item: ItemPublic
@@ -47,8 +47,8 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<ItemFormValues>({
+    resolver: zodResolver(itemFormSchema),
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
@@ -58,8 +58,7 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
   })
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) =>
-      ItemsService.updateItem({ id: item.id, requestBody: data }),
+    mutationFn: (data: ItemFormValues) => updateItem(item.id, data),
     onSuccess: () => {
       showSuccessToast("Item updated successfully")
       setIsOpen(false)
@@ -67,11 +66,11 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] })
+      queryClient.invalidateQueries({ queryKey: itemsQueryKey })
     },
   })
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = (data: ItemFormValues) => {
     mutation.mutate(data)
   }
 

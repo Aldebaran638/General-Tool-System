@@ -1,11 +1,11 @@
-# project-management 测试文档
+# project_management 测试文档
 
 ## 一、工具上下文
 
 - group: workbench
-- tool_key: project-management
-- frontend_test_root: frontend/tests/workbench/project-management/
-- backend_test_root: backend/tests/workbench/project-management/
+- tool_key: project_management
+- frontend_test_root: frontend/tests/workbench/project_management/
+- backend_test_root: backend/tests/workbench/project_management/
 - current_legacy_backend_test_root: backend/tests/items/
 - current_legacy_frontend_test_root: 当前未发现 items 工具的独立 Playwright 主测试目录。
 
@@ -71,6 +71,8 @@
 - 登录 -> 工作台导航 -> 项目管理页面 -> Add Item -> Edit Item -> Delete Item。
 - 前端列表 query key items 与后端 /api/v1/items/ 保持一致。
 - 前端对 title 的本地校验与后端 422 约束保持一致。
+- ItemsService.readItems、createItem、updateItem、deleteItem 继续对应 /api/v1/items/ 相关路径。
+- 前端错误提示与后端 403/404 detail 文案保持一致。
 
 ## 六、越界与回归检查
 
@@ -82,6 +84,15 @@
 ## 七、验收门槛
 
 - backend/tests/items/index_test.py 作为当前基线必须可执行通过。
-- 新的 backend/tests/workbench/project-management/index_test.py 在迁移完成后必须覆盖相同主要分支。
-- frontend/tests/workbench/project-management/index.spec.ts 必须覆盖至少一条成功主链路和一条失败或空状态分支。
+- 新的 backend/tests/workbench/project_management/index_test.py 在迁移完成后必须覆盖相同主要分支。
+- frontend/tests/workbench/project_management/index.spec.ts 必须覆盖至少一条成功主链路和一条失败或空状态分支。
 - 主链路必须至少真实跑通一次：创建 -> 编辑 -> 删除。
+
+## 八、测试AI准入条件
+
+- frontend report 已生成。
+- backend report 已生成。
+- backend/tests/items/index_test.py 存在并可执行。
+- backend/tests/workbench/project_management/index_test.py 已建立。
+- frontend/tests/workbench/project_management/index.spec.ts 已建立。
+- 缺失上述任一项时，测试AI必须判定为“输入物不完整，无法验收”。

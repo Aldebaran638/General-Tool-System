@@ -2,10 +2,11 @@
 
 ## 1. 命名规则
 
-1. group 使用稳定英文标识，推荐 kebab-case 或 snake_case 中与当前仓库一致的一种。
-2. tool_key 使用稳定英文标识。
+1. group 使用稳定英文标识，并且必须使用 snake_case。
+2. tool_key 使用稳定英文标识，并且必须使用 snake_case。
 3. 一个工具的前后端目录、测试目录、文档标识必须共享同一组 group 与 tool_key。
 4. 用户看到的中文名称与内部 tool_key 必须分离。
+5. 之所以统一为 snake_case，是因为后端模块目录会被 Python 直接 import，连字符命名会破坏包路径。
 
 ## 2. 前端目录契约
 

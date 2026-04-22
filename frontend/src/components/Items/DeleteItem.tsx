@@ -3,7 +3,6 @@ import { Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 
-import { ItemsService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -17,6 +16,10 @@ import {
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
+import {
+  deleteItem,
+  itemsQueryKey,
+} from "@/tools/workbench/project_management/api"
 import { handleError } from "@/utils"
 
 interface DeleteItemProps {
@@ -30,10 +33,6 @@ const DeleteItem = ({ id, onSuccess }: DeleteItemProps) => {
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const { handleSubmit } = useForm()
 
-  const deleteItem = async (id: string) => {
-    await ItemsService.deleteItem({ id: id })
-  }
-
   const mutation = useMutation({
     mutationFn: deleteItem,
     onSuccess: () => {
@@ -43,7 +42,7 @@ const DeleteItem = ({ id, onSuccess }: DeleteItemProps) => {
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
-      queryClient.invalidateQueries()
+      queryClient.invalidateQueries({ queryKey: itemsQueryKey })
     },
   })
 

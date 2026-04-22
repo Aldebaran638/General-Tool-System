@@ -1,17 +1,14 @@
 import { expect, test, type Page } from "@playwright/test"
 
-import { createUser } from "../utils/privateApi"
+import { createUser } from "../../utils/privateApi"
 import {
   randomEmail,
   randomItemDescription,
   randomItemTitle,
   randomPassword,
-} from "../utils/random"
-import { logInUser } from "../utils/user"
+} from "../../utils/random"
+import { logInUser } from "../../utils/user"
 
-// ─────────────────────────────────────────────────────────────
-// 辅助：从侧边栏进入项目管理页面
-// ─────────────────────────────────────────────────────────────
 async function gotoItemsFromSidebar(page: Page) {
   const projectManagementLink = page.getByRole("link", { name: "项目管理" })
   await expect(page.getByRole("button", { name: "工作台" })).toBeVisible()
@@ -26,9 +23,6 @@ async function gotoItemsFromSidebar(page: Page) {
   await expect(page).toHaveURL(/\/items/)
 }
 
-// ─────────────────────────────────────────────────────────────
-// 一、公共访问（已有全局 storageState）
-// ─────────────────────────────────────────────────────────────
 test("项目管理页面可正常打开并显示标题", async ({ page }) => {
   await page.goto("/items")
   await expect(page.getByRole("heading", { name: "Items" })).toBeVisible()
@@ -46,9 +40,6 @@ test("新增按钮可见", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Add Item" })).toBeVisible()
 })
 
-// ─────────────────────────────────────────────────────────────
-// 二、登录后完整业务流程
-// ─────────────────────────────────────────────────────────────
 test.describe("项目管理业务流程", () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
@@ -66,7 +57,6 @@ test.describe("项目管理业务流程", () => {
     await page.goto("/items")
   })
 
-  // ── 失败流程：标题为必填 ──────────────────────────────────
   test("标题为空时提交应提示 Title is required", async ({ page }) => {
     await page.getByRole("button", { name: "Add Item" }).click()
     await page.getByLabel("Title").fill("")
@@ -74,7 +64,6 @@ test.describe("项目管理业务流程", () => {
     await expect(page.getByText("Title is required")).toBeVisible()
   })
 
-  // ── 新增流程 ─────────────────────────────────────────────
   test("新增 Item（含描述）成功", async ({ page }) => {
     const title = randomItemTitle()
     const description = randomItemDescription()
@@ -106,7 +95,6 @@ test.describe("项目管理业务流程", () => {
     await expect(page.getByRole("dialog")).not.toBeVisible()
   })
 
-  // ── 编辑 & 删除（在每条测试前预先创建一条记录）──────────────
   test.describe("编辑与删除", () => {
     let itemTitle: string
 
@@ -148,9 +136,6 @@ test.describe("项目管理业务流程", () => {
   })
 })
 
-// ─────────────────────────────────────────────────────────────
-// 三、空状态
-// ─────────────────────────────────────────────────────────────
 test.describe("空状态", () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 

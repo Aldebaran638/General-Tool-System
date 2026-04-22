@@ -16,6 +16,7 @@
 5. 测试AI必须先读取本次任务的任务清单。
 6. 测试AI必须先读取前端AI与后端AI的报告。
 7. 测试AI必须先读取 skills/tool-system/validation-and-consistency.md。
+8. 如果前端 report 或 backend report 缺失，测试AI必须直接输出“输入物不完整，无法验收”。
 
 三. 前端测试文件执行规则
 
