@@ -3,9 +3,10 @@ import uuid
 from fastapi import HTTPException
 from sqlmodel import Session
 
-from app.models import Item, User
+from app.models_core import User
 
 from . import repository
+from .models import Item
 from .schemas import ItemCreate, ItemsPublic, ItemUpdate, Message
 
 

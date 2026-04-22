@@ -2,8 +2,7 @@ import uuid
 
 from sqlmodel import Session, func, select
 
-from app.models import Item
-
+from .models import Item
 from .schemas import ItemCreate, ItemUpdate
 
 

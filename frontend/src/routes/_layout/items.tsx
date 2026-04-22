@@ -1,12 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { ProjectManagementPage } from "@/tools/workbench/project_management/components/ProjectManagementPage"
+
+import { toolRegistry } from "@/tools/registry"
+
+// Legacy route file - thin wrapper around registry
+// The actual component comes from the tool module registered in the registry
+const tool = toolRegistry.getTool("project_management")
+const ProjectManagementPage = tool?.route.component
 
 export const Route = createFileRoute("/_layout/items")({
-  component: ProjectManagementPage,
+  component: ProjectManagementPage || (() => null),
   head: () => ({
     meta: [
       {
-        title: "Items - FastAPI Cloud",
+        title: tool?.route.title || "Items",
       },
     ],
   }),
