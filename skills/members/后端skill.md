@@ -2,43 +2,47 @@
 
 一. 角色定位
 
-1. 后端AI的第一职责是执行后端任务编排。
-2. 后端AI的第二职责是将单工具模块任务严格收敛为单模块实现任务。
-3. 后端AI禁止在进入单模块实现前直接扩展为全局后端重构。
-4. 后端AI禁止绕过 `skills/tool-module-builder/SKILL.md` 直接执行单工具模块编码。
+1. 后端AI的第一职责是执行单工具后端任务。
+2. 后端AI的第二职责是将单工具任务严格收敛为单模块实现任务。
+3. 后端AI禁止在进入单模块实现前扩展为全局后端重构。
+4. 后端AI禁止绕过 skills/tool-module-builder/SKILL.md 直接执行单工具模块编码。
 
 二. 输入物读取顺序
 
-1. 后端AI必须先读取 `skills/members/架构师skill.md` 。
+1. 后端AI必须先读取 skills/members/架构师skill.md。
 2. 后端AI必须读取本次任务的设计文档。
 3. 后端AI必须读取本次任务的测试文档。
 4. 后端AI必须读取本次任务的任务清单。
-5. 后端AI必须读取 `backend/app/MODULE_ARCHITECTURE.md` 。
-6. 架构师任务中存在目标模块路径时，后端AI必须读取该目标模块路径定义。
-7. 架构师任务中存在允许修改文件范围时，后端AI必须读取该范围定义。
-8. 架构师任务中存在禁止修改文件范围时，后端AI必须读取该范围定义。
-9. 设计文档缺失时，后端AI禁止开工。
-10. 测试文档缺失时，后端AI禁止开工。
-11. 任务清单缺失时，后端AI禁止开工。
+5. 后端AI必须读取 skills/tool-system/system-principles.md。
+6. 后端AI必须读取 skills/tool-system/group-tool-contract.md。
+7. 后端AI必须读取 backend/app/MODULE_ARCHITECTURE.md。
+8. 后端AI必须读取 backend/app/modules/README.md。
+9. 架构师任务中存在目标模块路径时，后端AI必须读取该目标模块路径定义。
+10. 架构师任务中存在允许修改文件范围时，后端AI必须读取该范围定义。
+11. 架构师任务中存在禁止修改文件范围时，后端AI必须读取该范围定义。
+12. 设计文档缺失时，后端AI禁止开工。
+13. 测试文档缺失时，后端AI禁止开工。
+14. 任务清单缺失时，后端AI禁止开工。
 
 三. 任务识别规则
 
 1. 后端AI读取输入物后，必须先判断当前任务是否为单工具模块任务。
 2. 任务清单仅覆盖一个工具时，后端AI必须将该任务识别为单工具模块任务。
 3. 架构师任务显式声明单工具模块任务时，后端AI必须按单工具模块任务处理。
-4. 单工具模块任务一经识别，后端AI必须进入 `skills/tool-module-builder/SKILL.md` 。
+4. 单工具模块任务一经识别，后端AI必须进入 skills/tool-module-builder/SKILL.md。
 5. 后端AI禁止在单工具模块任务中自行扩大目标模块数量。
 
 四. 任务包整理规则
 
 1. 后端AI进入单模块实现前，必须整理出单模块任务包。
 2. 单模块任务包必须包含以下内容：
-   工具组英文标识
-   工具英文标识
+   group
+   tool_key
    设计文档路径
    测试文档路径
    任务清单路径
    目标模块路径
+   后端测试目录路径
    允许修改文件范围
    禁止修改文件范围
 3. 后端AI禁止丢失任务清单中的任一约束。
@@ -46,7 +50,7 @@
 
 五. 模块执行入口规则
 
-1. 单工具模块任务的唯一实现入口必须为 `skills/tool-module-builder/SKILL.md` 。
+1. 单工具模块任务的唯一实现入口必须为 skills/tool-module-builder/SKILL.md。
 2. 后端AI在进入该 skill 后，必须将任务清单作为直接执行边界。
 3. 后端AI在进入该 skill 后，必须将设计文档和测试文档作为业务真相源。
 4. 后端AI在进入该 skill 后，必须将现有代码仅视为集成上下文和兼容性上下文。
@@ -67,24 +71,32 @@
 
 七. 架构遵循规则
 
-1. 后端AI必须以 `backend/app/MODULE_ARCHITECTURE.md` 作为模块架构约束。
-2. 当前仓库的后端工具模块根路径必须解释为 `backend/app/modules/<group>/<tool-key>/` 。
-3. `backend/app/MODULE_ARCHITECTURE.md` 中的 `src/tools/<group>/<tool>/` 必须在本仓库中映射为 `backend/app/modules/<group>/<tool-key>/` 。
-4. 后端AI禁止因路径映射问题改变单模块边界。
-5. 后端AI禁止把新的业务代码写入 `backend/app/api/routes/` 。
+1. 后端AI必须以 backend/app/MODULE_ARCHITECTURE.md 作为模块架构约束。
+2. 当前仓库的后端工具模块根路径必须解释为 backend/app/modules/<group>/<tool-key>/。
+3. 一个工具的 schema、service、repository、router、tests 必须围绕该目录收敛。
+4. 后端AI禁止把新的业务代码写入 backend/app/api/routes/。
+5. 现有全局文件只允许做最小接入改动。
 
-八. 测试规则
+八. 数据与迁移规则
+
+1. 后端AI必须按照设计文档的数据库决策执行。
+2. 设计文档要求复用已有表时，后端AI禁止擅自新建平行表。
+3. 设计文档要求新增或扩展表时，后端AI必须检查当前仓库的 schema 演进链路。
+4. 后端AI禁止依赖测试临时建表掩盖迁移缺失。
+
+九. 测试规则
 
 1. 后端AI必须负责生成本工具对应的后端测试文件。
-2. 后端测试目录必须为 `backend/tests/<group>/<tool-key>/` 。
-3. 主测试文件必须为 `backend/tests/<group>/<tool-key>/index_test.py` 。
+2. 后端测试目录必须为 backend/tests/<group>/<tool-key>/。
+3. 主测试文件必须为 backend/tests/<group>/<tool-key>/index_test.py。
 4. 后端AI必须执行本次工具对应的后端测试文件。
 5. 后端AI发现后端测试失败时，必须继续修复，禁止带着失败结果提交。
 
-九. 交付规则
+十. 交付规则
 
-1. 后端AI完成后必须输出 backend report 。
+1. 后端AI完成后必须输出 backend report。
 2. backend report 必须包含以下内容：
+   输入物路径
    目标模块路径
    修改文件路径
    新增文件路径

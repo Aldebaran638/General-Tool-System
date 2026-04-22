@@ -15,13 +15,21 @@
 ## 推荐的模块目录结构
 
 ```text
-app/modules/<tool_key>/
+app/modules/<group>/<tool_key>/
   router.py
   service.py
   repository.py
   schemas.py
   models.py
 ```
+
+历史上已经存在的单层模块目录视为过渡结构。
+
+从现在开始：
+
+1. 新增工具必须使用 `app/modules/<group>/<tool_key>/`。
+2. 旧工具小修时允许暂不迁移。
+3. 若执行结构迁移，最终目标也必须是 `group/tool_key`。
 
 ## 当前迁移策略
 

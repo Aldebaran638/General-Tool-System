@@ -1,115 +1,83 @@
 ---
 name: tool-intake
-description: 将用户模糊的工具想法转成结构化工具定义。当用户在讨论一个新工具、新模块，或者需要通过对话逐步明确工具信息，并最终输出固定 json 时使用。输出字段包括 tool_key、tool_name、group、object_key、object_name、features、fields、description。
+description: 将用户需求转成结构化的 group -> tool 定义草案。当架构师需要通过对话澄清一个新工具、新工具组、现有工具修改需求，或把混合需求拆成单工具任务时使用。
 ---
 
-- 执行本 skill 时，只能基于当前用户给出的工具需求输入进行判断，不引用历史上下文、外部实现信息或未在当前输入中出现的假设。
+## 输入
 
-## 输入:
-用户的提示词
+1. 用户当前需求。
+2. 用户对现有工具、现有页面、现有接口的补充说明。
+3. 如已给出，则读取当前任务涉及的已有路径或文档。
 
-## 逻辑：
-通过简短追问，澄清用户要做的`工具`具体逻辑是什么。
-你的目标是收集并输出以下字段(严禁漏字段或者输出其他字段)：
+## 目标
+
+通过最少问题，产出可继续进入数据库设计与设计文档阶段的结构化定义。
+
+## 固定执行顺序
+
+1. 先判断请求类型：
+   new-group
+   new-tool
+   existing-tool-change
+   split-into-multiple-tools
+2. 再判断本次是否需要独立前端页面。
+3. 再判断本次是否需要独立后端模块。
+4. 再判断本次是否涉及数据实体变化。
+5. 最后整理为统一 JSON 草稿给用户确认。
+
+## 必须收集的字段
+
+- request_type
+- group
+- group_name
 - tool_key
 - tool_name
-- group
+- route_path
+- navigation_label
 - object_key
 - object_name
-- features
-- fields
-- description
+- core_actions
+- primary_actor
+- frontend_required
+- backend_required
+- summary
+- assumptions
+- open_questions
 
-## skill流程:
-```mermaid
-flowchart TD
-    A[用户提出工具想法] --> B[AI提取已知信息]
-    B --> C{信息是否足够}
-    C -- 否 --> D[AI向用户追问最必要问题]
-    D --> E[整理当前工具定义草稿]
-    E --> F[展示给用户审核]
-    F --> G{用户是否通过}
-    G -- 否 --> H[根据用户意见修改草稿]
-    H --> C
-    G -- 是 --> I[输出最终 JSON]
-    I --> J[结束当前 skill]
+## 规则
 
-    C -- 是 --> E
-```
+1. 只基于当前输入判断，不得引入未确认的历史业务假设。
+2. 一轮只问一个最关键的问题。
+3. 先确认工具边界，再讨论数据库和接口。
+4. 如果用户描述实际上包含多个工具，必须先拆分，再分别整理。
+5. 如果当前需求只是新增工具组，tool_key、tool_name、route_path、object_key、object_name 允许为 null。
+6. group、tool_key 必须使用稳定英文标识。
+7. route_path 必须以当前项目可接受的路由形态表达。
+8. core_actions 只记录当前工具真实要支持的用户动作。
+9. assumptions 只记录已被架构师主动声明、但尚未得到用户明确确认的推断。
+10. open_questions 只记录会阻塞后续设计的未决问题。
+11. 在用户明确表示“通过”“可以”“没问题”之前，不得输出最终 JSON。
+12. 最终输出时，只输出 JSON，不附加解释文字。
 
-## 规则：
-- `tool_key`除非用户明确给出,否则由AI根据用户需求自己取名
-- `tool_name`除非用户明确给出,否则由AI根据用户需求自己取名
-- `group`除非用户明确给出,否则由AI根据用户需求自己取名
-- `object_key`除非用户明确给出,否则由AI根据用户需求自己取名
-- `object_name`除非用户明确给出,否则由AI根据用户需求自己取名
-- `features` 是站在用户视角的用户动作，只能从下表中选择(如果没有找到,需要向用户询问是否添加新的用户动作)：
-| 动作值 | 含义 |
-|---|---|
-| `list` | 查看列表 |
-| `read` | 查看详情 |
-| `create` | 新建 |
-| `update` | 编辑 / 修改 |
-| `delete` | 删除 |
-| `submit` | 提交 |
-| `approve` | 审批 |
-| `export` | 导出 |
-| `import` | 导入 |
-| `generate` | 生成内容 |
-- `fields` 中每一项都必须包含以下字段：
-  - `field_key`
-  - `field_name`
-  - `type`
-  - `nullable`
-  - `unique`
-  - `description`
-- `type` 优先从以下常见值中选择：
-  - `string`
-  - `text`
-  - `int`
-  - `bigint`
-  - `decimal`
-  - `boolean`
-  - `date`
-  - `datetime`
-- `nullable` 只能是 `true` 或 `false`。
-- `unique` 只能是 `true` 或 `false`。
-- `description`是对当前工具的描述,需要简单介绍AI所理解的内容.
-- 只关注业务含义，不讨论数据库、表结构、后端模块、前端路由。
-- 每一轮对话只专注于一个问题,内容需要简洁,禁止输出过多行数导致刷屏
-- 缺信息时，只能追问当前最必要的问题。
-- 审核阶段应先展示草稿，再等待用户确认。
-- 在用户明确表示“通过”“可以”“没问题”之前，不得输出最终 JSON。
-- 最终输出时，只输出 JSON，不附加任何解释文字。
-
-## 固定输出格式(示例)：
+## 固定输出格式
 
 ```json
 {
-  "tool_key": "weekly-report-assistant",
-  "tool_name": "周报助手",
-  "group": "协作工具",
-  "object_key": "weekly-report",
-  "object_name": "周报",
-  "features": ["list", "create", "update", "submit"],
-  "fields": [
-    {
-      "field_key": "title",
-      "field_name": "标题",
-      "type": "string",
-      "nullable": false,
-      "unique": false
-      "description": "周报标题"
-    },
-    {
-      "field_key": "content",
-      "field_name": "内容",
-      "type": "text",
-      "nullable": false,
-      "unique": false
-      "description": "周报正文内容"
-    }
-  ],
-  "description": "用于创建、编辑和提交周报"
+  "request_type": "new-tool",
+  "group": "purchase-records",
+  "group_name": "采购记录",
+  "tool_key": "supplier-reconciliation",
+  "tool_name": "供应商对账",
+  "route_path": "/purchase-records/supplier-reconciliation",
+  "navigation_label": "供应商对账",
+  "object_key": "supplier_reconciliation",
+  "object_name": "供应商对账单",
+  "core_actions": ["list", "read", "create", "submit"],
+  "primary_actor": "finance-manager",
+  "frontend_required": true,
+  "backend_required": true,
+  "summary": "用于按供应商维度查看、创建并提交对账单。",
+  "assumptions": [],
+  "open_questions": []
 }
 ```

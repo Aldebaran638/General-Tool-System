@@ -5,15 +5,23 @@
 ## 工具放置规则
 
 - 一个工具对应 `src/routes/_layout` 下的一个路由。
-- 工具自己的界面代码应放在 `src/tools/<tool-key>/`。
+- 新工具自己的界面代码应放在 `src/tools/<group>/<tool-key>/`。
 - 通用基础组件继续放在 `src/components/ui/`。
 - 跨工具复用的公共组件继续放在 `src/components/Common/`。
 - 侧边栏注册必须写入 `src/config/tool-navigation.tsx`。
 
+历史上已经存在的 `src/tools/<tool-key>/` 单层目录视为过渡结构。
+
+从现在开始：
+
+1. 新增工具必须使用 `src/tools/<group>/<tool-key>/`。
+2. 修改旧工具时，若任务范围只是小修，允许暂不迁移。
+3. 若架构师明确要求迁移，则迁移后也必须以 `group/tool-key` 为最终结构。
+
 ## 推荐的工具目录结构
 
 ```text
-src/tools/<tool-key>/
+src/tools/<group>/<tool-key>/
   api.ts
   components/
   hooks/

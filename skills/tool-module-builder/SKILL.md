@@ -24,6 +24,12 @@ In this repository, the executable backend module root is:
 
 You must follow the repository mapping defined by the architect task, `skills/members/后端skill.md`, and `backend/app/MODULE_ARCHITECTURE.md`.
 
+You must also align with:
+
+- `skills/tool-system/system-principles.md`
+- `skills/tool-system/group-tool-contract.md`
+- `backend/app/modules/README.md`
+
 ## Source Priority
 
 When sources conflict, use this priority order:
@@ -33,8 +39,10 @@ When sources conflict, use this priority order:
 3. design document
 4. test document
 5. `skills/members/后端skill.md`
-6. `backend/app/MODULE_ARCHITECTURE.md`
-7. existing repository code, only as compatibility context
+6. `skills/tool-system/system-principles.md`
+7. `skills/tool-system/group-tool-contract.md`
+8. `backend/app/MODULE_ARCHITECTURE.md`
+9. existing repository code, only as compatibility context
 
 Important rule:
 
@@ -78,8 +86,11 @@ Read in this order:
 3. design document
 4. test document
 5. `skills/members/后端skill.md`
-6. `backend/app/MODULE_ARCHITECTURE.md`
-7. only then inspect existing local code needed for integration
+6. `skills/tool-system/system-principles.md`
+7. `skills/tool-system/group-tool-contract.md`
+8. `backend/app/MODULE_ARCHITECTURE.md`
+9. `backend/app/modules/README.md`
+10. only then inspect existing local code needed for integration
 
 Do not begin by studying historical implementation in depth.
 
@@ -156,6 +167,14 @@ Do not stop at module code.
 Implement or update tests for the same module so the documented behavior is verifiable.
 
 Tests should primarily reflect the test document, not undocumented legacy behavior.
+
+Backend test output must live under:
+
+`backend/tests/<group>/<tool-key>/`
+
+The main backend test file must be:
+
+`backend/tests/<group>/<tool-key>/index_test.py`
 
 ## Implementation Workflow
 
@@ -234,6 +253,7 @@ Before finishing, verify:
 - the code matches the task list
 - the code matches the design doc
 - the tests reflect the test doc
+- the module and tests follow the group/tool-key path contract
 - the changes stayed inside the allowed scope
 - the module respects `backend/app/MODULE_ARCHITECTURE.md`
 - unrelated modules were not changed without necessity

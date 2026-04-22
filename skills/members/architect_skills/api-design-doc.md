@@ -1,178 +1,95 @@
 ---
 name: api-design-doc
-description: 将第一阶段的工具定义 json 和第二阶段的数据库设计 json 结合起来，生成结构化接口设计文档。当用户已经完成工具定义和数据库设计，并需要输出接口设计文档时使用。输出内容必须包含工具名称、API地址、请求方式、Path参数、Query参数、Body参数、Header参数、权限要求、成功返回、失败返回、备注。
+description: 将工具定义与数据决策组合成一个可交接的设计文档。当架构师需要为前端、后端、测试生成统一设计文档时使用。
 ---
 
-## 输入:
-* 第一阶段输出的工具定义 JSON
-* 第二阶段输出的数据库设计 JSON
-* 用户当前补充的提示词（用于修正、细化、微调设计文档方案）
+## 输入
 
-## 逻辑：
-* 通过结合第一阶段和第二阶段的结果，生成接口设计文档。
-* 从第一阶段输出结果收集以下内容：
-  * `tool_key`
-  * `tool_name`
-  * `group`
-  * `features`
-* 从第二阶段输出结果收集以下内容：
-  * `object_key`
-  * `tables.fields`
-* 结合规则见`规则`板块
+1. tool-intake 输出的 JSON。
+2. db-design-intake 输出的 JSON。
+3. 用户当前补充的提示词。
 
-## skill流程:
-```mermaid
-flowchart TD
-    A[输入第一阶段工具定义 JSON] --> B[输入第二阶段数据库设计 JSON]
-    B --> C[读取用户补充提示词]
-    C --> D[AI推导当前工具需要的接口列表]
-    D --> E[AI推导每个接口的请求参数与返回结构]
-    E --> F[整理当前设计文档草稿]
-    F --> G[展示给用户审核]
-    G --> H{用户是否通过}
-    H -- 否 --> I[根据用户意见修改草稿]
-    I --> D
-    H -- 是 --> J[输出最终设计文档]
-    J --> K[结束当前 skill]
+## 目标
+
+输出一份 markdown 设计文档，供前端AI、后端AI、测试AI共享使用。
+
+## 固定执行顺序
+
+1. 读取 group、tool_key、tool_name、route_path、navigation_label、core_actions。
+2. 读取 schema_strategy、tables、relations、notes。
+3. 推导本工具的前端根目录、后端根目录、测试目录。
+4. 按工具动作推导 API 契约。
+5. 按 API 契约推导页面状态、权限规则、文件边界、验收标准。
+6. 先展示草稿给用户审核，再输出最终文档。
+
+## 规则
+
+1. 只基于当前输入生成设计文档，不得擅自补充未被输入支持的功能点。
+2. 禁止强行套用统一请求包裹结构，除非用户已明确要求。
+3. 一个工具一份设计文档，不得混入其他工具。
+4. 必须写出真实目录路径：
+   frontend/src/tools/<group>/<tool-key>/
+   backend/app/modules/<group>/<tool-key>/
+   frontend/tests/<group>/<tool-key>/
+   backend/tests/<group>/<tool-key>/
+5. 如果本次只是前端工具组调整，必须在文档中明确写出“本次无后端 API 变更”。
+6. 审核通过前不得输出最终文档。
+7. 最终输出时，只输出设计文档，不附加解释文字。
+
+## 固定输出结构
+
+```md
+# <tool_key> 设计文档
+
+## 一、工具身份
+- request_type:
+- group:
+- tool_key:
+- tool_name:
+- route_path:
+- navigation_label:
+- frontend_root:
+- backend_root:
+- frontend_test_root:
+- backend_test_root:
+
+## 二、需求摘要
+- summary:
+- primary_actor:
+- core_actions:
+
+## 三、数据与持久化决策
+- schema_strategy:
+- migration_required:
+- tables:
+- relations:
+- notes:
+
+## 四、API 契约
+### 1. <endpoint_id>
+- method:
+- path:
+- purpose:
+- auth_requirement:
+- request_shape:
+- response_shape:
+- error_shape:
+- business_rules:
+
+## 五、前端页面状态
+- loading:
+- empty:
+- success:
+- validation_error:
+- permission_denied:
+- backend_failure:
+
+## 六、文件边界
+- allowed_files:
+- forbidden_files:
+
+## 七、验收清单
+- frontend_acceptance:
+- backend_acceptance:
+- integration_acceptance:
 ```
-
-## 规则：
-
-* 只基于当前输入生成设计文档，不得擅自补充未被输入支持的接口。
-* 缺信息时，只能追问当前最必要的问题。
-* 审核阶段应先展示草稿，再等待用户确认。
-* 在用户明确表示“通过”“可以”“没问题”之前，不得输出最终设计文档。
-* 最终输出时，只输出设计文档，不附加任何解释文字以及脏内容。
-* 最终设计文档必须输出为 HTML table。
-* 当同一工具下存在多个接口时，工具名称列必须使用 HTML 的 `rowspan` 进行合并单元格。
-* 新建工具的统一协议规则：
-
-  * 只要是新建工具，接口协议必须使用统一结构。
-  * 所有带请求体的接口，`Body参数` 必须按统一请求结构展开。
-  * 所有接口的成功响应必须按统一成功响应结构展开。
-  * 所有接口的失败响应必须按统一失败响应结构展开。
-
-## 输出字段说明：
-
-* `工具名称`：填写该接口所属工具名称，格式为:`第一阶段输出的tool_key(第一阶段输出中的tool_name)`。
-* `API地址`：填写接口路径，前缀固定为`/api/{版本号}/{group}/{tool_key}`。
-* `请求方式`：根据接口动作填写对应的 HTTP 方法。
-* `Path参数`：填写路径中的动态参数，例如 `{id}`。
-* `Query参数`：填写查询字符串中的参数，例如分页、筛选条件。
-* `Body参数`：填写请求体中的字段。
-
-  * 对于新建工具，所有带请求体的接口必须按以下统一请求结构展开：
-
-    * `request_id`
-    * `ts`
-    * `payload`
-* `Header参数`：填写请求头中的参数，例如 `Authorization`。
-* `权限要求`：填写可以访问的用户类型。
-* `成功返回`：必须展开到字段级，逐项列出成功响应中的字段。
-
-  * 对于新建工具，必须按以下统一成功响应结构展开：
-
-    * `version`
-    * `success`
-    * `code`
-    * `message`
-    * `request_id`
-    * `ts`
-    * `data`
-* `失败返回`：必须展开到字段级，逐项列出失败响应中的字段。
-
-  * 对于新建工具，必须按以下统一失败响应结构展开：
-
-    * `version`
-    * `success`
-    * `code`
-    * `message`
-    * `request_id`
-    * `ts`
-    * `error.details`
-* `备注`：填写接口用途、特殊说明或补充信息，写法不限制。
-
-## 固定输出格式(示例)：
-
-
-<table>
-  <thead>
-    <tr>
-      <th>工具名称</th>
-      <th>API地址</th>
-      <th>请求方式</th>
-      <th>Path参数</th>
-      <th>Query参数</th>
-      <th>Body参数</th>
-      <th>Header参数</th>
-      <th>权限要求</th>
-      <th>成功返回</th>
-      <th>失败返回</th>
-      <th>备注</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td rowspan="5">weekly-report-assistant(周报助手)</td>
-      <td>/api/v1/collaboration-tools/weekly-report-assistant</td>
-      <td>GET</td>
-      <td>无</td>
-      <td>page:int<br>page_size:int</td>
-      <td>无</td>
-      <td>Authorization:string</td>
-      <td>登录用户</td>
-      <td>version:string<br>success:boolean<br>code:string<br>message:string<br>request_id:string<br>ts:number<br>data:list</td>
-      <td>version:string<br>success:boolean<br>code:string<br>message:string<br>request_id:string<br>ts:number<br>error.details:object</td>
-      <td>周报列表查询</td>
-    </tr>
-    <tr>
-      <td>/api/v1/collaboration-tools/weekly-report-assistant/{id}</td>
-      <td>GET</td>
-      <td>id:bigint</td>
-      <td>无</td>
-      <td>无</td>
-      <td>Authorization:string</td>
-      <td>登录用户</td>
-      <td>version:string<br>success:boolean<br>code:string<br>message:string<br>request_id:string<br>ts:number<br>data.id:bigint<br>data.title:varchar<br>data.content:text</td>
-      <td>version:string<br>success:boolean<br>code:string<br>message:string<br>request_id:string<br>ts:number<br>error.details:object</td>
-      <td>周报详情查询</td>
-    </tr>
-    <tr>
-      <td>/api/v1/collaboration-tools/weekly-report-assistant</td>
-      <td>POST</td>
-      <td>无</td>
-      <td>无</td>
-      <td>request_id:string<br>ts:number<br>payload.title:varchar<br>payload.content:text<br>payload.week:varchar<br>payload.author_id:bigint</td>
-      <td>Authorization:string</td>
-      <td>登录用户</td>
-      <td>version:string<br>success:boolean<br>code:string<br>message:string<br>request_id:string<br>ts:number<br>data.id:bigint</td>
-      <td>version:string<br>success:boolean<br>code:string<br>message:string<br>request_id:string<br>ts:number<br>error.details:object</td>
-      <td>新建周报</td>
-    </tr>
-    <tr>
-      <td>/api/v1/collaboration-tools/weekly-report-assistant/{id}</td>
-      <td>PUT</td>
-      <td>id:bigint</td>
-      <td>无</td>
-      <td>request_id:string<br>ts:number<br>payload.title:varchar<br>payload.content:text<br>payload.week:varchar</td>
-      <td>Authorization:string</td>
-      <td>登录用户</td>
-      <td>version:string<br>success:boolean<br>code:string<br>message:string<br>request_id:string<br>ts:number<br>data.id:bigint</td>
-      <td>version:string<br>success:boolean<br>code:string<br>message:string<br>request_id:string<br>ts:number<br>error.details:object</td>
-      <td>编辑周报</td>
-    </tr>
-    <tr>
-      <td>/api/v1/collaboration-tools/weekly-report-assistant/{id}/submit</td>
-      <td>POST</td>
-      <td>id:bigint</td>
-      <td>无</td>
-      <td>request_id:string<br>ts:number<br>payload:object</td>
-      <td>Authorization:string</td>
-      <td>登录用户</td>
-      <td>version:string<br>success:boolean<br>code:string<br>message:string<br>request_id:string<br>ts:number<br>data.id:bigint<br>data.status:varchar</td>
-      <td>version:string<br>success:boolean<br>code:string<br>message:string<br>request_id:string<br>ts:number<br>error.details:object</td>
-      <td>提交周报</td>
-    </tr>
-  </tbody>
-</table>
-
