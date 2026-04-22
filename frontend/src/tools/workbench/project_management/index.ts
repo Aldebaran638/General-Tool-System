@@ -14,7 +14,7 @@ registerTool({
   group: "workbench",
   route: {
     path: "/items",
-    title: "Items - FastAPI Cloud",
+    title: "Items - 通用工具系统",
     component: ProjectManagementPage,
   },
   navigation: {

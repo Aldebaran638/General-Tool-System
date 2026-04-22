@@ -48,7 +48,7 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       {
-        title: "Log In - FastAPI Cloud",
+        title: "Log In - 通用工具系统",
       },
     ],
   }),

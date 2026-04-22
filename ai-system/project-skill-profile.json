@@ -2,7 +2,7 @@
   "profile_version": "1.0",
   "generated_at": "2026-04-22",
   "project": {
-    "name": "Invoice Management System",
+    "name": "通用工具系统",
     "repository_root": ".",
     "summary": "A tool-oriented full-stack repository with a React frontend, FastAPI backend, and an architect-led multi-agent skill system."
   },

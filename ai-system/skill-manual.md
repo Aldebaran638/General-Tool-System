@@ -1,4 +1,4 @@
-# Invoice Management System Skill Manual
+# 通用工具系统 Skill Manual
 
 ## 初始化结果
 
