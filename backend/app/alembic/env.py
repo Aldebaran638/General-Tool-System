@@ -1,8 +1,8 @@
-import os
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
+from sqlmodel import SQLModel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -18,8 +18,11 @@ fileConfig(config.config_file_name)
 # target_metadata = mymodel.Base.metadata
 # target_metadata = None
 
-from app.models import SQLModel  # noqa
-from app.core.config import settings # noqa
+import app.models_core  # noqa: F401
+from app.core.config import settings  # noqa: E402
+from app.modules.registry import auto_discover_modules  # noqa: E402
+
+auto_discover_modules("app.modules")
 
 target_metadata = SQLModel.metadata
 
