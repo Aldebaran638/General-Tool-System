@@ -5,7 +5,7 @@ import type {
 } from "@/tools/registry"
 export type { NavigationEntry, NavigationGroup, NavigationTool }
 
-import { Home, Settings, Users } from "lucide-react"
+import { Home, LayoutDashboard, Settings, Users } from "lucide-react"
 import { toolRegistry } from "@/tools/registry"
 
 // Import all tool modules to trigger their self-registration
@@ -17,25 +17,33 @@ import "@/tools/workbench/project_management"
  * These are NOT tool modules; they are core platform features
  * that always exist regardless of which tools are registered.
  */
-const PLATFORM_NAVIGATION: NavigationEntry[] = [
+const PLATFORM_NAVIGATION: NavigationGroup[] = [
   {
-    kind: "tool",
+    kind: "group",
     icon: Home,
-    title: "仪表盘",
-    path: "/",
-  },
-  {
-    kind: "tool",
-    icon: Settings,
-    title: "个人设置",
-    path: "/settings",
-  },
-  {
-    kind: "tool",
-    icon: Users,
-    title: "用户管理",
-    path: "/admin",
-    requiresSuperuser: true,
+    title: "平台",
+    defaultExpanded: true,
+    children: [
+      {
+        kind: "tool",
+        icon: LayoutDashboard,
+        title: "仪表盘",
+        path: "/",
+      },
+      {
+        kind: "tool",
+        icon: Settings,
+        title: "个人设置",
+        path: "/settings",
+      },
+      {
+        kind: "tool",
+        icon: Users,
+        title: "用户管理",
+        path: "/admin",
+        requiresSuperuser: true,
+      },
+    ],
   },
 ]
 
@@ -51,13 +59,20 @@ export function getNavigationEntries(
   // Start with platform entries
   const entries: NavigationEntry[] = []
 
-  // Add platform entries that pass permission check
-  for (const entry of PLATFORM_NAVIGATION) {
-    if (entry.kind === "tool") {
-      if (entry.requiresSuperuser && !context.isSuperuser) {
-        continue
+  // Add platform groups with child-level permission checks
+  for (const group of PLATFORM_NAVIGATION) {
+    const children = group.children.filter((child) => {
+      if (child.requiresSuperuser && !context.isSuperuser) {
+        return false
       }
-      entries.push(entry)
+      return true
+    })
+
+    if (children.length > 0) {
+      entries.push({
+        ...group,
+        children,
+      })
     }
   }
 

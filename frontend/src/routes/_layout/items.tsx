@@ -8,7 +8,7 @@ const tool = toolRegistry.getTool("project_management")
 const ProjectManagementPage = tool?.route.component
 
 export const Route = createFileRoute("/_layout/items")({
-  component: ProjectManagementPage || (() => null),
+  component: ProjectManagementRoute,
   head: () => ({
     meta: [
       {
@@ -17,3 +17,11 @@ export const Route = createFileRoute("/_layout/items")({
     ],
   }),
 })
+
+function ProjectManagementRoute() {
+  if (!ProjectManagementPage) {
+    return null
+  }
+
+  return <ProjectManagementPage />
+}
