@@ -6,3 +6,5 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 .env
+# Runtime uploads and models generated during tests/runtime
+backend/runtime_data/

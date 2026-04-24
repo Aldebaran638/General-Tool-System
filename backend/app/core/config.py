@@ -95,6 +95,13 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
 
+    # OCR / AI configuration
+    ENABLE_LLM: bool = False
+    ENABLE_LOCAL_OCR: bool = True
+    OCR_PROVIDER: str = "paddleocr"
+    OCR_MODEL_DIR: str = "runtime_data/models/paddleocr"
+    OCR_ALLOW_MODEL_DOWNLOAD: bool = False
+
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (
