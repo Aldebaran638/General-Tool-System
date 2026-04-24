@@ -66,7 +66,7 @@
 
 后端校验命令：
 
-- `docker compose exec backend pytest backend/tests/finance/purchase_records/index_test.py`
+- `docker compose exec backend pytest tests/finance/purchase_records/index_test.py`
 - `docker compose exec backend alembic current`
 - 如新增 migration，执行 `docker compose exec backend alembic upgrade head`
 

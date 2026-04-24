@@ -149,7 +149,7 @@
   - `backend/tests/finance/purchase_records/**`
   - `docs/rounds/round-001/backend-report.md`
 - done_when:
-  - `docker compose exec backend pytest backend/tests/finance/purchase_records/index_test.py` 通过或报告明确阻塞原因。
+  - `docker compose exec backend pytest tests/finance/purchase_records/index_test.py` 通过或报告明确阻塞原因。
   - `docker compose exec backend alembic upgrade head` 通过或报告明确阻塞原因。
   - backend report 包含 API 契约测试、迁移校验、越界自检、联调已验证/未验证项。
 
