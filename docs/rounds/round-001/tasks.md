@@ -120,10 +120,14 @@
   - `backend/app/modules/finance/purchase_records/**`
   - `backend/pyproject.toml`
   - `uv.lock`
+  - `.env`
+  - `.env-example`
+  - `backend/app/core/config.py`
   - `backend/tests/finance/purchase_records/**`
 - done_when:
   - OCR preview 接口存在。
   - OCR 不保存文件、不写数据库。
+  - OCR 行为受全局配置控制。
   - PaddleOCR 依赖版本固定，或报告明确安装阻塞与降级实现。
 
 ### BE-004

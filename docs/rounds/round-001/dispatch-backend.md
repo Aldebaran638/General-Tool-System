@@ -29,6 +29,9 @@
 - `backend/app/modules/finance/purchase_records/**`
 - `backend/app/alembic/versions/**`
 - `backend/tests/finance/purchase_records/**`
+- `.env`
+- `.env-example`
+- `backend/app/core/config.py`
 - `backend/pyproject.toml`
 - `uv.lock`
 - `docs/rounds/round-001/backend-report.md`
@@ -48,6 +51,7 @@
 - 模块自注册。
 - 文件存储 `storage.py`。
 - OCR preview `ocr.py`，使用 PaddleOCR 本地预训练模型或清晰降级实现。
+- 全局 AI/OCR 配置：`ENABLE_LLM`、`ENABLE_LOCAL_OCR`、`OCR_PROVIDER`、`OCR_MODEL_DIR`、`OCR_ALLOW_MODEL_DOWNLOAD`。
 - CRUD API。
 - 状态流转 API。
 - 逻辑删除与恢复。
@@ -56,6 +60,7 @@
 - 权限规则。
 - 大类/小类校验。
 - OCR preview 不落库。
+- OCR preview 必须受全局 AI/OCR 配置控制。
 - 数据库不保存截图二进制。
 
 ## 测试责任

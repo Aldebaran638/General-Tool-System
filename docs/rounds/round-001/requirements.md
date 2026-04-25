@@ -159,6 +159,12 @@
 - 不接入大模型。
 - 不接入云 OCR 或第三方 AI 服务。
 - 运行期不得依赖外网。
+- OCR 必须受全局配置控制：
+  - `ENABLE_LLM=false`
+  - `ENABLE_LOCAL_OCR=true`
+  - `OCR_PROVIDER=paddleocr`
+  - `OCR_MODEL_DIR=runtime_data/models/paddleocr`
+  - `OCR_ALLOW_MODEL_DOWNLOAD=false`
 - OCR 接口只返回预填字段，不落库。
 - 用户最终提交的表单字段才是正式业务数据。
 

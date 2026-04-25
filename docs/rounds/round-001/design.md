@@ -307,6 +307,9 @@ backend/app/modules/finance/purchase_records/
 - `backend/app/modules/finance/purchase_records/**`
 - `backend/app/alembic/versions/**`
 - `backend/tests/finance/purchase_records/**`
+- `.env`
+- `.env-example`
+- `backend/app/core/config.py`
 - `backend/pyproject.toml`
 - `uv.lock`
 - 必要的模块发现兼容文件，但不得扩改无关工具业务逻辑。
@@ -317,3 +320,20 @@ backend/app/modules/finance/purchase_records/
 - 修改 skill 文件。
 - 修改无关全局样式和全局布局。
 - 把 OCR 结果作为独立业务数据持久化。
+
+## 5. 全局 OCR 配置
+
+后端必须读取以下配置：
+
+- `ENABLE_LLM`
+- `ENABLE_LOCAL_OCR`
+- `OCR_PROVIDER`
+- `OCR_MODEL_DIR`
+- `OCR_ALLOW_MODEL_DOWNLOAD`
+
+业务规则：
+
+- `ENABLE_LLM=false` 时禁止调用任何大模型能力。
+- `ENABLE_LOCAL_OCR=false` 时 OCR preview 必须降级为空预填，不阻塞手工录入。
+- `OCR_ALLOW_MODEL_DOWNLOAD=false` 时运行期禁止自动下载模型。
+- `OCR_MODEL_DIR` 不存在或模型不可用时，OCR preview 必须降级为空预填。

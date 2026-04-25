@@ -108,7 +108,14 @@ class ToolRegistry {
     return entries
   }
 
+  private _groupNameMap: Record<string, string> = {
+    finance: "财务",
+  }
+
   private _formatGroupName(name: string): string {
+    if (this._groupNameMap[name]) {
+      return this._groupNameMap[name]
+    }
     return name
       .split("_")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
