@@ -19,6 +19,7 @@ import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutFinancePurchaseRecordsRouteImport } from './routes/_layout/finance.purchase-records'
+import { Route as LayoutFinanceInvoiceFilesRouteImport } from './routes/_layout/finance.invoice-files'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -70,6 +71,12 @@ const LayoutFinancePurchaseRecordsRoute =
     path: '/finance/purchase-records',
     getParentRoute: () => LayoutRoute,
   } as any)
+const LayoutFinanceInvoiceFilesRoute =
+  LayoutFinanceInvoiceFilesRouteImport.update({
+    id: '/finance/invoice-files',
+    path: '/finance/invoice-files',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof LayoutAdminRoute
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
+  '/finance/invoice-files': typeof LayoutFinanceInvoiceFilesRoute
   '/finance/purchase-records': typeof LayoutFinancePurchaseRecordsRoute
 }
 export interface FileRoutesByTo {
@@ -91,6 +99,7 @@ export interface FileRoutesByTo {
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
+  '/finance/invoice-files': typeof LayoutFinanceInvoiceFilesRoute
   '/finance/purchase-records': typeof LayoutFinancePurchaseRecordsRoute
 }
 export interface FileRoutesById {
@@ -104,6 +113,7 @@ export interface FileRoutesById {
   '/_layout/items': typeof LayoutItemsRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/finance/invoice-files': typeof LayoutFinanceInvoiceFilesRoute
   '/_layout/finance/purchase-records': typeof LayoutFinancePurchaseRecordsRoute
 }
 export interface FileRouteTypes {
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/items'
     | '/settings'
+    | '/finance/invoice-files'
     | '/finance/purchase-records'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/items'
     | '/settings'
     | '/'
+    | '/finance/invoice-files'
     | '/finance/purchase-records'
   id:
     | '__root__'
@@ -140,6 +152,7 @@ export interface FileRouteTypes {
     | '/_layout/items'
     | '/_layout/settings'
     | '/_layout/'
+    | '/_layout/finance/invoice-files'
     | '/_layout/finance/purchase-records'
   fileRoutesById: FileRoutesById
 }
@@ -223,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutFinancePurchaseRecordsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/finance/invoice-files': {
+      id: '/_layout/finance/invoice-files'
+      path: '/finance/invoice-files'
+      fullPath: '/finance/invoice-files'
+      preLoaderRoute: typeof LayoutFinanceInvoiceFilesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
   }
 }
 
@@ -231,6 +251,7 @@ interface LayoutRouteChildren {
   LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
+  LayoutFinanceInvoiceFilesRoute: typeof LayoutFinanceInvoiceFilesRoute
   LayoutFinancePurchaseRecordsRoute: typeof LayoutFinancePurchaseRecordsRoute
 }
 
@@ -239,6 +260,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutItemsRoute: LayoutItemsRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
+  LayoutFinanceInvoiceFilesRoute: LayoutFinanceInvoiceFilesRoute,
   LayoutFinancePurchaseRecordsRoute: LayoutFinancePurchaseRecordsRoute,
 }
 
