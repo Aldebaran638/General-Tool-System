@@ -104,3 +104,27 @@ class NewPassword(SQLModel):
 
 class Message(SQLModel):
     message: str
+
+
+# =============================================================================
+# App Settings Model (Platform-level key-value config)
+# =============================================================================
+
+class AppSetting(SQLModel, table=True):
+    """Platform-level key-value settings with type conversion."""
+
+    __tablename__ = "app_setting"
+
+    key: str = Field(primary_key=True, max_length=128)
+    value: str = Field(max_length=2048)
+    value_type: str = Field(default="str", max_length=32)
+    description: str | None = Field(default=None, max_length=512)
+    updated_by_id: uuid.UUID | None = Field(
+        default=None,
+        foreign_key="user.id",
+        nullable=True,
+    )
+    updated_at: datetime | None = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
