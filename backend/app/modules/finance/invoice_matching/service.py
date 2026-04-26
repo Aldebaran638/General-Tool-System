@@ -183,7 +183,7 @@ def _get_level(score: int) -> str:
 # =============================================================================
 
 
-def _get_allocated_for_invoice(
+def get_allocated_for_invoice(
     session: Session,
     *,
     invoice_file_id: uuid.UUID,
@@ -193,6 +193,9 @@ def _get_allocated_for_invoice(
 
     Active = confirmed + needs_review. Optionally exclude one match
     (used by reconfirm to avoid double-counting itself).
+
+    Public helper: cross-module callers (e.g. finance.dashboard) reuse this
+    instead of duplicating the allocation rule. See Round 005 design.
     """
     matches = repository.get_active_matches_for_invoice_file(
         session, invoice_file_id=invoice_file_id
@@ -331,7 +334,7 @@ def list_candidates(
         if score < SCORE_THRESHOLD_WEAK:
             continue
 
-        allocated = _get_allocated_for_invoice(session, invoice_file_id=inv.id)
+        allocated = get_allocated_for_invoice(session, invoice_file_id=inv.id)
         remaining = (
             inv.invoice_amount - allocated if inv.invoice_amount else Decimal("0")
         )
@@ -407,7 +410,7 @@ def _validate_pair_for_match(
     if purchase.amount is None or invoice.invoice_amount is None:
         raise ValueError("Missing amount on purchase or invoice")
 
-    allocated = _get_allocated_for_invoice(
+    allocated = get_allocated_for_invoice(
         session, invoice_file_id=invoice.id, exclude_match_id=exclude_match_id
     )
     if (allocated + purchase.amount) > (invoice.invoice_amount + AMOUNT_TOLERANCE_DECIMAL):
