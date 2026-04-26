@@ -296,6 +296,19 @@ def update_record(
     if old_pdf_path:
         delete_pdf(relative_path=old_pdf_path)
 
+    from app.modules.finance.invoice_matching.service import (
+        mark_needs_review_for_invoice_file,
+    )
+
+    mark_needs_review_for_invoice_file(
+        session,
+        invoice_file_id=record.id,
+        review_reason="invoice file updated",
+    )
+    # The hook commits, which expires attributes on `record`. Refresh so the
+    # response builder below can read the live row.
+    session.refresh(record)
+
     warning, dup_count = _get_duplicate_info(session, record, current_user)
     return _to_public(
         record,
@@ -339,6 +352,18 @@ def withdraw_confirmation(
     if record.status != STATUS_CONFIRMED:
         raise HTTPException(status_code=403, detail="Only confirmed records can be withdrawn")
     record = repository.update_record_status(session, record=record, status=STATUS_DRAFT)
+
+    from app.modules.finance.invoice_matching.service import (
+        mark_needs_review_for_invoice_file,
+    )
+
+    mark_needs_review_for_invoice_file(
+        session,
+        invoice_file_id=record.id,
+        review_reason="invoice file withdrawn to draft",
+    )
+    session.refresh(record)
+
     warning, dup_count = _get_duplicate_info(session, record, current_user)
     return _to_public(
         record,
@@ -358,6 +383,18 @@ def void_record(
     if record.status != STATUS_CONFIRMED:
         raise HTTPException(status_code=403, detail="Only confirmed records can be voided")
     record = repository.update_record_status(session, record=record, status=STATUS_VOIDED)
+
+    from app.modules.finance.invoice_matching.service import (
+        mark_needs_review_for_invoice_file,
+    )
+
+    mark_needs_review_for_invoice_file(
+        session,
+        invoice_file_id=record.id,
+        review_reason="invoice file voided",
+    )
+    session.refresh(record)
+
     warning, dup_count = _get_duplicate_info(session, record, current_user)
     return _to_public(
         record,
@@ -377,6 +414,18 @@ def restore_draft(
     if record.status != STATUS_VOIDED:
         raise HTTPException(status_code=403, detail="Only voided records can be restored to draft")
     record = repository.update_record_status(session, record=record, status=STATUS_DRAFT)
+
+    from app.modules.finance.invoice_matching.service import (
+        mark_needs_review_for_invoice_file,
+    )
+
+    mark_needs_review_for_invoice_file(
+        session,
+        invoice_file_id=record.id,
+        review_reason="invoice file restored to draft",
+    )
+    session.refresh(record)
+
     warning, dup_count = _get_duplicate_info(session, record, current_user)
     return _to_public(
         record,
@@ -399,6 +448,17 @@ def delete_record(
     record = repository.get_record(session, record_id=record_id)
     _require_record_access(record=record, current_user=current_user)
     repository.soft_delete_record(session, record=record, deleted_by_id=current_user.id)
+
+    from app.modules.finance.invoice_matching.service import (
+        mark_needs_review_for_invoice_file,
+    )
+
+    mark_needs_review_for_invoice_file(
+        session,
+        invoice_file_id=record.id,
+        review_reason="invoice file deleted",
+    )
+
     return Message(message="Invoice file deleted successfully")
 
 
@@ -413,6 +473,18 @@ def restore_record(
     if record.deleted_by_id != current_user.id and not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     record = repository.restore_record(session, record=record)
+
+    from app.modules.finance.invoice_matching.service import (
+        mark_needs_review_for_invoice_file,
+    )
+
+    mark_needs_review_for_invoice_file(
+        session,
+        invoice_file_id=record.id,
+        review_reason="invoice file restored",
+    )
+    session.refresh(record)
+
     warning, dup_count = _get_duplicate_info(session, record, current_user)
     return _to_public(
         record,

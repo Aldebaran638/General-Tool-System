@@ -187,7 +187,22 @@ def update_record(
         record.screenshot_mime_type = mime
         record.screenshot_size = size
 
-    return repository.update_record(session, record=record, record_in=record_in)
+    updated = repository.update_record(session, record=record, record_in=record_in)
+
+    # Cross-module hook: any active match referencing this record must be
+    # re-reviewed because key fields may have changed.
+    from app.modules.finance.invoice_matching.service import (
+        mark_needs_review_for_purchase_record,
+    )
+
+    mark_needs_review_for_purchase_record(
+        session,
+        purchase_record_id=updated.id,
+        review_reason="purchase record updated",
+    )
+    session.refresh(updated)
+
+    return updated
 
 
 def submit_record(
@@ -217,7 +232,20 @@ def withdraw_record(
             status_code=403,
             detail="Only submitted records can be withdrawn",
         )
-    return repository.update_record_status(session, record=record, status=STATUS_DRAFT)
+    updated = repository.update_record_status(session, record=record, status=STATUS_DRAFT)
+
+    from app.modules.finance.invoice_matching.service import (
+        mark_needs_review_for_purchase_record,
+    )
+
+    mark_needs_review_for_purchase_record(
+        session,
+        purchase_record_id=updated.id,
+        review_reason="purchase record withdrawn to draft",
+    )
+    session.refresh(updated)
+
+    return updated
 
 
 def approve_record(
@@ -247,7 +275,20 @@ def reject_record(
             status_code=403,
             detail="Only submitted records can be rejected",
         )
-    return repository.update_record_status(session, record=record, status=STATUS_REJECTED)
+    updated = repository.update_record_status(session, record=record, status=STATUS_REJECTED)
+
+    from app.modules.finance.invoice_matching.service import (
+        mark_needs_review_for_purchase_record,
+    )
+
+    mark_needs_review_for_purchase_record(
+        session,
+        purchase_record_id=updated.id,
+        review_reason="purchase record rejected",
+    )
+    session.refresh(updated)
+
+    return updated
 
 
 def unapprove_record(
@@ -275,6 +316,17 @@ def delete_record(
     if not current_user.is_superuser and record.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     repository.soft_delete_record(session, record=record, deleted_by_id=current_user.id)
+
+    from app.modules.finance.invoice_matching.service import (
+        mark_needs_review_for_purchase_record,
+    )
+
+    mark_needs_review_for_purchase_record(
+        session,
+        purchase_record_id=record.id,
+        review_reason="purchase record deleted",
+    )
+
     return Message(message="Purchase record deleted successfully")
 
 
@@ -288,7 +340,20 @@ def restore_record(
         raise HTTPException(status_code=400, detail="Record is not deleted")
     if record.deleted_by_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    return repository.restore_record(session, record=record)
+    restored = repository.restore_record(session, record=record)
+
+    from app.modules.finance.invoice_matching.service import (
+        mark_needs_review_for_purchase_record,
+    )
+
+    mark_needs_review_for_purchase_record(
+        session,
+        purchase_record_id=restored.id,
+        review_reason="purchase record restored",
+    )
+    session.refresh(restored)
+
+    return restored
 
 
 def purge_deleted_records(
