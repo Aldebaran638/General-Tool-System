@@ -5,6 +5,7 @@ import settings from "./settings"
 import purchaseRecords from "./purchaseRecords"
 import invoiceFiles from "./invoiceFiles"
 import invoiceMatching from "./invoiceMatching"
+import reimbursementExports from "./reimbursementExports"
 
 const dict = {
   common,
@@ -16,6 +17,7 @@ const dict = {
     purchaseRecords,
     invoiceFiles,
     invoiceMatching,
+    reimbursementExports,
   },
 }
 

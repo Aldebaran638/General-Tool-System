@@ -17,6 +17,7 @@ import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LayoutFinanceReimbursementExportsRouteImport } from './routes/_layout/finance.reimbursement-exports'
 import { Route as LayoutFinancePurchaseRecordsRouteImport } from './routes/_layout/finance.purchase-records'
 import { Route as LayoutFinanceInvoiceMatchingRouteImport } from './routes/_layout/finance.invoice-matching'
 import { Route as LayoutFinanceInvoiceFilesRouteImport } from './routes/_layout/finance.invoice-files'
@@ -60,6 +61,12 @@ const LayoutAdminRoute = LayoutAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutFinanceReimbursementExportsRoute =
+  LayoutFinanceReimbursementExportsRouteImport.update({
+    id: '/finance/reimbursement-exports',
+    path: '/finance/reimbursement-exports',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 const LayoutFinancePurchaseRecordsRoute =
   LayoutFinancePurchaseRecordsRouteImport.update({
     id: '/finance/purchase-records',
@@ -90,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/finance/invoice-files': typeof LayoutFinanceInvoiceFilesRoute
   '/finance/invoice-matching': typeof LayoutFinanceInvoiceMatchingRoute
   '/finance/purchase-records': typeof LayoutFinancePurchaseRecordsRoute
+  '/finance/reimbursement-exports': typeof LayoutFinanceReimbursementExportsRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -102,6 +110,7 @@ export interface FileRoutesByTo {
   '/finance/invoice-files': typeof LayoutFinanceInvoiceFilesRoute
   '/finance/invoice-matching': typeof LayoutFinanceInvoiceMatchingRoute
   '/finance/purchase-records': typeof LayoutFinancePurchaseRecordsRoute
+  '/finance/reimbursement-exports': typeof LayoutFinanceReimbursementExportsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +125,7 @@ export interface FileRoutesById {
   '/_layout/finance/invoice-files': typeof LayoutFinanceInvoiceFilesRoute
   '/_layout/finance/invoice-matching': typeof LayoutFinanceInvoiceMatchingRoute
   '/_layout/finance/purchase-records': typeof LayoutFinancePurchaseRecordsRoute
+  '/_layout/finance/reimbursement-exports': typeof LayoutFinanceReimbursementExportsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/finance/invoice-files'
     | '/finance/invoice-matching'
     | '/finance/purchase-records'
+    | '/finance/reimbursement-exports'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/finance/invoice-files'
     | '/finance/invoice-matching'
     | '/finance/purchase-records'
+    | '/finance/reimbursement-exports'
   id:
     | '__root__'
     | '/_layout'
@@ -155,6 +167,7 @@ export interface FileRouteTypes {
     | '/_layout/finance/invoice-files'
     | '/_layout/finance/invoice-matching'
     | '/_layout/finance/purchase-records'
+    | '/_layout/finance/reimbursement-exports'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -223,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/finance/reimbursement-exports': {
+      id: '/_layout/finance/reimbursement-exports'
+      path: '/finance/reimbursement-exports'
+      fullPath: '/finance/reimbursement-exports'
+      preLoaderRoute: typeof LayoutFinanceReimbursementExportsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/finance/purchase-records': {
       id: '/_layout/finance/purchase-records'
       path: '/finance/purchase-records'
@@ -254,6 +274,7 @@ interface LayoutRouteChildren {
   LayoutFinanceInvoiceFilesRoute: typeof LayoutFinanceInvoiceFilesRoute
   LayoutFinanceInvoiceMatchingRoute: typeof LayoutFinanceInvoiceMatchingRoute
   LayoutFinancePurchaseRecordsRoute: typeof LayoutFinancePurchaseRecordsRoute
+  LayoutFinanceReimbursementExportsRoute: typeof LayoutFinanceReimbursementExportsRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
@@ -263,6 +284,8 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutFinanceInvoiceFilesRoute: LayoutFinanceInvoiceFilesRoute,
   LayoutFinanceInvoiceMatchingRoute: LayoutFinanceInvoiceMatchingRoute,
   LayoutFinancePurchaseRecordsRoute: LayoutFinancePurchaseRecordsRoute,
+  LayoutFinanceReimbursementExportsRoute:
+    LayoutFinanceReimbursementExportsRoute,
 }
 
 const LayoutRouteWithChildren =
