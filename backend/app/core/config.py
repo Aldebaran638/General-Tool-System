@@ -57,16 +57,22 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
 
+    # Test database config (defaults to app_test)
+    POSTGRES_TEST_DB: str = "app_test"
+    TESTING: bool = False
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
+        # When TESTING is true, use POSTGRES_TEST_DB automatically
+        db_name = self.POSTGRES_TEST_DB if self.TESTING else self.POSTGRES_DB
         return PostgresDsn.build(
             scheme="postgresql+psycopg",
             username=self.POSTGRES_USER,
             password=self.POSTGRES_PASSWORD,
             host=self.POSTGRES_SERVER,
             port=self.POSTGRES_PORT,
-            path=self.POSTGRES_DB,
+            path=db_name,
         )
 
     SMTP_TLS: bool = True
@@ -123,5 +129,15 @@ class Settings(BaseSettings):
 
         return self
 
+    @model_validator(mode="after")
+    def _ensure_test_db_has_test_suffix(self) -> Self:
+        if self.TESTING and "test" not in self.POSTGRES_TEST_DB.lower():
+            raise ValueError(
+                f"TESTING is enabled but POSTGRES_TEST_DB='{self.POSTGRES_TEST_DB}' "
+                "does not contain 'test'. Aborting to prevent accidental data loss."
+            )
+        return self
 
+
+# Module-level singleton. In tests this may be overridden after patching env vars.
 settings = Settings()  # type: ignore
