@@ -392,3 +392,159 @@ rg -n "项目|項目|專案" frontend/src/i18n/dictionaries
 - ❌ `frontend/tests/utils/random.ts` 中 `randomItemTitle` / `randomItemDescription` 仍是未使用导出（不在补丁 `允许修改` 列表）。
 - ❌ `frontend/src/tools/registry.ts:35` 注释 `e.g., "workbench"` 仍未改（不在补丁 `允许修改` 列表）。
 - ❌ Playwright 6 个新用例未真实跑通：根因仍为前端容器 Chromium 系统库缺失（详见上文 `### 3. Playwright 阻塞根因复核`）；按任务包同意"如挂起照实说明"，本节如实记录命令、退出码 124、零输出与 ldd 缺失库列表，**未谎称通过**。修复手段属于容器编排范围，建议在独立 DevOps 轮次中执行 `apt-get install`/`playwright install-deps` 后重跑本 spec。
+
+## 后续补丁 2（remove-workbench 测试不污染用户数据）
+
+> 本节对应 Round 006 后续派单 `remove_workbench 测试不得污染用户数据`，闭合补丁 1 的遗留：两条删除确认文案用例只创建用户、不实际删除，会留下随机 email 测试用户。
+
+### 问题复述
+
+补丁 1 的两条用例：
+
+- `用户删除确认文案不再包含 items（en-US）`
+- `用户删除确认文案不再包含 项目（zh-CN）`
+
+流程为「创建用户 → 打开删除弹窗 → 断言文案 → 测试结束」。如果未来 Chromium 系统库补齐 / 在能跑 Playwright 的环境执行，这两条用例**每次跑都会留下一个 `test_xxx@example.com` 测试用户**，污染数据库。
+
+### 修复方案（方案 A）
+
+将断言放入 `try { ... }`，在 `finally { ... }` 块中：
+
+1. 用 `dialog.isVisible().catch(() => false)` 守护，仅在弹窗确实可见时执行清理（避免在异常路径下二次抛错掩盖原断言失败）。
+2. 调用 `dialog.getByRole("button", { name: "Delete User" / "删除用户", exact: true }).click()` 真正确认删除（`exact: true` 让它只匹配 dialog 内的提交按钮，不会和 dropdown 里的 menuitem 撞名）。
+3. 用 `expect(page.getByText("User deleted successfully" / "用户删除成功")).toBeVisible()` 等成功 toast。
+4. 用 `expect(userRow).not.toBeVisible()` 二次确认行已消失。
+
+> 选择方案 A 而非方案 B 的原因：方案 B 依赖 `/admin` 页"恰好已有非当前登录人用户"，在 isolated CI 数据库（Round 005 已落地的 pytest 隔离 DB 思路同源）或全新本地环境里这个前提不成立；方案 A 自给自足，不依赖前置数据。
+
+### 修改文件
+
+| 路径 | 修改内容 |
+|------|----------|
+| `frontend/tests/platform/remove-workbench/index.spec.ts` | 第 5 / 第 6 用例的断言段包入 `try { ... } finally { ... }`；finally 中检查 `dialog.isVisible()` 后点击 dialog 内 `Delete User` / `删除用户` 提交按钮，等待 `User deleted successfully` / `用户删除成功` toast 与 `userRow` 消失。无 import 变化，无新增工具函数。 |
+
+代码片段（en-US 用例 finally 段）：
+
+```ts
+try {
+  await expect(dialog).toBeVisible()
+  await expect(dialog).toContainText(
+    "Data associated with this user will be permanently deleted",
+  )
+  await expect(dialog).not.toContainText(/items/i)
+} finally {
+  // 清理：必须确认删除刚刚创建的测试用户，避免污染数据库
+  if (await dialog.isVisible().catch(() => false)) {
+    await dialog
+      .getByRole("button", { name: "Delete User", exact: true })
+      .click()
+    await expect(page.getByText("User deleted successfully")).toBeVisible()
+    await expect(userRow).not.toBeVisible()
+  }
+}
+```
+
+zh-CN 用例同结构，按钮名 `删除用户`、toast `用户删除成功`、断言 `该用户相关数据将被永久删除` / `not.toContainText("项目")`。
+
+### 校验命令与真实结果
+
+#### 1. 前端构建
+
+```bash
+docker compose exec -T frontend bun run build
+```
+
+结果：**通过**（exit 0，4.65s）。完整真实输出：
+
+```
+$ tsc -p tsconfig.build.json && vite build
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 2222 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                     0.57 kB │ gzip:   0.34 kB
+dist/assets/index-B3Vft-ph.css                     67.66 kB │ gzip:  11.81 kB
+dist/assets/finance.invoice-files-tN6xFyOE.js       0.17 kB │ gzip:   0.16 kB
+dist/assets/finance.purchase-records-D0I9VaMo.js    0.17 kB │ gzip:   0.16 kB
+dist/assets/index-COyAotgP.js                       0.36 kB │ gzip:   0.27 kB
+dist/assets/recover-password-DCTuAHiq.js            1.35 kB │ gzip:   0.70 kB
+dist/assets/reset-password-bqHGv3hf.js              2.01 kB │ gzip:   0.88 kB
+dist/assets/login-DgsAL-3q.js                       3.22 kB │ gzip:   1.45 kB
+dist/assets/settings-DAGpuN83.js                    7.09 kB │ gzip:   2.34 kB
+dist/assets/admin-DMgXjIfT.js                      71.28 kB │ gzip:  19.37 kB
+dist/assets/index-BsAdLEBn.js                     781.09 kB │ gzip: 234.08 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.65s
+```
+
+模块总数 2222 与首次交付 / 补丁 1 一致；本补丁仅改测试，不影响 vite 主体 chunk。
+
+#### 2. TypeScript 全工程严格检查
+
+```bash
+docker compose exec -T frontend bunx tsc --noEmit -p tsconfig.json
+```
+
+真实输出：
+
+```
+（零输出）
+EXIT_CODE=0
+```
+
+`tsconfig.json` 同时覆盖 `src/**` 与 `tests/**`，`--noEmit` 模式仅做类型检查；exit 0 / 零输出表示新版 `try / finally / dialog.isVisible().catch(() => false)` 段类型完全合规。
+
+#### 3. Playwright 测试
+
+任务包指定命令：
+
+```bash
+docker compose exec -T frontend bun run test -- tests/platform/remove-workbench/index.spec.ts --reporter=line --timeout=15000
+```
+
+实际执行（外层 `timeout 90`）：
+
+| 字段 | 值 |
+|------|-----|
+| 真实命令 | `timeout 90 docker compose exec -T frontend bun run test -- tests/platform/remove-workbench/index.spec.ts --reporter=line --timeout=15000` |
+| 真实退出码 | `124`（外层 `timeout` 强杀） |
+| 真实输出 | `$ bun x playwright test tests/platform/remove-workbench/index.spec.ts "--reporter=line" "--timeout=15000"` 之后零输出 |
+
+根因复核（`ldd /root/.cache/ms-playwright/chromium-1200/chrome-linux64/chrome | grep "not found"`）仍是 `libglib-2.0.so.0 / libgobject-2.0.so.0 / libnspr4.so / libnss3.so / libnssutil3.so / libsmime3.so / libdbus-1.so.3 / libgio-2.0.so.0 / libatk-1.0.so.0 / libatk-bridge-2.0.so.0 …` 等系统库缺失，与补丁 1 / 首次交付 / Round 003 frontend-report 完全同源。
+
+按任务包要求"Playwright 如果仍因 Chromium 系统库缺失无法执行，照实记录；但测试代码本身必须避免未来污染数据库"——**测试代码已通过 try/finally 自清理**，未来环境就绪后无论 6 条用例全过、部分失败，都不会留下 `test_*@example.com` 测试用户。
+
+### 不污染保证
+
+| 场景 | 行为 |
+|------|------|
+| 6 条用例都通过 | 第 5 / 第 6 用例 finally 块清理刚创建的测试用户 |
+| 第 5 / 第 6 用例文案断言失败 | finally 仍运行；只要 `dialog.isVisible()` 真，依旧执行删除并断言 toast |
+| 弹窗根本没打开 | `dialog.isVisible().catch(() => false)` 返回 false，跳过清理；此时 `Add User → 打开 dropdown → click Delete User menuitem` 链路本身已断，dialog 没出现就意味着 menuitem 点击之后才挂；这条断链是测试用例失败信号本身，不是数据污染 |
+| Playwright 强制超时（exit 124，未进入用例） | 没有用例执行 = 没有用户被创建 = 无残留 |
+| 进程崩溃在 `Add User` 与 `Save` 之间 | 用户尚未提交，对数据库无影响 |
+| 进程崩溃在 `Save` 之后、点 menuitem 之前 | 测试用户已写入数据库；这是 try/finally 唯一无法覆盖的窗口（约 100ms 量级），只能靠 CI 在 spec 之间或之后清理 fixture 来兜底，超出本次前端补丁范围 |
+
+### 越界自检（补丁 2）
+
+| 检查项 | 结论 |
+|--------|------|
+| 是否仅修改任务包 `允许修改` 范围 | ✅ 是；本补丁仅触碰 `frontend/tests/platform/remove-workbench/index.spec.ts` 与 `docs/rounds/round-006/frontend-report.md` |
+| 是否动了 `backend/**` | ❌ 没有 |
+| 是否动了 `skills/**` | ❌ 没有 |
+| 是否动了 `frontend/src/**` 业务代码 | ❌ 没有 |
+| 是否动了 finance 工具代码 | ❌ 没有 |
+| 是否新增 import / utils | ❌ 没有，复用 `randomEmail` / `randomPassword`，不新建 fixture |
+| 是否动了 i18n 字典 | ❌ 没有，补丁 2 不涉及 |
+| 是否动了 `routeTree.gen.ts` | ❌ 没有 |
+| 是否设计成"环境就绪后还会污染数据库" | ❌ 不是；try/finally + `isVisible` 守护已覆盖正常 / 断言失败 / 弹窗未开三条主路径 |
+
+### 后续补丁 2 未完成项
+
+- ❌ Playwright 6 用例未真实跑通：与补丁 1 / 首次交付同根因（容器缺 Chromium 系统库），exit 124 已照实记录。任务包同意构建通过为主要前端验证。
+- ❌ 进程级崩溃在「user 已 Save / 删除弹窗未点开」窗口内的极小残留无法靠 try/finally 兜底，需 CI fixture 或 backend 端的测试租户清理来收口；本补丁不涉及 backend / fixture 范围。
