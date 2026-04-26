@@ -11,3 +11,5 @@ backend/runtime_data/
 
 # Claude Code local configuration
 .claude/
+
+/scripts/start-kimi-claude.ps1
