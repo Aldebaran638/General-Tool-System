@@ -4,6 +4,7 @@ import admin from "./admin"
 import settings from "./settings"
 import purchaseRecords from "./purchaseRecords"
 import invoiceFiles from "./invoiceFiles"
+import invoiceMatching from "./invoiceMatching"
 
 const dict = {
   common,
@@ -14,6 +15,7 @@ const dict = {
     groupName: "財務",
     purchaseRecords,
     invoiceFiles,
+    invoiceMatching,
   },
 }
 

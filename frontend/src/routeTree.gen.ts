@@ -18,6 +18,7 @@ import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutFinancePurchaseRecordsRouteImport } from './routes/_layout/finance.purchase-records'
+import { Route as LayoutFinanceInvoiceMatchingRouteImport } from './routes/_layout/finance.invoice-matching'
 import { Route as LayoutFinanceInvoiceFilesRouteImport } from './routes/_layout/finance.invoice-files'
 
 const SignupRoute = SignupRouteImport.update({
@@ -65,6 +66,12 @@ const LayoutFinancePurchaseRecordsRoute =
     path: '/finance/purchase-records',
     getParentRoute: () => LayoutRoute,
   } as any)
+const LayoutFinanceInvoiceMatchingRoute =
+  LayoutFinanceInvoiceMatchingRouteImport.update({
+    id: '/finance/invoice-matching',
+    path: '/finance/invoice-matching',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 const LayoutFinanceInvoiceFilesRoute =
   LayoutFinanceInvoiceFilesRouteImport.update({
     id: '/finance/invoice-files',
@@ -81,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof LayoutAdminRoute
   '/settings': typeof LayoutSettingsRoute
   '/finance/invoice-files': typeof LayoutFinanceInvoiceFilesRoute
+  '/finance/invoice-matching': typeof LayoutFinanceInvoiceMatchingRoute
   '/finance/purchase-records': typeof LayoutFinancePurchaseRecordsRoute
 }
 export interface FileRoutesByTo {
@@ -92,6 +100,7 @@ export interface FileRoutesByTo {
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
   '/finance/invoice-files': typeof LayoutFinanceInvoiceFilesRoute
+  '/finance/invoice-matching': typeof LayoutFinanceInvoiceMatchingRoute
   '/finance/purchase-records': typeof LayoutFinancePurchaseRecordsRoute
 }
 export interface FileRoutesById {
@@ -105,6 +114,7 @@ export interface FileRoutesById {
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/finance/invoice-files': typeof LayoutFinanceInvoiceFilesRoute
+  '/_layout/finance/invoice-matching': typeof LayoutFinanceInvoiceMatchingRoute
   '/_layout/finance/purchase-records': typeof LayoutFinancePurchaseRecordsRoute
 }
 export interface FileRouteTypes {
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/settings'
     | '/finance/invoice-files'
+    | '/finance/invoice-matching'
     | '/finance/purchase-records'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/'
     | '/finance/invoice-files'
+    | '/finance/invoice-matching'
     | '/finance/purchase-records'
   id:
     | '__root__'
@@ -141,6 +153,7 @@ export interface FileRouteTypes {
     | '/_layout/settings'
     | '/_layout/'
     | '/_layout/finance/invoice-files'
+    | '/_layout/finance/invoice-matching'
     | '/_layout/finance/purchase-records'
   fileRoutesById: FileRoutesById
 }
@@ -217,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutFinancePurchaseRecordsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/finance/invoice-matching': {
+      id: '/_layout/finance/invoice-matching'
+      path: '/finance/invoice-matching'
+      fullPath: '/finance/invoice-matching'
+      preLoaderRoute: typeof LayoutFinanceInvoiceMatchingRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/finance/invoice-files': {
       id: '/_layout/finance/invoice-files'
       path: '/finance/invoice-files'
@@ -232,6 +252,7 @@ interface LayoutRouteChildren {
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
   LayoutFinanceInvoiceFilesRoute: typeof LayoutFinanceInvoiceFilesRoute
+  LayoutFinanceInvoiceMatchingRoute: typeof LayoutFinanceInvoiceMatchingRoute
   LayoutFinancePurchaseRecordsRoute: typeof LayoutFinancePurchaseRecordsRoute
 }
 
@@ -240,6 +261,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
   LayoutFinanceInvoiceFilesRoute: LayoutFinanceInvoiceFilesRoute,
+  LayoutFinanceInvoiceMatchingRoute: LayoutFinanceInvoiceMatchingRoute,
   LayoutFinancePurchaseRecordsRoute: LayoutFinancePurchaseRecordsRoute,
 }
 

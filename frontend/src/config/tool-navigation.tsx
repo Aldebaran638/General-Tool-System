@@ -12,6 +12,7 @@ import { toolRegistry } from "@/tools/registry"
 // This is the ONLY place where tool modules should be explicitly imported.
 import "@/tools/finance/purchase_records"
 import "@/tools/finance/invoice_files"
+import "@/tools/finance/invoice_matching"
 
 /**
  * Platform-level navigation entries.
