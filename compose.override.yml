@@ -55,6 +55,15 @@ services:
     ports:
       - "18081:8080"
 
+  prestart:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    volumes:
+      - ./backend:/app/backend
+    environment:
+      WATCHFILES_FORCE_POLLING: "true"
+
   backend:
     restart: "no"
     ports:

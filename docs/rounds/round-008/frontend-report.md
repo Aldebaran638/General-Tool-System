@@ -116,28 +116,55 @@ Exit code: 0
 
 ## Playwright 结果
 
+### 第一次尝试（错误方式）
+
 **命令：**
 ```bash
 docker compose exec -T frontend bun run test -- tests/finance/reimbursement_exports/index.spec.ts --reporter=line --timeout=15000
 ```
 
+**结果：**命令挂起，exit code 124（timeout 强制终止）。
+**原因：**`frontend` dev 容器基于 `oven/bun:1`，不包含 Chromium 和浏览器系统库，不适合作为 Playwright 运行环境。
+
+### 第二次尝试（正确方式：使用 playwright service）
+
+**命令：**
+```bash
+docker compose --profile test run --rm --no-deps playwright bunx playwright test tests/finance/reimbursement_exports/index.spec.ts --reporter=line
+```
+
+**结果：**Playwright service 镜像构建成功，测试执行起来了，但 auth setup 失败。
+
 **实际输出：**
 ```
-$ bun x playwright test tests/finance/reimbursement_exports/index.spec.ts "--reporter=line" "--timeout=15000"
-（命令挂起，无后续输出）
+Running 11 tests using 10 workers
+[setup] › tests/auth.setup.ts:6:1 › authenticate
+Test timeout of 30000ms exceeded.
+Error: page.waitForURL: Test timeout of 30000ms exceeded.
+waiting for navigation to "/" until "load"
+  1 failed
+  10 did not run
 ```
 
-**诊断命令：**
-```bash
-$ docker compose exec -T frontend sh -c "timeout 20 bunx playwright test tests/finance/reimbursement_exports/index.spec.ts --reporter=line --timeout=10000 2>&1; echo EXIT_CODE=$?"
-EXIT_CODE=124
-```
+**阻塞原因链（首次诊断 — 已证伪并修正）：**
 
-**阻塞原因：**
-前端容器内未安装 Chromium 浏览器。`which chromium` 返回空。Playwright 在启动浏览器阶段阻塞，直至 `timeout` 强制终止（退出码 124）。
+1. auth setup 登录后等待跳转到 `/` 超时
+2. 根本原因是 backend 服务未运行
+3. backend 未运行是因为 prestart 服务失败（exit 255）
+4. prestart 失败是因为 alembic upgrade head 找不到 revision `85dea52b034c`
+5. ~~数据库 alembic_version 表中存在 85dea52b034c 记录，但 backend 容器中缺少对应的迁移脚本文件（`/app/backend/app/alembic/versions/` 目录为空）~~
 
-**处置：**
-测试文件已按规范生成并覆盖主流程、空状态、权限分支、i18n 分支。待 CI/CD 环境或本地安装 `npx playwright install chromium` 后即可执行通过。
+> **首次诊断错误**：当时是用 `docker compose run --rm --no-deps backend` 临时拉起的孤立容器去看文件，那个容器没有挂载 `./backend:/app/backend`，所以镜像里确实没有最新的 `85dea52b034c_*.py`；但正常 `backend` 服务容器是有挂载、有文件的。真实根因是 `prestart` 用旧镜像跑迁移（详见下文「最终修复」）。
+
+**最终修复（2026-04-26 联调收尾）：**
+
+| 层 | 真实根因 | 修复 |
+|----|----------|------|
+| 1 | `compose.yml` `prestart` 只声明 `image:`，无 `build:` 和 `volumes:`；`compose.override.yml` 也未覆盖 `prestart`，导致 prestart 永远拿旧镜像跑 `alembic upgrade head`，旧镜像没有 round-008 的 `85dea52b034c_*.py` | `compose.override.yml` 增加 `prestart` 覆盖：`build.context=.`、`build.dockerfile=backend/Dockerfile`、`volumes=./backend:/app/backend`、`environment.WATCHFILES_FORCE_POLLING=true` |
+| 2 | `backend/pyproject.toml` 在 commit `c3c6dc3` 加入 `openpyxl>=3.1.5`，但根 `uv.lock` 没同步；Dockerfile 用 `uv sync --frozen`，新镜像里仍无 `openpyxl`。修了 layer 1 后改报 `ModuleNotFoundError: No module named 'openpyxl'` | 用现有 `generic-demo-template-backend:latest` 镜像执行 `uv lock` 重生成根 lock，使其包含 `et-xmlfile v2.0.0` + `openpyxl v3.1.5` |
+| 3 | （新真实失败）Playwright auth setup 仍超时；后端日志显示 `POST /api/v1/login/access-token 200`，error-context 截图显示页面仍停留在 `/login` 且 email/password 已填 — 前端 SPA 没有跳转到 `/` | **未修复**。这是前端登录后路由问题，与本轮 `reimbursement_exports` 代码无关，也不是基础设施问题；按规范本轮不动业务代码 |
+
+**当前结论：**Playwright 仍未跑通，但失败已与本轮 `reimbursement_exports` 模块解耦。前端业务代码本身按规范生成，已覆盖主流程、空状态、权限分支、i18n 分支。建议在前端单独修复登录后路由问题后再补跑 Playwright，或在浏览器手工验证 `http://localhost:15173/finance/reimbursement-exports`。
 
 ## 越界自检
 
@@ -150,5 +177,5 @@ EXIT_CODE=124
 
 ## 未完成项
 
-- [ ] Playwright 测试因容器内缺少 Chromium 未实际执行，需在具备浏览器环境的机器上补跑并确认通过。
+- [ ] Playwright `auth.setup.ts` 登录后 `waitForURL("/")` 超时。基础设施已修复（prestart + uv.lock，详见联调报告第 6 节），后端登录接口 200，但前端 SPA 不跳转。属于前端登录后路由问题，与本轮 `reimbursement_exports` 模块无关，需单独 round 修复。
 - [ ] 联调检查：前端与后端 `/api/v1/finance/reimbursement-exports/*` 的完整端到端流程尚未在运行环境中实际验证。

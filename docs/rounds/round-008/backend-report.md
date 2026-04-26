@@ -268,3 +268,23 @@ docker compose exec backend alembic current
 ### 11.4 交付结论
 
 **可以交付前端联调。** 模块 API 契约、权限、过滤语义、文件生命周期、设置回落、Excel 生成规则全部满足设计与 FIX-001/FIX-002 后的契约审计要求；59 个模块测试 + 207 个 finance 全量回归全部通过；Alembic 头未变。
+
+## 12. 平台清理记录（2026-04-26）
+
+### 12.1 问题
+
+`reimbursement_exports/storage.py` 中 `_resolve_export_dir` 使用 `Path(__file__).resolve().parents[5]` 锚定到项目根，导致从项目根运行测试或脚本时，导出文件落在 `<project-root>/runtime_data/exports/...`，而不是 `backend/runtime_data/...`。原 `.gitignore` 仅有 `backend/runtime_data/`（含斜杠，锚定路径），**不覆盖**项目根的 `runtime_data/`，造成仓库污染风险。
+
+### 12.2 修复
+
+`.gitignore` 在 `backend/runtime_data/` 之后追加一行非锚定规则 `runtime_data/`，覆盖项目根及任意嵌套层级的运行时目录。**未触动** `backend/**` / `frontend/**` / `skills/**` / migration / 测试 / storage 配置。
+
+### 12.3 验证
+
+```
+$ mkdir -p runtime_data/exports && touch runtime_data/exports/foo.xlsx
+$ git check-ignore -v runtime_data/ runtime_data/exports/foo.xlsx
+.gitignore:11:runtime_data/	runtime_data/
+.gitignore:11:runtime_data/	runtime_data/exports/foo.xlsx
+$ git status --short  # 不再出现 runtime_data/
+```
