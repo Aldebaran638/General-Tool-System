@@ -60,6 +60,3 @@ def authenticate(*, session: Session, email: str, password: str) -> User | None:
     return db_user
 
 
-# NOTE: create_item has been moved to the project_management module.
-# Import it from there instead:
-#   from app.modules.workbench.project_management.repository import create_item

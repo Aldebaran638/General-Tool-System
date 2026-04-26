@@ -68,7 +68,6 @@ class User(UserBase, table=True):
         default_factory=get_datetime_utc,
         sa_type=DateTime(timezone=True),  # type: ignore
     )
-    # Relationship to items is defined via back_populates in the Item model
 
 
 class UserPublic(UserBase):

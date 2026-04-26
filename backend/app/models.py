@@ -5,13 +5,10 @@ App Models (Compatibility Layer)
 
 New code should import from:
     - app.models_core          for platform models (User, Token, etc.)
-    - app.modules.xxx.models   for tool-specific models (Item, etc.)
+    - app.modules.xxx.models   for tool-specific models
 
 ================================================================================
 MIGRATION NOTICE:
-
-Item models have been moved to the project_management module:
-    from app.modules.workbench.project_management.models import Item, ItemCreate, ...
 
 This file will be removed in a future major version once all legacy code is migrated.
 ================================================================================

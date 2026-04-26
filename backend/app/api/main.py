@@ -38,19 +38,6 @@ for module_name, router in registry.get_routers():
     api_router.include_router(router)
 
 
-# =============================================================================
-# Legacy Route Compatibility
-# =============================================================================
-# The following routers are kept for backward compatibility.
-# They reference the same module routers already registered above.
-# New code should not depend on these legacy import paths.
-
-# Note: items.router is auto-discovered via the registry from project_management.
-# The legacy import path (app.api.routes.items) still works for backward
-# compatibility but is no longer the primary registration mechanism.
-
-from app.api.routes import items  # noqa: F401 - kept for import compatibility
-
 
 # =============================================================================
 # Development Routes
