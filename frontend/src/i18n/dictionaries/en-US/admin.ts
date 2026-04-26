@@ -6,7 +6,7 @@ export default {
   editUser: "Edit User",
   deleteUser: "Delete User",
   deleteUserDescription:
-    "All items associated with this user will be permanently deleted. This action cannot be undone.",
+    "Data associated with this user will be permanently deleted. This action cannot be undone.",
   fullName: "Full Name",
   email: "Email",
   role: "Role",

@@ -5,7 +5,7 @@ export default {
   addUserDescription: "在下方填写信息以创建新用户",
   editUser: "编辑用户",
   deleteUser: "删除用户",
-  deleteUserDescription: "与该用户关联的所有项目将被永久删除，此操作不可撤销。",
+  deleteUserDescription: "该用户相关数据将被永久删除。此操作无法撤销。",
   fullName: "姓名",
   email: "邮箱",
   role: "角色",
