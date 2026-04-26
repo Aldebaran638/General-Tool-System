@@ -151,8 +151,18 @@ def test_summary_unauthenticated(client: TestClient) -> None:
 # -----------------------------------------------------------------------------
 
 
-def test_unmatched_purchase_records_empty(client: TestClient, normal_user_token_headers: dict[str, str]) -> None:
-    response = client.get(f"{BASE_URL}/unmatched-purchase-records", headers=normal_user_token_headers)
+def test_unmatched_purchase_records_empty(client: TestClient, db: Session) -> None:
+    # Use a per-test fresh user instead of the session-wide EMAIL_TEST_USER:
+    # other suites (e.g. purchase_records state-transition tests) submit/approve
+    # purchase records for the global normal user, which would otherwise pollute
+    # the "no unmatched purchase records" assertion when suites run together.
+    from tests.utils.user import authentication_token_from_email
+    from tests.utils.utils import random_email
+
+    headers = authentication_token_from_email(
+        client=client, email=random_email(), db=db
+    )
+    response = client.get(f"{BASE_URL}/unmatched-purchase-records", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert data["count"] == 0
