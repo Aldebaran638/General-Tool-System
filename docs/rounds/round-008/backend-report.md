@@ -226,3 +226,45 @@ docker compose exec backend pytest tests/finance/reimbursement_exports/index_tes
 # 验证迁移
 docker compose exec backend alembic current
 ```
+
+## 11. 最终审查通过（2026-04-26）
+
+针对 Round 008 `reimbursement_exports` 模块在 BE-R008-FIX-001 + BE-R008-FIX-002 后做最终审查，**未发现问题、未改业务代码、未新增测试**。
+
+### 11.1 审查重点逐项核对
+
+| # | 审查项 | 证据 | 结论 |
+|---|--------|------|------|
+| 1 | API 前缀 `/api/v1/finance/reimbursement-exports` | `router.py:33` `APIRouter(prefix="/finance/reimbursement-exports", ...)`；测试文件全部 URL 已对齐；无双挂载 | ✅ |
+| 2 | `POST /generate` 契约 | `schemas.GenerateRequest` 仅 `purchase_record_ids`；`retention_days: int \| None`；service 二级回落 `data_in.retention_days → app_setting → DEFAULT_RETENTION_DAYS=1`；`test_generate_rejects_old_record_ids_field` 验证旧字段 422 | ✅ |
+| 3 | `GET /records` count/data 一致 + 资格链 | `_build_eligible_base` 同时被 `count_eligible_records` 和 `list_eligible_records` 复用；`exported` 过滤 `EXISTS / NOT EXISTS` 下推到 SQL；资格链 `PR.deleted_at IS NULL + PR.status==approved + IM.status==confirmed + IF.deleted_at IS NULL + IF.status!="voided"`；`exported` / `start_date` / `end_date` 非法值返回 422 | ✅ |
+| 4 | `GET /history` 4 个过滤参数 | `_apply_history_filters` 同时被 `count_exports` 和 `list_exports` 复用；`router.read_history` 接收 `created_at_from / created_at_to / created_by_id / currency`；3 个新增过滤测试覆盖 | ✅ |
+| 5 | 下载 410 生命周期 | `service.download_export` 四层检查：`file_deleted_at` / `file_expires_at < now` / `not file_path` / `not Path(file_path).exists()`；`GET /{id}` 详情不受影响；`test_download_export_purged_gone` / `test_download_export_expired_gone` / `test_download_export_physical_file_missing_410` 全部覆盖 | ✅ |
+| 6 | 权限控制 | `router.py` 8 个端点均显式 `if not current_user.is_superuser: raise 403`；`test_normal_user_*_forbidden` 8 项 + `test_unauthenticated_*` 5 项全部覆盖 | ✅ |
+| 7 | Excel 生成规则 | `service.generate_export` 多币种 422；按 `CATEGORY_ORDER` → `purchase_date ASC` → `created_at ASC` → `id ASC` 排序后顺序分配 `document_number`；`excel_builder.build_excel` 模板缺失走 Workbook 兜底（line 93-109）；用途说明 `remark or order_name`；地点由/至留空；使用公司/部门 = `data_in.department` | ✅ |
+| 8 | Purge 仅删过期、保留历史、物理删除失败容忍 | `purge_expired_files` 调用 `delete_excel + mark_file_deleted`，从不删除导出历史行；`storage.delete_excel` 用 `Path.unlink(missing_ok=True)`；`test_purge_only_deletes_physical_file_not_history` 验证历史保留 | ✅ |
+
+### 11.2 执行命令与结果
+
+```
+docker compose exec backend pytest tests/finance/reimbursement_exports/index_test.py -q
+59 passed, 3 warnings in 5.29s
+
+docker compose exec backend pytest tests/finance/ -q
+207 passed, 3 warnings in 11.82s
+
+docker compose exec backend alembic current
+85dea52b034c (head)
+```
+
+### 11.3 越界自检
+
+- 仅写入 `docs/rounds/round-008/backend-report.md`（本节）。
+- 未触动 `backend/app/modules/finance/reimbursement_exports/**`。
+- 未触动 `backend/tests/finance/reimbursement_exports/**`。
+- 未新增/修改 `backend/app/alembic/versions/*`。
+- 未触动 frontend、skills、其它后端模块。
+
+### 11.4 交付结论
+
+**可以交付前端联调。** 模块 API 契约、权限、过滤语义、文件生命周期、设置回落、Excel 生成规则全部满足设计与 FIX-001/FIX-002 后的契约审计要求；59 个模块测试 + 207 个 finance 全量回归全部通过；Alembic 头未变。
