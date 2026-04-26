@@ -164,11 +164,22 @@ def test_unmatched_purchase_records_empty(client: TestClient, normal_user_token_
 # -----------------------------------------------------------------------------
 
 
-def test_available_invoices_empty(client: TestClient, normal_user_token_headers: dict[str, str]) -> None:
-    response = client.get(f"{BASE_URL}/available-invoices", headers=normal_user_token_headers)
+def test_available_invoices_empty(client: TestClient, db: Session) -> None:
+    # Use a per-test fresh user instead of the session-wide EMAIL_TEST_USER:
+    # other suites (e.g. invoice_files state-transition tests) confirm
+    # invoices for the global normal user, which would otherwise pollute
+    # the "no available invoices" assertion when suites run together.
+    from tests.utils.user import authentication_token_from_email
+    from tests.utils.utils import random_email
+
+    headers = authentication_token_from_email(
+        client=client, email=random_email(), db=db
+    )
+    response = client.get(f"{BASE_URL}/available-invoices", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert data["count"] == 0
+    assert data["data"] == []
 
 
 # -----------------------------------------------------------------------------

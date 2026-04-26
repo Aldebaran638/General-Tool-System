@@ -276,6 +276,7 @@ a4e06ea5ffad (head)
   - 复现验证：在删除 dashboard 全部新增文件 / 撤销 invoice_matching helper 重命名（`git stash`）后，该测试在「invoice_files + invoice_matching」组合下依然失败；恢复改动（`git stash pop`）后再次确认依然失败。结论：与 Round 007 无因果关系。
   - 派单的硬性测试要求是 dashboard 单套件 + invoice_matching 单套件 + alembic current，三者本轮均通过。
   - 建议后续单独立项修复（让 invoice_matching 该测试在断言前 scope 到本测试自建用户，而非全局空值）。本轮不在 dispatch 允许范围内，未触碰。
+  - **更新（测试稳定性补丁，已合并）**：该问题已在后续「测试稳定性」专项派单中以单测级修复落地，详见本报告 §16。修复后 `pytest tests/finance/invoice_files tests/finance/invoice_matching -q` 89 passed / 0 failed，`pytest tests/finance/ -q` 148 passed / 0 failed。
 
 ## 15. 是否仅在任务清单授权范围内完成修改
 
@@ -321,3 +322,136 @@ a4e06ea5ffad (head)
 - 所有 `backend/tests/`、`backend/app/api/`、`frontend/`、`skills/` 子树均无任何引用。
 
 因此本次重命名只产生 invoice_matching/service.py 内部 3 行修改，对 invoice_matching 公开契约 / API 行为 / 测试用例零影响（35 条测试零回归）。Dashboard 通过 `from ..invoice_matching.service import get_allocated_for_invoice` 直接复用，没有引入额外 wrapper 层。
+
+## 16. 测试稳定性补丁：invoice_files × invoice_matching 跨套件污染修复
+
+§14 中标注的"未完成项"（仅在 invoice_files + invoice_matching 联合运行时 `tests/finance/invoice_matching/index_test.py::test_available_invoices_empty` 失败）已通过单测级别修复落地，落在「测试稳定性」专项派单授权范围内。
+
+### 16.1 根因
+
+`test_available_invoices_empty` 复用 session-scoped `normal_user_token_headers` fixture（即认证为全局 `EMAIL_TEST_USER`），并断言"该用户的 available invoices 列表 count == 0"。这是一个隐性"全局状态为空"假设。
+
+但 `tests/finance/invoice_files/index_test.py` 中以下用例会在测试过程中为同一全局用户生成 **confirmed** 状态发票：
+
+- `test_confirm_invoice`（line 553）：直接对 normal user 拥有的发票调 `/confirm`，留下 1 条 confirmed 发票。
+- `test_withdraw_confirmation`（line 571）：先用 `_create_random_invoice(..., status=STATUS_CONFIRMED)` 注入 1 条 confirmed 发票再撤回，撤回过程虽然把 status 改回 draft，但若 owner_id 流程中其他状态切换有异步残留，依然可能保留 confirmed 数据。
+- 其他若干 confirm/withdraw/restore 流程会临时把 normal user 的发票切到 confirmed。
+
+session-scoped `db` fixture 在整个 pytest 进程生命周期内只重建一次（per-PID），跨文件共享。pytest 默认按文件路径字典序运行：`invoice_files` 排在 `invoice_matching` 之前，所以 invoice_files 留下的 confirmed 发票会被 invoice_matching 的 `test_available_invoices_empty` 看到。
+
+复现命令（修复前）：
+
+```text
+docker compose exec -T backend pytest \
+  tests/finance/invoice_files/index_test.py \
+  tests/finance/invoice_matching/index_test.py -q
+...
+FAILED tests/finance/invoice_matching/index_test.py::test_available_invoices_empty
+assert 2 == 0
+```
+
+invoice_matching 单独运行时通过，因此问题不在 invoice_matching 自身的业务逻辑或读路径，而在于"测试隐含假设全局空状态"这一脆弱前提。
+
+### 16.2 修改文件
+
+仅一文件变更：
+
+- `backend/tests/finance/invoice_matching/index_test.py`
+  - `test_available_invoices_empty`：把依赖 `normal_user_token_headers` 改为「该测试自建一个新用户并用其 token 发请求」。
+  - 函数签名由 `(client, normal_user_token_headers)` 改为 `(client, db)`。
+  - 测试体内调用 `tests.utils.user.authentication_token_from_email(client=client, email=random_email(), db=db)` 创建并登录全新用户；该用户在测试运行的瞬间数据库内不可能有任何 invoice / match 记录。
+  - 断言保持 `count == 0` 与 `data == []`，含义不变。
+  - 函数顶部加注释解释：选择 per-test fresh user 的原因是"防止其他工具套件对全局 normal user 的写操作污染本断言"，而非"让断言宽松"。
+
+未触动：
+
+- `backend/tests/finance/invoice_files/index_test.py`：无需修改，不消减原有覆盖。
+- `backend/tests/conftest.py`：未引入 function-scoped DB 重置或 transaction rollback。dispatch 明确禁止改 conftest，除非证明单测级修复不可行；本次单测级修复完全充分，conftest 零变化。
+- 任何 `backend/app/modules/**` 业务代码：dispatch 禁止；本补丁也无需改业务，因为问题在测试层。
+
+### 16.3 修复策略
+
+把"全局 normal user 的发票列表是空的"这一**全局状态假设**替换为"该测试当场创建的全新用户的发票列表必然是空的"这一**结构性事实**。
+
+具体落地：
+
+```python
+def test_available_invoices_empty(client: TestClient, db: Session) -> None:
+    from tests.utils.user import authentication_token_from_email
+    from tests.utils.utils import random_email
+
+    headers = authentication_token_from_email(
+        client=client, email=random_email(), db=db
+    )
+    response = client.get(f"{BASE_URL}/available-invoices", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["count"] == 0
+    assert data["data"] == []
+```
+
+`authentication_token_from_email` 是 `tests/utils/user.py` 已有 helper：传入新邮箱即创建用户并返回登录 token，复用基础设施零新增。
+
+未采用的反向方案及理由：
+
+- ❌ 把断言改成 `count >= 0` 或 `count == previously_observed_value`：会丢失"用户没有发票时应该看到空列表"这一契约的有效性，dispatch 明确禁止此类做法。
+- ❌ 在测试 fixture 里 truncate 全局表：会掩盖 invoice_files 自己的状态，且把测试隔离责任推到全局基础设施层，违反 dispatch 「不要清空全局表来掩盖问题」要求。
+- ❌ 把 invoice_files 改成总是用 fresh user：超出 dispatch「仅当确实需要」的允许边界，且 invoice_files 大量 state-transition 测试本身依赖 normal_user_token_headers 也是合理选择。
+
+### 16.4 为什么不会削弱测试
+
+新断言验证的契约严格更强：
+
+- 旧断言："认证为 EMAIL_TEST_USER 时，`/available-invoices` 返回的 count 是 0"——隐含「全局共享用户没有 confirmed 发票」，依赖测试运行顺序与外部状态。
+- 新断言："认证为一个刚创建的新用户时，`/available-invoices` 返回的 count 是 0"——直接验证业务契约「未拥有任何 confirmed 发票的用户看到空列表」。
+
+更具体地，新版本继续验证：
+
+1. `/available-invoices` endpoint 对认证用户存在（200）。
+2. 响应结构含 `count` 与 `data` 字段。
+3. 对没有 confirmed 发票的用户，`count == 0` 且 `data == []`（即不会泄漏其他用户的发票）。
+
+如果 service 层意外把所有用户的发票都返回（owner_id filter 失效），新断言依然会失败（fresh user 看到 N 条数据），因此 owner-scoping 这条核心契约**仍然被守护**。换言之，本补丁让断言更鲁棒，而不是更宽松。
+
+### 16.5 执行命令与结果
+
+以 dispatch 列出的四条命令为准：
+
+| 命令 | 期望 | 实际 |
+|---|---|---|
+| `docker compose exec -T backend pytest tests/finance/invoice_matching/index_test.py -q` | 通过 | **35 passed** |
+| `docker compose exec -T backend pytest tests/finance/invoice_files/index_test.py tests/finance/invoice_matching/index_test.py -q` | 通过 | **89 passed**（54 + 35） |
+| `docker compose exec -T backend pytest tests/finance/invoice_files/index_test.py -q` | 通过 | **54 passed** |
+| `docker compose exec -T backend alembic current` | head | `a4e06ea5ffad (head)` |
+
+补充健康检查（非 dispatch 必需，但用于确认无更广泛回归）：
+
+- `docker compose exec -T backend pytest tests/finance/ -q` → **148 passed**（finance 全套件，含 dashboard 17 / invoice_matching 35 / invoice_files 54 / purchase_records 42）。
+- 警告项保持 3 条 `SECRET_KEY` / `POSTGRES_PASSWORD` / `FIRST_SUPERUSER_PASSWORD` 默认值告警，与本补丁无关。
+
+修复前 `pytest tests/finance/invoice_files tests/finance/invoice_matching` 是 1 failed / 88 passed；修复后 0 failed / 89 passed（多出来的 1 条来自原本被失败短路掉的下游断言）。
+
+### 16.6 越界自检
+
+本补丁实际改动文件：
+
+- `backend/tests/finance/invoice_matching/index_test.py`：dispatch 允许范围内（"测试稳定性补丁"明确允许该文件）。
+- `docs/rounds/round-007/backend-report.md`：dispatch 允许「记录测试稳定性补丁」的文件之一。
+
+未改动：
+
+- `backend/app/modules/**` 业务代码（dispatch 禁止）。
+- `backend/app/alembic/**`（dispatch 禁止；本补丁也无需迁移）。
+- `backend/tests/conftest.py`（dispatch 默认禁止，单测级修复完全充分时不应触碰）。
+- `backend/tests/finance/invoice_files/index_test.py`（dispatch 允许「仅当确实需要」；本补丁不需要）。
+- `frontend/**`、`skills/**`、`.env`：dispatch 严禁。
+
+未做：
+
+- 没有把 `count >= 0` / `count == arbitrary` 等弱断言塞进测试。
+- 没有清空表 / TRUNCATE / DELETE FROM 任何业务表。
+- 没有借此机会"统一" invoice_files 和 invoice_matching 测试 fixture。
+- 没有新增数据库迁移。
+- 没有改业务代码。
+
+结论：**修改严格落在派单允许范围内，未越界**。修复策略为单测级最小变更，不依赖任何全局基础设施改动。
