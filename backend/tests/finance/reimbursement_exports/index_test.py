@@ -904,3 +904,125 @@ def test_settings_read_unauthenticated(client: TestClient) -> None:
 def test_purge_expired_unauthenticated(client: TestClient) -> None:
     response = client.post("/api/v1/reimbursement-exports/purge-expired-files")
     assert response.status_code == 401
+
+
+# =============================================================================
+# Contract Guard Tests (no business logic changes)
+# =============================================================================
+
+def test_generate_rejects_old_record_ids_field(client: TestClient, db: Session) -> None:
+    """Old field 'record_ids' must not be accepted as the primary contract."""
+    headers = _superuser_headers(client, db)
+    from app import crud
+    user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    assert user is not None
+    record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
+    response = client.post(
+        "/api/v1/reimbursement-exports/generate",
+        json={"record_ids": [str(record.id)], "retention_days": 7},
+        headers=headers,
+    )
+    assert response.status_code == 422
+
+
+def test_records_exported_all_value(client: TestClient, db: Session) -> None:
+    """exported=all must be accepted and return records regardless of export status."""
+    headers = _superuser_headers(client, db)
+    from app import crud
+    user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    assert user is not None
+    _make_eligible_chain(db, owner_id=user.id)
+    response = client.get(
+        "/api/v1/reimbursement-exports/records",
+        headers=headers,
+        params={"exported": "all"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["count"] >= 1
+
+
+def test_records_exported_invalid_value_422(client: TestClient, db: Session) -> None:
+    """exported must reject values outside all/exported/not_exported."""
+    headers = _superuser_headers(client, db)
+    response = client.get(
+        "/api/v1/reimbursement-exports/records",
+        headers=headers,
+        params={"exported": "invalid_value"},
+    )
+    assert response.status_code == 422
+
+
+def test_records_invalid_start_date_format_422(client: TestClient, db: Session) -> None:
+    """start_date must reject non-ISO date strings."""
+    headers = _superuser_headers(client, db)
+    response = client.get(
+        "/api/v1/reimbursement-exports/records",
+        headers=headers,
+        params={"start_date": "not-a-date"},
+    )
+    assert response.status_code == 422
+
+
+def test_records_invalid_end_date_format_422(client: TestClient, db: Session) -> None:
+    """end_date must reject non-ISO date strings."""
+    headers = _superuser_headers(client, db)
+    response = client.get(
+        "/api/v1/reimbursement-exports/records",
+        headers=headers,
+        params={"end_date": "2025/06/01"},
+    )
+    assert response.status_code == 422
+
+
+def test_download_export_physical_file_missing_410(client: TestClient, db: Session) -> None:
+    """Download must return 410 when the physical file no longer exists."""
+    headers = _superuser_headers(client, db)
+    from app import crud
+    user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    assert user is not None
+    record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
+    gen_resp = client.post(
+        "/api/v1/reimbursement-exports/generate",
+        json={"purchase_record_ids": [str(record.id)], "retention_days": 7},
+        headers=headers,
+    )
+    export_id = gen_resp.json()["id"]
+    export = db.get(ReimbursementExport, export_id)
+    assert export is not None
+    # Point file_path to a non-existent file
+    export.file_path = "/tmp/nonexistent_reimbursement_export.xlsx"
+    db.add(export)
+    db.commit()
+    response = client.get(
+        f"/api/v1/reimbursement-exports/{export_id}/download",
+        headers=headers,
+    )
+    assert response.status_code == 410
+    # Clean up so purge tests are not affected
+    export = db.get(ReimbursementExport, export_id)
+    assert export is not None
+    export.file_deleted_at = datetime.now(timezone.utc)
+    db.add(export)
+    db.commit()
+
+
+def test_settings_update_persists_metadata(client: TestClient, db: Session) -> None:
+    """PUT /settings must write value_type='int', non-empty description, and updated_by_id."""
+    headers = _superuser_headers(client, db)
+    from app import crud
+    user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    assert user is not None
+    response = client.put(
+        "/api/v1/reimbursement-exports/settings",
+        json={"retention_days": 14},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    # Verify the underlying AppSetting row
+    setting = db.get(AppSetting, SETTING_RETENTION_DAYS)
+    assert setting is not None
+    assert setting.value == "14"
+    assert setting.value_type == "int"
+    assert setting.description is not None and len(setting.description) > 0
+    assert setting.updated_by_id == user.id

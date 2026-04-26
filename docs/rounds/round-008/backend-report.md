@@ -16,7 +16,7 @@
 | 下载鉴权（已清理返回 410） | 完成 |
 | 设置管理（仅 `retention_days`） | 完成 |
 | 权限控制（admin only） | 完成 |
-| 测试覆盖 | **45** 个测试全部通过 |
+| 测试覆盖 | **52** 个测试全部通过 |
 
 ## 2. 模块文件清单
 
@@ -45,7 +45,7 @@ backend/app/modules/finance/reimbursement_exports/
 
 ```
 pytest tests/finance/reimbursement_exports/index_test.py -q
-45 passed, 3 warnings in 3.83s
+52 passed, 3 warnings in 4.47s
 ```
 
 **测试覆盖范围**:
@@ -80,7 +80,7 @@ pytest tests/finance/reimbursement_exports/index_test.py -q
 
 ```
 pytest tests/finance/ -q
-193 passed, 3 warnings in 9.70s
+200 passed, 3 warnings in 9.53s
 ```
 
 全部通过，无回归问题。
@@ -110,6 +110,29 @@ pytest tests/finance/reimbursement_exports/index_test.py -q
 
 pytest tests/finance/ -q
 193 passed, 3 warnings in 9.70s
+```
+
+## 9. 契约补充测试
+
+针对以下 6 个契约边界场景新增防回归测试（共 7 个用例，**不改业务代码**）：
+
+| 场景 | 测试函数 | 断言 |
+|------|----------|------|
+| POST /generate 使用旧字段 `record_ids` | `test_generate_rejects_old_record_ids_field` | 422（`purchase_record_ids` 是正式契约，旧字段被拒绝） |
+| GET /records `exported=all` 可用 | `test_records_exported_all_value` | 200，返回记录 |
+| GET /records `exported` 非法值 | `test_records_exported_invalid_value_422` | 422 |
+| GET /records `start_date` 非法格式 | `test_records_invalid_start_date_format_422` | 422 |
+| GET /records `end_date` 非法格式 | `test_records_invalid_end_date_format_422` | 422 |
+| GET /download 物理文件不存在 | `test_download_export_physical_file_missing_410` | 410 |
+| PUT /settings 持久化 metadata | `test_settings_update_persists_metadata` | `value_type="int"`、`description` 非空、`updated_by_id` 等于当前管理员 |
+
+**验证结果**：
+```
+pytest tests/finance/reimbursement_exports/index_test.py -q
+52 passed, 3 warnings in 4.47s
+
+pytest tests/finance/ -q
+200 passed, 3 warnings in 9.53s
 ```
 
 ## 7. 运行方式
