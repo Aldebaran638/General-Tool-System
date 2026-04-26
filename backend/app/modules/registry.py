@@ -9,10 +9,10 @@ Usage:
     from app.modules.registry import register_module
     
     register_module(
-        name="project_management",
-        group="workbench",
+        name="purchase_records",
+        group="finance",
         router=router,
-        models=[Item],  # optional
+        models=[PurchaseRecord],  # optional
     )
 """
 
@@ -60,8 +60,8 @@ class ModuleRegistry:
         """Register a tool module.
 
         Args:
-            name: Unique module identifier (e.g., "project_management")
-            group: Module group (e.g., "workbench")
+            name: Unique module identifier (e.g., "purchase_records")
+            group: Module group (e.g., "finance")
             router: FastAPI router instance
             models: SQLModel classes defined by this module
 
@@ -148,7 +148,7 @@ def auto_discover_modules(package_name: str = "app.modules") -> None:
     except ImportError:
         return
 
-    # Walk through groups (e.g., workbench)
+    # Walk through groups (e.g., finance)
     for _, group_name, ispkg in pkgutil.iter_modules(package.__path__, package.__name__ + "."):
         if not ispkg:
             continue

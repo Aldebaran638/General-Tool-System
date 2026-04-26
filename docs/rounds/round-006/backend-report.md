@@ -136,6 +136,28 @@ docker compose exec backend bash -c "cd /app/backend && pytest tests/crud/test_u
 - 唯一触及的非目标文件是 `backend/app/api/routes/users.py`（删除 Item 级联删除），属于删除 workbench 后的必要清理。
 - `backend/app/modules/finance/dashboard/` 中出现了 `PendingItem`, `ByUserItem` 等类名，但它们是 Round007 dashboard 模块的业务概念，与 workbench 的 `Item` 模型无关，未做修改。
 
+## registry 注释残留清理
+
+- `backend/app/modules/registry.py`
+  - docstring 示例：`project_management` / `workbench` / `Item` -> `purchase_records` / `finance` / `PurchaseRecord`
+  - `register()` 参数注释示例：`project_management` / `workbench` -> `purchase_records` / `finance`
+  - `auto_discover_modules()` 注释：`# Walk through groups (e.g., workbench)` -> `(e.g., finance)`
+  - 无运行时代码逻辑变更。
+
+## 测试（收尾后）
+
+```bash
+docker compose exec backend bash -c "cd /app/backend && pytest tests/platform/remove_workbench/index_test.py -q"
+```
+
+结果：`4 passed, 3 warnings`
+
+```bash
+docker compose exec backend bash -c "cd /app/backend && alembic current"
+```
+
+结果：`a4e06ea5ffad (head)`
+
 ## 未完成项
 
 - 无。
