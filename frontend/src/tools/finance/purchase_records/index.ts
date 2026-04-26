@@ -19,6 +19,7 @@ registerTool({
   },
   navigation: {
     title: "购买记录",
+    titleKey: "finance.purchaseRecords.title",
     icon: Receipt,
     path: "/finance/purchase-records",
     requiresSuperuser: false,

@@ -19,41 +19,45 @@ import "@/tools/finance/invoice_files"
  * These are NOT tool modules; they are core platform features
  * that always exist regardless of which tools are registered.
  */
-const PLATFORM_NAVIGATION: NavigationGroup[] = [
-  {
-    kind: "group",
-    icon: Home,
-    title: "平台",
-    defaultExpanded: true,
-    children: [
-      {
-        kind: "tool",
-        icon: LayoutDashboard,
-        title: "仪表盘",
-        path: "/",
-      },
-      {
-        kind: "tool",
-        icon: Settings,
-        title: "个人设置",
-        path: "/settings",
-      },
-      {
-        kind: "tool",
-        icon: Users,
-        title: "用户管理",
-        path: "/admin",
-        requiresSuperuser: true,
-      },
-    ],
-  },
-]
+function buildPlatformNavigation(t: (key: string) => string): NavigationGroup[] {
+  return [
+    {
+      kind: "group",
+      icon: Home,
+      title: t("navigation.platform"),
+      defaultExpanded: true,
+      children: [
+        {
+          kind: "tool",
+          icon: LayoutDashboard,
+          title: t("navigation.dashboard"),
+          path: "/",
+        },
+        {
+          kind: "tool",
+          icon: Settings,
+          title: t("navigation.userSettings"),
+          path: "/settings",
+        },
+        {
+          kind: "tool",
+          icon: Users,
+          title: t("navigation.userManagement"),
+          path: "/admin",
+          requiresSuperuser: true,
+        },
+      ],
+    },
+  ]
+}
 
 export function getNavigationEntries(
   currentUser?: {
     is_superuser?: boolean
   } | null,
+  t?: (key: string) => string,
 ): NavigationEntry[] {
+  const _t = t || ((key: string) => key)
   const context = {
     isSuperuser: currentUser?.is_superuser ?? false,
   }
@@ -62,7 +66,7 @@ export function getNavigationEntries(
   const entries: NavigationEntry[] = []
 
   // Add platform groups with child-level permission checks
-  for (const group of PLATFORM_NAVIGATION) {
+  for (const group of buildPlatformNavigation(_t)) {
     const children = group.children.filter((child) => {
       if (child.requiresSuperuser && !context.isSuperuser) {
         return false
@@ -79,7 +83,7 @@ export function getNavigationEntries(
   }
 
   // Add tool entries from registry
-  const toolEntries = toolRegistry.getNavigationEntries(context)
+  const toolEntries = toolRegistry.getNavigationEntries(context, _t)
   entries.push(...toolEntries)
 
   return entries

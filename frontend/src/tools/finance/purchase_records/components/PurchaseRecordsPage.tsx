@@ -3,12 +3,14 @@ import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useI18n } from "@/i18n"
 
 import { PurchaseRecordForm } from "./PurchaseRecordForm"
 import { PurchaseRecordTable } from "./PurchaseRecordTable"
 import { usePurchaseRecordsQuery } from "../hooks/usePurchaseRecords"
 
 export function PurchaseRecordsPage() {
+  const { t } = useI18n()
   const [showDeleted, setShowDeleted] = useState(false)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<
@@ -33,12 +35,16 @@ export function PurchaseRecordsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">购买记录</h1>
-          <p className="text-muted-foreground">管理和提交您的购买记录</p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {t("finance.purchaseRecords.title")}
+          </h1>
+          <p className="text-muted-foreground">
+            {t("finance.purchaseRecords.title")}
+          </p>
         </div>
         <Button onClick={() => setIsFormOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          新建购买记录
+          {t("finance.purchaseRecords.form.titleCreate")}
         </Button>
       </div>
 
@@ -47,8 +53,12 @@ export function PurchaseRecordsPage() {
         onValueChange={(value) => setShowDeleted(value === "deleted")}
       >
         <TabsList>
-          <TabsTrigger value="normal">正常记录</TabsTrigger>
-          <TabsTrigger value="deleted">已删除记录</TabsTrigger>
+          <TabsTrigger value="normal">
+            {t("finance.purchaseRecords.title")}
+          </TabsTrigger>
+          <TabsTrigger value="deleted">
+            {t("common.status")}
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -67,13 +77,13 @@ export function PurchaseRecordsPage() {
           </div>
           <h3 className="text-lg font-semibold">
             {showDeleted
-              ? "没有已删除的记录"
-              : "您还没有购买记录"}
+              ? t("finance.purchaseRecords.title")
+              : t("finance.purchaseRecords.title")}
           </h3>
           <p className="text-muted-foreground">
             {showDeleted
-              ? "删除的记录将在这里显示 30 天"
-              : "点击上方按钮创建新的购买记录"}
+              ? t("finance.purchaseRecords.title")
+              : t("finance.purchaseRecords.form.titleCreate")}
           </p>
         </div>
       ) : (

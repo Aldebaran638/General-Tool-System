@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/table"
 
 import type { InvoiceFile } from "../types"
-import { INVOICE_TYPES } from "../schemas"
+import { createInvoiceFileSchemas } from "../schemas"
 import {
   useDeleteInvoiceFileMutation,
   useRestoreInvoiceFileMutation,
@@ -41,6 +41,7 @@ import {
 import { downloadPdf } from "../api"
 import useAuth from "@/hooks/useAuth"
 import { useState } from "react"
+import { useI18n } from "@/i18n/I18nProvider"
 
 interface InvoiceFileTableProps {
   records: InvoiceFile[]
@@ -48,7 +49,7 @@ interface InvoiceFileTableProps {
   showDeleted: boolean
 }
 
-function StatusBadge({ status }: { status: InvoiceFile["status"] }) {
+function StatusBadge({ status, t }: { status: InvoiceFile["status"]; t: (key: string) => string }) {
   const variants: Record<InvoiceFile["status"], "default" | "secondary" | "destructive" | "outline"> = {
     draft: "secondary",
     confirmed: "default",
@@ -56,35 +57,12 @@ function StatusBadge({ status }: { status: InvoiceFile["status"] }) {
   }
 
   const labels: Record<InvoiceFile["status"], string> = {
-    draft: "草稿",
-    confirmed: "已确认",
-    voided: "已作废",
+    draft: t("finance.invoiceFiles.status.draft"),
+    confirmed: t("finance.invoiceFiles.status.confirmed"),
+    voided: t("finance.invoiceFiles.status.voided"),
   }
 
   return <Badge variant={variants[status]}>{labels[status]}</Badge>
-}
-
-function getInvoiceTypeLabel(value: string) {
-  return INVOICE_TYPES.find((t) => t.value === value)?.label || value
-}
-
-function DuplicateWarning({ record }: { record: InvoiceFile }) {
-  const { user } = useAuth()
-  const isAdmin = user?.is_superuser ?? false
-
-  if (isAdmin && record.duplicate_warning) {
-    return (
-      <div className="flex items-center gap-1 text-xs text-amber-600">
-        <AlertTriangle className="h-3 w-3" />
-        <span>{record.duplicate_warning}</span>
-        {record.duplicate_invoice_owner_count !== null && record.duplicate_invoice_owner_count !== undefined && (
-          <span>({record.duplicate_invoice_owner_count} 位用户)</span>
-        )}
-      </div>
-    )
-  }
-
-  return null
 }
 
 export function InvoiceFileTable({
@@ -92,6 +70,12 @@ export function InvoiceFileTable({
   onEdit,
   showDeleted,
 }: InvoiceFileTableProps) {
+  const { t } = useI18n()
+  const { INVOICE_TYPES } = createInvoiceFileSchemas(t)
+
+  const getInvoiceTypeLabel = (value: string) => {
+    return INVOICE_TYPES.find((type) => type.value === value)?.label || value
+  }
 
   const confirmMutation = useConfirmInvoiceFileMutation()
   const withdrawMutation = useWithdrawConfirmationMutation()
@@ -128,16 +112,16 @@ export function InvoiceFileTable({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>发票号码</TableHead>
-          <TableHead>日期</TableHead>
-          <TableHead>金额</TableHead>
-          <TableHead>币种</TableHead>
-          <TableHead>购买方</TableHead>
-          <TableHead>销售方</TableHead>
-          <TableHead>类型</TableHead>
-          <TableHead>状态</TableHead>
-          <TableHead>PDF</TableHead>
-          <TableHead className="text-right">操作</TableHead>
+          <TableHead>{t("finance.invoiceFiles.columns.invoiceNumber")}</TableHead>
+          <TableHead>{t("finance.invoiceFiles.columns.date")}</TableHead>
+          <TableHead>{t("finance.invoiceFiles.columns.amount")}</TableHead>
+          <TableHead>{t("finance.invoiceFiles.columns.currency")}</TableHead>
+          <TableHead>{t("finance.invoiceFiles.columns.buyer")}</TableHead>
+          <TableHead>{t("finance.invoiceFiles.columns.seller")}</TableHead>
+          <TableHead>{t("finance.invoiceFiles.columns.type")}</TableHead>
+          <TableHead>{t("finance.invoiceFiles.columns.status")}</TableHead>
+          <TableHead>{t("finance.invoiceFiles.columns.pdf")}</TableHead>
+          <TableHead className="text-right">{t("finance.invoiceFiles.columns.actions")}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -146,7 +130,7 @@ export function InvoiceFileTable({
             <TableCell className="font-medium">
               <div className="flex flex-col gap-1">
                 <span>{record.invoice_number}</span>
-                <DuplicateWarning record={record} />
+                <DuplicateWarning record={record} t={t} />
               </div>
             </TableCell>
             <TableCell>{record.invoice_date}</TableCell>
@@ -156,10 +140,10 @@ export function InvoiceFileTable({
             <TableCell>{record.seller}</TableCell>
             <TableCell>{getInvoiceTypeLabel(record.invoice_type)}</TableCell>
             <TableCell>
-              <StatusBadge status={record.status} />
+              <StatusBadge status={record.status} t={t} />
             </TableCell>
             <TableCell>
-              <PdfDownloadButton id={record.id} fileName={record.pdf_original_name} />
+              <PdfDownloadButton id={record.id} fileName={record.pdf_original_name} t={t} />
             </TableCell>
             <TableCell className="text-right">
               <DropdownMenu>
@@ -172,35 +156,35 @@ export function InvoiceFileTable({
                   {!showDeleted && record.status === "draft" && (
                     <DropdownMenuItem onClick={() => onEdit(record)}>
                       <Pencil className="mr-2 h-4 w-4" />
-                      编辑
+                      {t("finance.invoiceFiles.actions.edit")}
                     </DropdownMenuItem>
                   )}
 
                   {!showDeleted && record.status === "draft" && (
                     <DropdownMenuItem onClick={() => handleConfirm(record.id)}>
                       <CheckCircle className="mr-2 h-4 w-4" />
-                      确认
+                      {t("finance.invoiceFiles.actions.confirm")}
                     </DropdownMenuItem>
                   )}
 
                   {!showDeleted && record.status === "confirmed" && (
                     <DropdownMenuItem onClick={() => handleWithdraw(record.id)}>
                       <Undo2 className="mr-2 h-4 w-4" />
-                      撤回确认
+                      {t("finance.invoiceFiles.actions.withdraw")}
                     </DropdownMenuItem>
                   )}
 
                   {!showDeleted && record.status === "confirmed" && (
                     <DropdownMenuItem onClick={() => handleVoid(record.id)}>
                       <Ban className="mr-2 h-4 w-4" />
-                      作废
+                      {t("finance.invoiceFiles.actions.void")}
                     </DropdownMenuItem>
                   )}
 
                   {!showDeleted && record.status === "voided" && (
                     <DropdownMenuItem onClick={() => handleRestoreDraft(record.id)}>
                       <RotateCcw className="mr-2 h-4 w-4" />
-                      恢复草稿
+                      {t("finance.invoiceFiles.actions.restoreDraft")}
                     </DropdownMenuItem>
                   )}
 
@@ -210,14 +194,14 @@ export function InvoiceFileTable({
                       className="text-destructive"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      删除
+                      {t("finance.invoiceFiles.actions.delete")}
                     </DropdownMenuItem>
                   )}
 
                   {showDeleted && (
                     <DropdownMenuItem onClick={() => handleRestore(record.id)}>
                       <RotateCcw className="mr-2 h-4 w-4" />
-                      恢复
+                      {t("finance.invoiceFiles.actions.restore")}
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
@@ -230,7 +214,26 @@ export function InvoiceFileTable({
   )
 }
 
-function PdfDownloadButton({ id }: { id: string; fileName?: string }) {
+function DuplicateWarning({ record, t }: { record: InvoiceFile; t: (key: string) => string }) {
+  const { user } = useAuth()
+  const isAdmin = user?.is_superuser ?? false
+
+  if (isAdmin && record.duplicate_warning) {
+    return (
+      <div className="flex items-center gap-1 text-xs text-amber-600">
+        <AlertTriangle className="h-3 w-3" />
+        <span>{record.duplicate_warning}</span>
+        {record.duplicate_invoice_owner_count !== null && record.duplicate_invoice_owner_count !== undefined && (
+          <span>({record.duplicate_invoice_owner_count}{t("finance.invoiceFiles.duplicateUsers")})</span>
+        )}
+      </div>
+    )
+  }
+
+  return null
+}
+
+function PdfDownloadButton({ id, fileName: _fileName, t }: { id: string; fileName?: string; t: (key: string) => string }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -238,7 +241,7 @@ function PdfDownloadButton({ id }: { id: string; fileName?: string }) {
     setError(null)
     const previewWindow = window.open("", "_blank")
     if (!previewWindow) {
-      setError("浏览器拦截了弹窗，请允许弹窗后重试")
+      setError(t("finance.invoiceFiles.messages.popupBlocked"))
       return
     }
 
@@ -250,8 +253,8 @@ function PdfDownloadButton({ id }: { id: string; fileName?: string }) {
       setTimeout(() => URL.revokeObjectURL(url), 60000)
     } catch (error) {
       previewWindow.close()
-      setError("PDF 下载失败，请稍后重试")
-      console.error("PDF 下载失败:", error)
+      setError(t("finance.invoiceFiles.messages.downloadFailed"))
+      console.error(t("finance.invoiceFiles.messages.downloadFailed"), error)
     } finally {
       setLoading(false)
     }
@@ -269,7 +272,7 @@ function PdfDownloadButton({ id }: { id: string; fileName?: string }) {
         ) : (
           <FileText className="mr-1 h-4 w-4" />
         )}
-        查看
+        {t("finance.invoiceFiles.columns.view")}
       </button>
       {error && <span className="text-xs text-destructive mt-1">{error}</span>}
     </div>

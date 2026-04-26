@@ -8,15 +8,19 @@ import type { ComponentType } from "react"
 export type ToolRouteConfig = {
   /** Route path, e.g., "/items" */
   path: string
-  /** Page title */
+  /** Page title (fallback when titleKey is missing) */
   title: string
+  /** Optional i18n key used to translate the route title at runtime. */
+  titleKey?: string
   /** React component to render */
   component: ComponentType
 }
 
 export type ToolNavigationConfig = {
-  /** Display title in sidebar */
+  /** Display title in sidebar (fallback when titleKey is missing) */
   title: string
+  /** Optional i18n key used to translate the sidebar title at runtime. */
+  titleKey?: string
   /** Lucide icon */
   icon: LucideIcon
   /** Route path */
@@ -74,7 +78,11 @@ class ToolRegistry {
     return Array.from(this.groups.keys())
   }
 
-  getNavigationEntries(context: { isSuperuser: boolean }): NavigationEntry[] {
+  getNavigationEntries(
+    context: { isSuperuser: boolean },
+    t?: (key: string) => string,
+  ): NavigationEntry[] {
+    const _t = t || ((key: string) => key)
     const entries: NavigationEntry[] = []
 
     for (const [groupName, toolNames] of this.groups) {
@@ -89,7 +97,9 @@ class ToolRegistry {
         .map((tool) => ({
           kind: "tool" as const,
           icon: tool.navigation.icon,
-          title: tool.navigation.title,
+          title: tool.navigation.titleKey
+            ? _t(tool.navigation.titleKey)
+            : tool.navigation.title,
           path: tool.navigation.path,
           requiresSuperuser: tool.navigation.requiresSuperuser,
         }))
@@ -97,8 +107,8 @@ class ToolRegistry {
       if (children.length > 0) {
         entries.push({
           kind: "group",
-          icon: children[0].icon, // Use first child's icon as group icon
-          title: this._formatGroupName(groupName),
+          icon: children[0].icon,
+          title: this._formatGroupName(groupName, _t),
           children,
           defaultExpanded: true,
         })
@@ -109,12 +119,13 @@ class ToolRegistry {
   }
 
   private _groupNameMap: Record<string, string> = {
-    finance: "财务",
+    finance: "finance.groupName",
   }
 
-  private _formatGroupName(name: string): string {
+  private _formatGroupName(name: string, t?: (key: string) => string): string {
+    const _t = t || ((key: string) => key)
     if (this._groupNameMap[name]) {
-      return this._groupNameMap[name]
+      return _t(this._groupNameMap[name])
     }
     return name
       .split("_")

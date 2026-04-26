@@ -31,11 +31,8 @@ import {
 
 import type { PurchaseRecord } from "../types"
 import {
-  purchaseRecordFormSchema,
+  createPurchaseRecordSchemas,
   type PurchaseRecordFormValues,
-  CATEGORIES,
-  SUBCATEGORIES,
-  CURRENCIES,
 } from "../schemas"
 import {
   useCreatePurchaseRecordMutation,
@@ -43,6 +40,7 @@ import {
   useSubmitPurchaseRecordMutation,
   useOcrPreviewMutation,
 } from "../hooks/usePurchaseRecords"
+import { useI18n } from "@/i18n/I18nProvider"
 
 interface PurchaseRecordFormProps {
   open: boolean
@@ -55,6 +53,9 @@ export function PurchaseRecordForm({
   onClose,
   record,
 }: PurchaseRecordFormProps) {
+  const { t } = useI18n()
+  const { purchaseRecordFormSchema, CURRENCIES, CATEGORIES, SUBCATEGORIES } = createPurchaseRecordSchemas(t)
+
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [ocrError, setOcrError] = useState<string | null>(null)
@@ -127,7 +128,6 @@ export function PurchaseRecordForm({
     const url = URL.createObjectURL(file)
     setPreviewUrl(url)
 
-    // Trigger OCR preview
     ocrMutation.mutate(file, {
       onSuccess: (data) => {
         if (data.purchase_date) {
@@ -153,7 +153,7 @@ export function PurchaseRecordForm({
         }
       },
       onError: (error: Error) => {
-        setOcrError(error.message || "OCR 识别失败，请手动填写")
+        setOcrError(error.message || t("finance.purchaseRecords.messages.ocrFailed"))
       },
     })
   }
@@ -171,7 +171,7 @@ export function PurchaseRecordForm({
     if (!isEditing && !uploadedFile) {
       form.setError("screenshot", {
         type: "manual",
-        message: "请上传截图",
+        message: t("finance.purchaseRecords.validation.screenshotRequired"),
       })
       return
     }
@@ -247,24 +247,23 @@ export function PurchaseRecordForm({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "编辑购买记录" : "新建购买记录"}
+            {isEditing ? t("finance.purchaseRecords.form.titleEdit") : t("finance.purchaseRecords.form.titleCreate")}
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? "修改购买记录信息"
-              : "上传截图并填写购买记录信息"}
+              ? t("finance.purchaseRecords.form.descriptionEdit")
+              : t("finance.purchaseRecords.form.descriptionCreate")}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form className="space-y-4">
-            {/* Screenshot Upload */}
             <FormField
               control={form.control}
               name="screenshot"
               render={() => (
                 <FormItem>
-                  <FormLabel>截图</FormLabel>
+                  <FormLabel>{t("finance.purchaseRecords.form.screenshot")}</FormLabel>
                   <FormControl>
                     <div className="space-y-2">
                       {!previewUrl ? (
@@ -272,7 +271,7 @@ export function PurchaseRecordForm({
                           <div className="flex flex-col items-center justify-center pt-5 pb-6">
                             <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
                             <p className="text-sm text-muted-foreground">
-                              点击上传截图
+                              {t("finance.purchaseRecords.form.clickToUpload")}
                             </p>
                           </div>
                           <input
@@ -302,7 +301,7 @@ export function PurchaseRecordForm({
                       {ocrMutation.isPending && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          正在识别...
+                          {t("common.loading")}
                         </div>
                       )}
 
@@ -328,7 +327,7 @@ export function PurchaseRecordForm({
                 name="purchase_date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>购买日期</FormLabel>
+                    <FormLabel>{t("finance.purchaseRecords.form.purchaseDate")}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -342,9 +341,9 @@ export function PurchaseRecordForm({
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>金额</FormLabel>
+                    <FormLabel>{t("finance.purchaseRecords.form.amount")}</FormLabel>
                     <FormControl>
-                      <Input type="text" placeholder="0.00" {...field} />
+                      <Input type="text" placeholder={t("finance.purchaseRecords.form.amountPlaceholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -358,14 +357,14 @@ export function PurchaseRecordForm({
                 name="currency"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>币种</FormLabel>
+                    <FormLabel>{t("finance.purchaseRecords.form.currency")}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="选择币种" />
+                          <SelectValue placeholder={t("finance.purchaseRecords.form.currencyPlaceholder")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -389,9 +388,9 @@ export function PurchaseRecordForm({
                 name="order_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>订单名称</FormLabel>
+                    <FormLabel>{t("finance.purchaseRecords.form.orderName")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="输入订单名称" {...field} />
+                      <Input placeholder={t("finance.purchaseRecords.form.orderNamePlaceholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -405,14 +404,14 @@ export function PurchaseRecordForm({
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>大类</FormLabel>
+                    <FormLabel>{t("finance.purchaseRecords.form.category")}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="选择大类" />
+                          <SelectValue placeholder={t("finance.purchaseRecords.form.categoryPlaceholder")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -436,7 +435,7 @@ export function PurchaseRecordForm({
                 name="subcategory"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>小类</FormLabel>
+                    <FormLabel>{t("finance.purchaseRecords.form.subcategory")}</FormLabel>
                     <Select
                       onValueChange={(value) =>
                         field.onChange(value || null)
@@ -446,7 +445,7 @@ export function PurchaseRecordForm({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="选择小类" />
+                          <SelectValue placeholder={t("finance.purchaseRecords.form.subcategoryPlaceholder")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -471,9 +470,9 @@ export function PurchaseRecordForm({
               name="note"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>备注</FormLabel>
+                  <FormLabel>{t("finance.purchaseRecords.form.note")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="可选备注" {...field} />
+                    <Input placeholder={t("finance.purchaseRecords.form.notePlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -484,7 +483,7 @@ export function PurchaseRecordForm({
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose}>
-            取消
+            {t("finance.purchaseRecords.form.cancel")}
           </Button>
           <Button
             variant="secondary"
@@ -494,10 +493,10 @@ export function PurchaseRecordForm({
             {isSubmitting && createMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                保存中...
+                {t("finance.purchaseRecords.form.saving")}
               </>
             ) : (
-              "保存草稿"
+              t("finance.purchaseRecords.form.saveDraft")
             )}
           </Button>
           <Button
@@ -507,10 +506,10 @@ export function PurchaseRecordForm({
             {isSubmitting && submitMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                提交中...
+                {t("finance.purchaseRecords.form.submitting")}
               </>
             ) : (
-              "保存并提交"
+              t("finance.purchaseRecords.form.saveAndSubmit")
             )}
           </Button>
         </DialogFooter>

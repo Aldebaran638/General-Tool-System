@@ -15,6 +15,7 @@ import {
   restorePurchaseRecord,
   ocrPreview,
 } from "../api"
+import { useI18n } from "@/i18n/I18nProvider"
 
 export const purchaseRecordsQueryKey = ["purchase-records"] as const
 
@@ -33,137 +34,146 @@ export function useOcrPreviewMutation() {
 
 export function useCreatePurchaseRecordMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: createPurchaseRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: purchaseRecordsQueryKey })
-      toast.success("购买记录已保存为草稿")
+      toast.success(t("finance.purchaseRecords.messages.createSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "保存失败")
+      toast.error(error.message || t("finance.purchaseRecords.messages.saveFailed"))
     },
   })
 }
 
 export function useUpdatePurchaseRecordMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: PurchaseRecordUpdate }) =>
       updatePurchaseRecord(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: purchaseRecordsQueryKey })
-      toast.success("购买记录已更新")
+      toast.success(t("finance.purchaseRecords.messages.updateSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "更新失败")
+      toast.error(error.message || t("finance.purchaseRecords.messages.updateFailed"))
     },
   })
 }
 
 export function useSubmitPurchaseRecordMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: submitPurchaseRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: purchaseRecordsQueryKey })
-      toast.success("购买记录已提交")
+      toast.success(t("finance.purchaseRecords.messages.submitSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "提交失败")
+      toast.error(error.message || t("finance.purchaseRecords.messages.submitFailed"))
     },
   })
 }
 
 export function useWithdrawPurchaseRecordMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: withdrawPurchaseRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: purchaseRecordsQueryKey })
-      toast.success("提交已撤回")
+      toast.success(t("finance.purchaseRecords.messages.withdrawSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "撤回失败")
+      toast.error(error.message || t("finance.purchaseRecords.messages.withdrawFailed"))
     },
   })
 }
 
 export function useApprovePurchaseRecordMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: approvePurchaseRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: purchaseRecordsQueryKey })
-      toast.success("购买记录已批准")
+      toast.success(t("finance.purchaseRecords.messages.approveSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "批准失败")
+      toast.error(error.message || t("finance.purchaseRecords.messages.approveFailed"))
     },
   })
 }
 
 export function useRejectPurchaseRecordMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: RejectRequest }) =>
       rejectPurchaseRecord(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: purchaseRecordsQueryKey })
-      toast.success("购买记录已驳回")
+      toast.success(t("finance.purchaseRecords.messages.rejectSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "驳回失败")
+      toast.error(error.message || t("finance.purchaseRecords.messages.rejectFailed"))
     },
   })
 }
 
 export function useUnapprovePurchaseRecordMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: unapprovePurchaseRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: purchaseRecordsQueryKey })
-      toast.success("批准已撤回")
+      toast.success(t("finance.purchaseRecords.messages.unapproveSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "撤回批准失败")
+      toast.error(error.message || t("finance.purchaseRecords.messages.unapproveFailed"))
     },
   })
 }
 
 export function useDeletePurchaseRecordMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: deletePurchaseRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: purchaseRecordsQueryKey })
-      toast.success("购买记录已删除")
+      toast.success(t("finance.purchaseRecords.messages.deleteSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "删除失败")
+      toast.error(error.message || t("finance.purchaseRecords.messages.deleteFailed"))
     },
   })
 }
 
 export function useRestorePurchaseRecordMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: restorePurchaseRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: purchaseRecordsQueryKey })
-      toast.success("购买记录已恢复")
+      toast.success(t("finance.purchaseRecords.messages.restoreSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "恢复失败")
+      toast.error(error.message || t("finance.purchaseRecords.messages.restoreFailed"))
     },
   })
 }

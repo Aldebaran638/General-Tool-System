@@ -3,12 +3,14 @@ import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useI18n } from "@/i18n"
 
 import { InvoiceFileForm } from "./InvoiceFileForm"
 import { InvoiceFileTable } from "./InvoiceFileTable"
 import { useInvoiceFilesQuery } from "../hooks/useInvoiceFiles"
 
 export function InvoiceFilesPage() {
+  const { t } = useI18n()
   const [showDeleted, setShowDeleted] = useState(false)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<
@@ -33,12 +35,16 @@ export function InvoiceFilesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">发票文件</h1>
-          <p className="text-muted-foreground">管理和确认您的发票文件</p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {t("finance.invoiceFiles.title")}
+          </h1>
+          <p className="text-muted-foreground">
+            {t("finance.invoiceFiles.title")}
+          </p>
         </div>
         <Button onClick={() => setIsFormOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          新建发票
+          {t("finance.invoiceFiles.form.titleCreate")}
         </Button>
       </div>
 
@@ -47,8 +53,12 @@ export function InvoiceFilesPage() {
         onValueChange={(value) => setShowDeleted(value === "deleted")}
       >
         <TabsList>
-          <TabsTrigger value="normal">正常记录</TabsTrigger>
-          <TabsTrigger value="deleted">已删除记录</TabsTrigger>
+          <TabsTrigger value="normal">
+            {t("finance.invoiceFiles.tabs.active")}
+          </TabsTrigger>
+          <TabsTrigger value="deleted">
+            {t("finance.invoiceFiles.tabs.deleted")}
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -67,13 +77,13 @@ export function InvoiceFilesPage() {
           </div>
           <h3 className="text-lg font-semibold">
             {showDeleted
-              ? "没有已删除的发票"
-              : "您还没有发票文件"}
+              ? t("finance.invoiceFiles.tabs.deleted")
+              : t("finance.invoiceFiles.title")}
           </h3>
           <p className="text-muted-foreground">
             {showDeleted
-              ? "删除的发票将在这里显示 30 天"
-              : "点击上方按钮创建新的发票文件"}
+              ? t("finance.invoiceFiles.tabs.deleted")
+              : t("finance.invoiceFiles.form.titleCreate")}
           </p>
         </div>
       ) : (

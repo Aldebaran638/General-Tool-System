@@ -32,16 +32,15 @@ import {
 
 import type { InvoiceFile } from "../types"
 import {
-  invoiceFileFormSchema,
+  createInvoiceFileSchemas,
   type InvoiceFileFormValues,
-  INVOICE_TYPES,
-  CURRENCIES,
 } from "../schemas"
 import {
   useCreateInvoiceFileMutation,
   useUpdateInvoiceFileMutation,
   useParsePreviewMutation,
 } from "../hooks/useInvoiceFiles"
+import { useI18n } from "@/i18n/I18nProvider"
 
 interface InvoiceFileFormProps {
   open: boolean
@@ -54,6 +53,9 @@ export function InvoiceFileForm({
   onClose,
   record,
 }: InvoiceFileFormProps) {
+  const { t } = useI18n()
+  const { invoiceFileFormSchema, CURRENCIES, INVOICE_TYPES } = createInvoiceFileSchemas(t)
+
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [parseError, setParseError] = useState<string | null>(null)
@@ -149,7 +151,7 @@ export function InvoiceFileForm({
         }
       },
       onError: () => {
-        setParseError("PDF 解析失败，请手动填写发票信息")
+        setParseError(t("finance.invoiceFiles.form.parseFailed"))
       },
     })
   }
@@ -165,7 +167,7 @@ export function InvoiceFileForm({
 
   const onSubmit = (values: InvoiceFileFormValues) => {
     if (!isEditing && !uploadedFile) {
-      toast.error("请上传 PDF 文件")
+      toast.error(t("finance.invoiceFiles.validation.pdfRequired"))
       return
     }
 
@@ -217,24 +219,23 @@ export function InvoiceFileForm({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "编辑发票文件" : "新建发票文件"}
+            {isEditing ? t("finance.invoiceFiles.form.titleEdit") : t("finance.invoiceFiles.form.titleCreate")}
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? "修改发票文件信息"
-              : "上传 PDF 发票并填写相关信息"}
+              ? t("finance.invoiceFiles.form.descriptionEdit")
+              : t("finance.invoiceFiles.form.descriptionCreate")}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form className="space-y-4">
-            {/* PDF Upload */}
             <FormField
               control={form.control}
               name="pdf"
               render={() => (
                 <FormItem>
-                  <FormLabel>PDF 发票 {isEditing ? "(可选)" : ""}</FormLabel>
+                  <FormLabel>{isEditing ? t("finance.invoiceFiles.form.pdfOptional") : t("finance.invoiceFiles.form.pdf")}</FormLabel>
                   <FormControl>
                     {!previewUrl ? (
                       <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
@@ -246,7 +247,7 @@ export function InvoiceFileForm({
                         />
                         <Upload className="h-8 w-8 text-muted-foreground mb-2" />
                         <span className="text-sm text-muted-foreground">
-                          点击上传 PDF 发票
+                          {t("finance.invoiceFiles.form.clickToUpload")}
                         </span>
                       </label>
                     ) : (
@@ -278,7 +279,7 @@ export function InvoiceFileForm({
                   {parseMutation.isPending && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      正在解析 PDF...
+                      {t("finance.invoiceFiles.form.processing")}
                     </div>
                   )}
                   <FormMessage />
@@ -286,16 +287,15 @@ export function InvoiceFileForm({
               )}
             />
 
-            {/* Invoice Number & Date */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="invoice_number"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>发票号码</FormLabel>
+                    <FormLabel>{t("finance.invoiceFiles.form.invoiceNumber")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="请输入发票号码" {...field} />
+                      <Input placeholder={t("finance.invoiceFiles.form.invoiceNumberPlaceholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -306,7 +306,7 @@ export function InvoiceFileForm({
                 name="invoice_date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>发票日期</FormLabel>
+                    <FormLabel>{t("finance.invoiceFiles.form.invoiceDate")}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -316,16 +316,15 @@ export function InvoiceFileForm({
               />
             </div>
 
-            {/* Amount & Tax */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="invoice_amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>发票金额</FormLabel>
+                    <FormLabel>{t("finance.invoiceFiles.form.invoiceAmount")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="0.00" {...field} />
+                      <Input placeholder={t("finance.invoiceFiles.form.amountPlaceholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -336,9 +335,9 @@ export function InvoiceFileForm({
                 name="tax_amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>税额（可选）</FormLabel>
+                    <FormLabel>{t("finance.invoiceFiles.form.taxAmount")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="0.00" {...field} />
+                      <Input placeholder={t("finance.invoiceFiles.form.amountPlaceholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -346,20 +345,19 @@ export function InvoiceFileForm({
               />
             </div>
 
-            {/* Currency */}
             <FormField
               control={form.control}
               name="currency"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>币种</FormLabel>
+                  <FormLabel>{t("finance.invoiceFiles.form.currency")}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="选择币种" />
+                        <SelectValue placeholder={t("finance.invoiceFiles.form.currencyPlaceholder")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -378,16 +376,15 @@ export function InvoiceFileForm({
               )}
             />
 
-            {/* Buyer & Seller */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="buyer"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>购买方</FormLabel>
+                    <FormLabel>{t("finance.invoiceFiles.form.buyer")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="请输入购买方" {...field} />
+                      <Input placeholder={t("finance.invoiceFiles.form.buyerPlaceholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -398,9 +395,9 @@ export function InvoiceFileForm({
                 name="seller"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>销售方</FormLabel>
+                    <FormLabel>{t("finance.invoiceFiles.form.seller")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="请输入销售方" {...field} />
+                      <Input placeholder={t("finance.invoiceFiles.form.sellerPlaceholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -408,20 +405,19 @@ export function InvoiceFileForm({
               />
             </div>
 
-            {/* Invoice Type */}
             <FormField
               control={form.control}
               name="invoice_type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>发票类型</FormLabel>
+                  <FormLabel>{t("finance.invoiceFiles.form.invoiceType")}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="选择发票类型" />
+                        <SelectValue placeholder={t("finance.invoiceFiles.form.invoiceTypePlaceholder")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -437,15 +433,14 @@ export function InvoiceFileForm({
               )}
             />
 
-            {/* Note */}
             <FormField
               control={form.control}
               name="note"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>备注（可选）</FormLabel>
+                  <FormLabel>{t("finance.invoiceFiles.form.note")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="请输入备注" {...field} />
+                    <Input placeholder={t("finance.invoiceFiles.form.notePlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -456,7 +451,7 @@ export function InvoiceFileForm({
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} type="button">
-            取消
+            {t("finance.invoiceFiles.form.cancel")}
           </Button>
           <Button
             onClick={handleSaveDraft}
@@ -466,7 +461,7 @@ export function InvoiceFileForm({
             {createMutation.isPending || updateMutation.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : null}
-            {isEditing ? "保存修改" : "保存草稿"}
+            {isEditing ? t("finance.invoiceFiles.form.saveEdit") : t("finance.invoiceFiles.form.saveDraft")}
           </Button>
         </DialogFooter>
       </DialogContent>

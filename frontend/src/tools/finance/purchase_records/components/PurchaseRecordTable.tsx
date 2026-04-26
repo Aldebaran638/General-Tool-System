@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/table"
 
 import type { PurchaseRecord } from "../types"
-import { CATEGORIES, SUBCATEGORIES } from "../schemas"
+import { createPurchaseRecordSchemas } from "../schemas"
 import {
   useDeletePurchaseRecordMutation,
   useRestorePurchaseRecordMutation,
@@ -40,6 +40,7 @@ import {
 import { downloadScreenshot } from "../api"
 import useAuth from "@/hooks/useAuth"
 import { useState } from "react"
+import { useI18n } from "@/i18n/I18nProvider"
 
 interface PurchaseRecordTableProps {
   records: PurchaseRecord[]
@@ -47,7 +48,7 @@ interface PurchaseRecordTableProps {
   showDeleted: boolean
 }
 
-function StatusBadge({ status }: { status: PurchaseRecord["status"] }) {
+function StatusBadge({ status, t }: { status: PurchaseRecord["status"]; t: (key: string) => string }) {
   const variants: Record<PurchaseRecord["status"], "default" | "secondary" | "destructive" | "outline"> = {
     draft: "secondary",
     submitted: "default",
@@ -56,29 +57,20 @@ function StatusBadge({ status }: { status: PurchaseRecord["status"] }) {
   }
 
   const labels: Record<PurchaseRecord["status"], string> = {
-    draft: "草稿",
-    submitted: "已提交",
-    approved: "已批准",
-    rejected: "已驳回",
+    draft: t("finance.purchaseRecords.status.draft"),
+    submitted: t("finance.purchaseRecords.status.submitted"),
+    approved: t("finance.purchaseRecords.status.approved"),
+    rejected: t("finance.purchaseRecords.status.rejected"),
   }
 
   return <Badge variant={variants[status]}>{labels[status]}</Badge>
 }
 
-function MatchStatusBadge({ status }: { status: PurchaseRecord["invoice_match_status"] }) {
+function MatchStatusBadge({ status, t }: { status: PurchaseRecord["invoice_match_status"]; t: (key: string) => string }) {
   if (status === "matched") {
-    return <Badge variant="outline">已匹配发票</Badge>
+    return <Badge variant="outline">{t("finance.purchaseRecords.invoiceMatchStatus.matched")}</Badge>
   }
-  return <Badge variant="outline">未匹配发票</Badge>
-}
-
-function getCategoryLabel(value: string) {
-  return CATEGORIES.find((c) => c.value === value)?.label || value
-}
-
-function getSubcategoryLabel(value: string | null) {
-  if (!value) return "-"
-  return SUBCATEGORIES.find((s) => s.value === value)?.label || value
+  return <Badge variant="outline">{t("finance.purchaseRecords.invoiceMatchStatus.unmatched")}</Badge>
 }
 
 export function PurchaseRecordTable({
@@ -88,6 +80,17 @@ export function PurchaseRecordTable({
 }: PurchaseRecordTableProps) {
   const { user } = useAuth()
   const isAdmin = user?.is_superuser ?? false
+  const { t } = useI18n()
+  const { CATEGORIES, SUBCATEGORIES } = createPurchaseRecordSchemas(t)
+
+  const getCategoryLabel = (value: string) => {
+    return CATEGORIES.find((c) => c.value === value)?.label || value
+  }
+
+  const getSubcategoryLabel = (value: string | null) => {
+    if (!value) return "-"
+    return SUBCATEGORIES.find((s) => s.value === value)?.label || value
+  }
 
   const submitMutation = useSubmitPurchaseRecordMutation()
   const withdrawMutation = useWithdrawPurchaseRecordMutation()
@@ -110,7 +113,7 @@ export function PurchaseRecordTable({
   }
 
   const handleReject = (id: string) => {
-    rejectMutation.mutate({ id, data: { reason: "管理员驳回" } })
+    rejectMutation.mutate({ id, data: { reason: t("finance.purchaseRecords.messages.adminRejectReason") } })
   }
 
   const handleUnapprove = (id: string) => {
@@ -129,14 +132,14 @@ export function PurchaseRecordTable({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>订单名称</TableHead>
-          <TableHead>日期</TableHead>
-          <TableHead>金额</TableHead>
-          <TableHead>大类</TableHead>
-          <TableHead>状态</TableHead>
-          <TableHead>匹配状态</TableHead>
-          <TableHead>截图</TableHead>
-          <TableHead className="text-right">操作</TableHead>
+          <TableHead>{t("finance.purchaseRecords.columns.orderName")}</TableHead>
+          <TableHead>{t("finance.purchaseRecords.columns.date")}</TableHead>
+          <TableHead>{t("finance.purchaseRecords.columns.amount")}</TableHead>
+          <TableHead>{t("finance.purchaseRecords.columns.category")}</TableHead>
+          <TableHead>{t("finance.purchaseRecords.columns.status")}</TableHead>
+          <TableHead>{t("finance.purchaseRecords.columns.matchStatus")}</TableHead>
+          <TableHead>{t("finance.purchaseRecords.columns.screenshot")}</TableHead>
+          <TableHead className="text-right">{t("finance.purchaseRecords.columns.actions")}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -156,13 +159,13 @@ export function PurchaseRecordTable({
               )}
             </TableCell>
             <TableCell>
-              <StatusBadge status={record.status} />
+              <StatusBadge status={record.status} t={t} />
             </TableCell>
             <TableCell>
-              <MatchStatusBadge status={record.invoice_match_status} />
+              <MatchStatusBadge status={record.invoice_match_status} t={t} />
             </TableCell>
             <TableCell>
-              <ScreenshotDownloadButton id={record.id} />
+              <ScreenshotDownloadButton id={record.id} t={t} />
             </TableCell>
             <TableCell className="text-right">
               <DropdownMenu>
@@ -175,21 +178,21 @@ export function PurchaseRecordTable({
                   {!showDeleted && (record.status === "draft" || record.status === "rejected") && (
                     <DropdownMenuItem onClick={() => onEdit(record)}>
                       <Pencil className="mr-2 h-4 w-4" />
-                      编辑
+                      {t("finance.purchaseRecords.actions.edit")}
                     </DropdownMenuItem>
                   )}
 
                   {!showDeleted && (record.status === "draft" || record.status === "rejected") && (
                     <DropdownMenuItem onClick={() => handleSubmit(record.id)}>
                       <Send className="mr-2 h-4 w-4" />
-                      提交
+                      {t("finance.purchaseRecords.actions.submit")}
                     </DropdownMenuItem>
                   )}
 
                   {!showDeleted && record.status === "submitted" && (
                     <DropdownMenuItem onClick={() => handleWithdraw(record.id)}>
                       <Undo2 className="mr-2 h-4 w-4" />
-                      撤回提交
+                      {t("finance.purchaseRecords.actions.withdrawSubmit")}
                     </DropdownMenuItem>
                   )}
 
@@ -197,11 +200,11 @@ export function PurchaseRecordTable({
                     <>
                       <DropdownMenuItem onClick={() => handleApprove(record.id)}>
                         <Send className="mr-2 h-4 w-4" />
-                        批准
+                        {t("finance.purchaseRecords.actions.approve")}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleReject(record.id)}>
                         <RotateCcw className="mr-2 h-4 w-4" />
-                        驳回
+                        {t("finance.purchaseRecords.actions.reject")}
                       </DropdownMenuItem>
                     </>
                   )}
@@ -209,7 +212,7 @@ export function PurchaseRecordTable({
                   {isAdmin && !showDeleted && record.status === "approved" && (
                     <DropdownMenuItem onClick={() => handleUnapprove(record.id)}>
                       <Undo2 className="mr-2 h-4 w-4" />
-                      撤回批准
+                      {t("finance.purchaseRecords.actions.unapprove")}
                     </DropdownMenuItem>
                   )}
 
@@ -219,14 +222,14 @@ export function PurchaseRecordTable({
                       className="text-destructive"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      删除
+                      {t("finance.purchaseRecords.actions.delete")}
                     </DropdownMenuItem>
                   )}
 
                   {showDeleted && (
                     <DropdownMenuItem onClick={() => handleRestore(record.id)}>
                       <RotateCcw className="mr-2 h-4 w-4" />
-                      恢复
+                      {t("finance.purchaseRecords.actions.restore")}
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
@@ -239,16 +242,15 @@ export function PurchaseRecordTable({
   )
 }
 
-function ScreenshotDownloadButton({ id }: { id: string }) {
+function ScreenshotDownloadButton({ id, t }: { id: string; t: (key: string) => string }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleClick = async () => {
     setError(null)
-    // Open blank window immediately to avoid popup blocker
     const previewWindow = window.open("", "_blank")
     if (!previewWindow) {
-      setError("浏览器拦截了弹窗，请允许弹窗后重试")
+      setError(t("finance.purchaseRecords.messages.popupBlocked"))
       return
     }
 
@@ -257,12 +259,11 @@ function ScreenshotDownloadButton({ id }: { id: string }) {
       const blob = await downloadScreenshot(id)
       const url = URL.createObjectURL(blob)
       previewWindow.location.href = url
-      // Clean up object URL after a delay
       setTimeout(() => URL.revokeObjectURL(url), 60000)
     } catch (error) {
       previewWindow.close()
-      setError("截图下载失败，请稍后重试")
-      console.error("截图下载失败:", error)
+      setError(t("finance.purchaseRecords.messages.downloadFailed"))
+      console.error(t("finance.purchaseRecords.messages.downloadFailed"), error)
     } finally {
       setLoading(false)
     }
@@ -280,7 +281,7 @@ function ScreenshotDownloadButton({ id }: { id: string }) {
         ) : (
           <FileImage className="mr-1 h-4 w-4" />
         )}
-        查看
+        {t("finance.purchaseRecords.columns.view")}
       </button>
       {error && <span className="text-xs text-destructive mt-1">{error}</span>}
     </div>

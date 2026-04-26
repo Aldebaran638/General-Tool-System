@@ -1,60 +1,75 @@
 import { z } from "zod"
 
-export const CURRENCIES = [
-  { value: "CNY", label: "CNY - 人民币" },
-  { value: "USD", label: "USD - 美元" },
-  { value: "EUR", label: "EUR - 欧元" },
-  { value: "JPY", label: "JPY - 日元" },
-  { value: "HKD", label: "HKD - 港币" },
-  { value: "GBP", label: "GBP - 英镑" },
-  { value: "AUD", label: "AUD - 澳元" },
-  { value: "CAD", label: "CAD - 加元" },
-  { value: "SGD", label: "SGD - 新加坡元" },
-]
+export interface PurchaseRecordFormValues {
+  purchase_date: string
+  amount: string
+  currency: string
+  order_name: string
+  category: string
+  subcategory?: string | null
+  note?: string
+  screenshot?: File
+}
 
-export const CATEGORIES = [
-  { value: "transportation", label: "交通费用" },
-  { value: "meals_entertainment", label: "膳食 / 应酬费用" },
-  { value: "vehicle", label: "汽车费用" },
-  { value: "other_project", label: "其他项目费用" },
-]
+export interface RejectFormValues {
+  reason: string
+}
 
-export const SUBCATEGORIES = [
-  { value: "agv", label: "自动导航承载车" },
-  { value: "painting_robot", label: "智能喷漆机器人" },
-  { value: "rebar_robot", label: "钢筋折弯与结扎机器人" },
-  { value: "fleet_scheduling", label: "生产线车队调度" },
-  { value: "rd_expense", label: "研发部开销" },
-]
+export function createPurchaseRecordSchemas(t: (key: string) => string) {
+  const CURRENCIES = [
+    { value: "CNY", label: `CNY - ${t("finance.purchaseRecords.currency.CNY")}` },
+    { value: "USD", label: `USD - ${t("finance.purchaseRecords.currency.USD")}` },
+    { value: "EUR", label: `EUR - ${t("finance.purchaseRecords.currency.EUR")}` },
+    { value: "JPY", label: `JPY - ${t("finance.purchaseRecords.currency.JPY")}` },
+    { value: "HKD", label: `HKD - ${t("finance.purchaseRecords.currency.HKD")}` },
+    { value: "GBP", label: `GBP - ${t("finance.purchaseRecords.currency.GBP")}` },
+    { value: "AUD", label: `AUD - ${t("finance.purchaseRecords.currency.AUD")}` },
+    { value: "CAD", label: `CAD - ${t("finance.purchaseRecords.currency.CAD")}` },
+    { value: "SGD", label: `SGD - ${t("finance.purchaseRecords.currency.SGD")}` },
+  ]
 
-export const purchaseRecordFormSchema = z
-  .object({
-    purchase_date: z.string().min(1, { message: "购买日期是必填项" }),
-    amount: z.string().min(1, { message: "金额是必填项" }),
-    currency: z.string().min(1, { message: "币种是必填项" }),
-    order_name: z.string().min(1, { message: "订单名称是必填项" }),
-    category: z.string().min(1, { message: "大类是必填项" }),
-    subcategory: z.string().nullable().optional(),
-    note: z.string().optional(),
-    screenshot: z.instanceof(File).optional(),
+  const CATEGORIES = [
+    { value: "transportation", label: t("finance.purchaseRecords.category.transportation") },
+    { value: "meals_entertainment", label: t("finance.purchaseRecords.category.meals_entertainment") },
+    { value: "vehicle", label: t("finance.purchaseRecords.category.vehicle") },
+    { value: "other_project", label: t("finance.purchaseRecords.category.other_project") },
+  ]
+
+  const SUBCATEGORIES = [
+    { value: "agv", label: t("finance.purchaseRecords.subcategory.agv") },
+    { value: "painting_robot", label: t("finance.purchaseRecords.subcategory.painting_robot") },
+    { value: "rebar_robot", label: t("finance.purchaseRecords.subcategory.rebar_robot") },
+    { value: "fleet_scheduling", label: t("finance.purchaseRecords.subcategory.fleet_scheduling") },
+    { value: "rd_expense", label: t("finance.purchaseRecords.subcategory.rd_expense") },
+  ]
+
+  const purchaseRecordFormSchema = z
+    .object({
+      purchase_date: z.string().min(1, { message: t("finance.purchaseRecords.validation.purchaseDateRequired") }),
+      amount: z.string().min(1, { message: t("finance.purchaseRecords.validation.amountRequired") }),
+      currency: z.string().min(1, { message: t("finance.purchaseRecords.validation.currencyRequired") }),
+      order_name: z.string().min(1, { message: t("finance.purchaseRecords.validation.orderNameRequired") }),
+      category: z.string().min(1, { message: t("finance.purchaseRecords.validation.categoryRequired") }),
+      subcategory: z.string().nullable().optional(),
+      note: z.string().optional(),
+      screenshot: z.instanceof(File).optional(),
+    })
+    .refine(
+      (data) => {
+        if (data.category !== "other_project") {
+          return !data.subcategory || data.subcategory === null
+        }
+        return true
+      },
+      {
+        message: t("finance.purchaseRecords.validation.subcategoryEmpty"),
+        path: ["subcategory"],
+      },
+    )
+
+  const rejectFormSchema = z.object({
+    reason: z.string().min(1, { message: t("finance.purchaseRecords.validation.rejectReasonRequired") }),
   })
-  .refine(
-    (data) => {
-      if (data.category !== "other_project") {
-        return !data.subcategory || data.subcategory === null
-      }
-      return true
-    },
-    {
-      message: "非「其他项目费用」时小类必须为空",
-      path: ["subcategory"],
-    },
-  )
 
-export type PurchaseRecordFormValues = z.infer<typeof purchaseRecordFormSchema>
-
-export const rejectFormSchema = z.object({
-  reason: z.string().min(1, { message: "驳回原因是必填项" }),
-})
-
-export type RejectFormValues = z.infer<typeof rejectFormSchema>
+  return { CURRENCIES, CATEGORIES, SUBCATEGORIES, purchaseRecordFormSchema, rejectFormSchema }
+}

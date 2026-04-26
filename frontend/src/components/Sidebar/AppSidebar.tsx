@@ -8,12 +8,14 @@ import {
 } from "@/components/ui/sidebar"
 import { getNavigationEntries } from "@/config/tool-navigation"
 import useAuth from "@/hooks/useAuth"
+import { useI18n } from "@/i18n"
 import { Main } from "./Main"
 import { User } from "./User"
 
 export function AppSidebar() {
   const { user: currentUser } = useAuth()
-  const items = getNavigationEntries(currentUser)
+  const { t } = useI18n()
+  const items = getNavigationEntries(currentUser, t)
 
   return (
     <Sidebar collapsible="icon">

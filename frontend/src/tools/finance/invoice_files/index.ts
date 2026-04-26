@@ -19,6 +19,7 @@ registerTool({
   },
   navigation: {
     title: "发票文件",
+    titleKey: "finance.invoiceFiles.title",
     icon: FileText,
     path: "/finance/invoice-files",
     requiresSuperuser: false,

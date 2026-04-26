@@ -14,6 +14,7 @@ import {
   restoreInvoiceFile,
   parsePreview,
 } from "../api"
+import { useI18n } from "@/i18n/I18nProvider"
 
 export const invoiceFilesQueryKey = ["invoice-files"] as const
 
@@ -32,121 +33,129 @@ export function useParsePreviewMutation() {
 
 export function useCreateInvoiceFileMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: createInvoiceFile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceFilesQueryKey })
-      toast.success("发票文件已保存为草稿")
+      toast.success(t("finance.invoiceFiles.messages.createSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "保存失败")
+      toast.error(error.message || t("finance.invoiceFiles.messages.saveFailed"))
     },
   })
 }
 
 export function useUpdateInvoiceFileMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: InvoiceFileUpdate }) =>
       updateInvoiceFile(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceFilesQueryKey })
-      toast.success("发票文件已更新")
+      toast.success(t("finance.invoiceFiles.messages.updateSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "更新失败")
+      toast.error(error.message || t("finance.invoiceFiles.messages.updateFailed"))
     },
   })
 }
 
 export function useConfirmInvoiceFileMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: confirmInvoiceFile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceFilesQueryKey })
-      toast.success("发票已确认")
+      toast.success(t("finance.invoiceFiles.messages.confirmSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "确认失败")
+      toast.error(error.message || t("finance.invoiceFiles.messages.confirmFailed"))
     },
   })
 }
 
 export function useWithdrawConfirmationMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: withdrawConfirmationInvoiceFile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceFilesQueryKey })
-      toast.success("确认已撤回")
+      toast.success(t("finance.invoiceFiles.messages.withdrawSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "撤回确认失败")
+      toast.error(error.message || t("finance.invoiceFiles.messages.withdrawFailed"))
     },
   })
 }
 
 export function useVoidInvoiceFileMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: voidInvoiceFile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceFilesQueryKey })
-      toast.success("发票已作废")
+      toast.success(t("finance.invoiceFiles.messages.voidSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "作废失败")
+      toast.error(error.message || t("finance.invoiceFiles.messages.voidFailed"))
     },
   })
 }
 
 export function useRestoreDraftMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: restoreDraftInvoiceFile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceFilesQueryKey })
-      toast.success("发票已恢复为草稿")
+      toast.success(t("finance.invoiceFiles.messages.restoreDraftSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "恢复草稿失败")
+      toast.error(error.message || t("finance.invoiceFiles.messages.restoreDraftFailed"))
     },
   })
 }
 
 export function useDeleteInvoiceFileMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: deleteInvoiceFile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceFilesQueryKey })
-      toast.success("发票文件已删除")
+      toast.success(t("finance.invoiceFiles.messages.deleteSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "删除失败")
+      toast.error(error.message || t("finance.invoiceFiles.messages.deleteFailed"))
     },
   })
 }
 
 export function useRestoreInvoiceFileMutation() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   return useMutation({
     mutationFn: restoreInvoiceFile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceFilesQueryKey })
-      toast.success("发票文件已恢复")
+      toast.success(t("finance.invoiceFiles.messages.restoreSuccess"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "恢复失败")
+      toast.error(error.message || t("finance.invoiceFiles.messages.restoreFailed"))
     },
   })
 }
