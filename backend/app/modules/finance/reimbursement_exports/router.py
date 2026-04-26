@@ -5,6 +5,7 @@ Interface layer for the reimbursement_exports tool module.
 """
 
 import uuid
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -29,7 +30,7 @@ from .schemas import (
 )
 from . import service
 
-router = APIRouter(prefix="/reimbursement-exports", tags=["reimbursement_exports"])
+router = APIRouter(prefix="/finance/reimbursement-exports", tags=["reimbursement_exports"])
 
 
 # =============================================================================
@@ -116,13 +117,25 @@ def read_history(
     current_user: CurrentUser,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
+    created_at_from: datetime | None = None,
+    created_at_to: datetime | None = None,
+    created_by_id: uuid.UUID | None = None,
+    currency: str | None = None,
 ) -> ReimbursementExportsPublic:
     if not current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required.",
         )
-    return service.read_history(session, skip=skip, limit=limit)
+    return service.read_history(
+        session,
+        skip=skip,
+        limit=limit,
+        created_at_from=created_at_from,
+        created_at_to=created_at_to,
+        created_by_id=created_by_id,
+        currency=currency,
+    )
 
 
 # =============================================================================

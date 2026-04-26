@@ -193,13 +193,13 @@ def _make_eligible_chain(
 # =============================================================================
 
 def test_records_normal_user_forbidden(client: TestClient, normal_user_token_headers: dict[str, str]) -> None:
-    response = client.get("/api/v1/reimbursement-exports/records", headers=normal_user_token_headers)
+    response = client.get("/api/v1/finance/reimbursement-exports/records", headers=normal_user_token_headers)
     assert response.status_code == 403
 
 
 def test_generate_normal_user_forbidden(client: TestClient, normal_user_token_headers: dict[str, str]) -> None:
     response = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={},
         headers=normal_user_token_headers,
     )
@@ -207,13 +207,13 @@ def test_generate_normal_user_forbidden(client: TestClient, normal_user_token_he
 
 
 def test_history_normal_user_forbidden(client: TestClient, normal_user_token_headers: dict[str, str]) -> None:
-    response = client.get("/api/v1/reimbursement-exports/history", headers=normal_user_token_headers)
+    response = client.get("/api/v1/finance/reimbursement-exports/history", headers=normal_user_token_headers)
     assert response.status_code == 403
 
 
 def test_read_export_normal_user_forbidden(client: TestClient, normal_user_token_headers: dict[str, str]) -> None:
     response = client.get(
-        f"/api/v1/reimbursement-exports/{uuid.uuid4()}",
+        f"/api/v1/finance/reimbursement-exports/{uuid.uuid4()}",
         headers=normal_user_token_headers,
     )
     assert response.status_code == 403
@@ -221,20 +221,20 @@ def test_read_export_normal_user_forbidden(client: TestClient, normal_user_token
 
 def test_download_export_normal_user_forbidden(client: TestClient, normal_user_token_headers: dict[str, str]) -> None:
     response = client.get(
-        f"/api/v1/reimbursement-exports/{uuid.uuid4()}/download",
+        f"/api/v1/finance/reimbursement-exports/{uuid.uuid4()}/download",
         headers=normal_user_token_headers,
     )
     assert response.status_code == 403
 
 
 def test_settings_read_normal_user_forbidden(client: TestClient, normal_user_token_headers: dict[str, str]) -> None:
-    response = client.get("/api/v1/reimbursement-exports/settings", headers=normal_user_token_headers)
+    response = client.get("/api/v1/finance/reimbursement-exports/settings", headers=normal_user_token_headers)
     assert response.status_code == 403
 
 
 def test_settings_update_normal_user_forbidden(client: TestClient, normal_user_token_headers: dict[str, str]) -> None:
     response = client.put(
-        "/api/v1/reimbursement-exports/settings",
+        "/api/v1/finance/reimbursement-exports/settings",
         json={"retention_days": 7},
         headers=normal_user_token_headers,
     )
@@ -243,7 +243,7 @@ def test_settings_update_normal_user_forbidden(client: TestClient, normal_user_t
 
 def test_purge_expired_normal_user_forbidden(client: TestClient, normal_user_token_headers: dict[str, str]) -> None:
     response = client.post(
-        "/api/v1/reimbursement-exports/purge-expired-files",
+        "/api/v1/finance/reimbursement-exports/purge-expired-files",
         headers=normal_user_token_headers,
     )
     assert response.status_code == 403
@@ -255,7 +255,7 @@ def test_purge_expired_normal_user_forbidden(client: TestClient, normal_user_tok
 
 def test_records_empty(client: TestClient, db: Session) -> None:
     headers = _superuser_headers(client, db)
-    response = client.get("/api/v1/reimbursement-exports/records", headers=headers)
+    response = client.get("/api/v1/finance/reimbursement-exports/records", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data["count"], int)
@@ -272,7 +272,7 @@ def test_records_filter_by_category(client: TestClient, db: Session) -> None:
     _make_eligible_chain(db, owner_id=user.id, category=CATEGORY_TRANSPORTATION)
     _make_eligible_chain(db, owner_id=user.id, category=CATEGORY_VEHICLE)
     response = client.get(
-        "/api/v1/reimbursement-exports/records",
+        "/api/v1/finance/reimbursement-exports/records",
         headers=headers,
         params={"category": CATEGORY_TRANSPORTATION},
     )
@@ -289,7 +289,7 @@ def test_records_draft_not_included(client: TestClient, db: Session) -> None:
     assert user is not None
     # Draft purchase record should not appear even with match
     _make_eligible_chain(db, owner_id=user.id, status=STATUS_DRAFT)
-    response = client.get("/api/v1/reimbursement-exports/records", headers=headers)
+    response = client.get("/api/v1/finance/reimbursement-exports/records", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert not any(r["status"] == STATUS_DRAFT for r in data["data"])
@@ -301,7 +301,7 @@ def test_records_confirmed_match_included(client: TestClient, db: Session) -> No
     user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     assert user is not None
     record, inv, _match = _make_eligible_chain(db, owner_id=user.id, status=STATUS_APPROVED)
-    response = client.get("/api/v1/reimbursement-exports/records", headers=headers)
+    response = client.get("/api/v1/finance/reimbursement-exports/records", headers=headers)
     assert response.status_code == 200
     data = response.json()
     record_ids = [r["id"] for r in data["data"]]
@@ -320,7 +320,7 @@ def test_records_invoice_file_voided_not_included(client: TestClient, db: Sessio
     record, _inv, _match = _make_eligible_chain(
         db, owner_id=user.id, invoice_status="voided", order_name="voided_test"
     )
-    response = client.get("/api/v1/reimbursement-exports/records", headers=headers)
+    response = client.get("/api/v1/finance/reimbursement-exports/records", headers=headers)
     assert response.status_code == 200
     data = response.json()
     record_ids = [r["id"] for r in data["data"]]
@@ -338,7 +338,7 @@ def test_records_invoice_file_deleted_not_included(client: TestClient, db: Sessi
         invoice_deleted_at=datetime.now(timezone.utc),
         order_name="deleted_test",
     )
-    response = client.get("/api/v1/reimbursement-exports/records", headers=headers)
+    response = client.get("/api/v1/finance/reimbursement-exports/records", headers=headers)
     assert response.status_code == 200
     data = response.json()
     record_ids = [r["id"] for r in data["data"]]
@@ -353,13 +353,13 @@ def test_records_exported_filter(client: TestClient, db: Session) -> None:
     record, _inv, _match = _make_eligible_chain(db, owner_id=user.id, order_name="exported_filter_test")
     # Generate export
     client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(record.id)], "retention_days": 7},
         headers=headers,
     )
     # exported=yes
     response = client.get(
-        "/api/v1/reimbursement-exports/records",
+        "/api/v1/finance/reimbursement-exports/records",
         headers=headers,
         params={"exported": "exported"},
     )
@@ -373,7 +373,7 @@ def test_records_exported_filter(client: TestClient, db: Session) -> None:
     # not_exported
     record2, _inv2, _match2 = _make_eligible_chain(db, owner_id=user.id, order_name="not_exported_test")
     response = client.get(
-        "/api/v1/reimbursement-exports/records",
+        "/api/v1/finance/reimbursement-exports/records",
         headers=headers,
         params={"exported": "not_exported"},
     )
@@ -391,7 +391,7 @@ def test_records_q_filter(client: TestClient, db: Session) -> None:
     _make_eligible_chain(db, owner_id=user.id, order_name="alpha order")
     _make_eligible_chain(db, owner_id=user.id, order_name="beta order")
     response = client.get(
-        "/api/v1/reimbursement-exports/records",
+        "/api/v1/finance/reimbursement-exports/records",
         headers=headers,
         params={"q": "alpha"},
     )
@@ -408,7 +408,7 @@ def test_records_q_filter(client: TestClient, db: Session) -> None:
 def test_generate_no_records_422(client: TestClient, db: Session) -> None:
     headers = _superuser_headers(client, db)
     response = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(uuid.uuid4())]},
         headers=headers,
     )
@@ -418,7 +418,7 @@ def test_generate_no_records_422(client: TestClient, db: Session) -> None:
 def test_generate_empty_ids_422(client: TestClient, db: Session) -> None:
     headers = _superuser_headers(client, db)
     response = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": []},
         headers=headers,
     )
@@ -432,7 +432,7 @@ def test_generate_by_ids_success(client: TestClient, db: Session) -> None:
     assert user is not None
     record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
     response = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={
             "purchase_record_ids": [str(record.id)],
             "retention_days": 7,
@@ -464,7 +464,7 @@ def test_generate_multi_currency_rejected(client: TestClient, db: Session) -> No
     r1, _inv1, _match1 = _make_eligible_chain(db, owner_id=user.id, currency="CNY")
     r2, _inv2, _match2 = _make_eligible_chain(db, owner_id=user.id, currency="USD")
     response = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(r1.id), str(r2.id)], "retention_days": 7},
         headers=headers,
     )
@@ -479,7 +479,7 @@ def test_generate_invalid_retention_low(client: TestClient, db: Session) -> None
     assert user is not None
     record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
     response = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(record.id)], "retention_days": 0},
         headers=headers,
     )
@@ -493,7 +493,7 @@ def test_generate_invalid_retention_high(client: TestClient, db: Session) -> Non
     assert user is not None
     record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
     response = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(record.id)], "retention_days": 366},
         headers=headers,
     )
@@ -506,7 +506,7 @@ def test_generate_invalid_retention_high(client: TestClient, db: Session) -> Non
 
 def test_history_empty(client: TestClient, db: Session) -> None:
     headers = _superuser_headers(client, db)
-    response = client.get("/api/v1/reimbursement-exports/history", headers=headers)
+    response = client.get("/api/v1/finance/reimbursement-exports/history", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data["count"], int)
@@ -520,11 +520,11 @@ def test_history_after_generate(client: TestClient, db: Session) -> None:
     assert user is not None
     record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
     client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(record.id)], "retention_days": 7},
         headers=headers,
     )
-    response = client.get("/api/v1/reimbursement-exports/history", headers=headers)
+    response = client.get("/api/v1/finance/reimbursement-exports/history", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert data["count"] >= 1
@@ -538,7 +538,7 @@ def test_history_after_generate(client: TestClient, db: Session) -> None:
 def test_read_export_not_found(client: TestClient, db: Session) -> None:
     headers = _superuser_headers(client, db)
     response = client.get(
-        f"/api/v1/reimbursement-exports/{uuid.uuid4()}",
+        f"/api/v1/finance/reimbursement-exports/{uuid.uuid4()}",
         headers=headers,
     )
     assert response.status_code == 404
@@ -551,13 +551,13 @@ def test_read_export_with_items(client: TestClient, db: Session) -> None:
     assert user is not None
     record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
     gen_resp = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(record.id)], "retention_days": 7},
         headers=headers,
     )
     export_id = gen_resp.json()["id"]
     response = client.get(
-        f"/api/v1/reimbursement-exports/{export_id}",
+        f"/api/v1/finance/reimbursement-exports/{export_id}",
         headers=headers,
     )
     assert response.status_code == 200
@@ -587,7 +587,7 @@ def test_doc_numbering_category_order(client: TestClient, db: Session) -> None:
         db, owner_id=user.id, category=CATEGORY_MEALS_ENTERTAINMENT, purchase_date=date(2025, 1, 3)
     )
     gen_resp = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={
             "purchase_record_ids": [str(r_vehicle.id), str(r_transport.id), str(r_meals.id)],
             "retention_days": 7,
@@ -597,7 +597,7 @@ def test_doc_numbering_category_order(client: TestClient, db: Session) -> None:
     assert gen_resp.status_code == 200
     export_id = gen_resp.json()["id"]
     export_resp = client.get(
-        f"/api/v1/reimbursement-exports/{export_id}",
+        f"/api/v1/finance/reimbursement-exports/{export_id}",
         headers=headers,
     )
     data = export_resp.json()
@@ -622,12 +622,12 @@ def test_doc_numbering_same_category_by_date(client: TestClient, db: Session) ->
         db, owner_id=user.id, category=CATEGORY_TRANSPORTATION, purchase_date=date(2025, 2, 1)
     )
     gen_resp = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(r1.id), str(r2.id)], "retention_days": 7},
         headers=headers,
     )
     export_id = gen_resp.json()["id"]
-    export_resp = client.get(f"/api/v1/reimbursement-exports/{export_id}", headers=headers)
+    export_resp = client.get(f"/api/v1/finance/reimbursement-exports/{export_id}", headers=headers)
     items = export_resp.json()["items"]
     # Earlier purchase_date should be doc_number 1
     assert items[0]["purchase_record_id"] == str(r2.id)
@@ -647,13 +647,13 @@ def test_download_export_success(client: TestClient, db: Session) -> None:
     assert user is not None
     record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
     gen_resp = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(record.id)], "retention_days": 7},
         headers=headers,
     )
     export_id = gen_resp.json()["id"]
     response = client.get(
-        f"/api/v1/reimbursement-exports/{export_id}/download",
+        f"/api/v1/finance/reimbursement-exports/{export_id}/download",
         headers=headers,
     )
     assert response.status_code == 200
@@ -663,7 +663,7 @@ def test_download_export_success(client: TestClient, db: Session) -> None:
 def test_download_export_not_found(client: TestClient, db: Session) -> None:
     headers = _superuser_headers(client, db)
     response = client.get(
-        f"/api/v1/reimbursement-exports/{uuid.uuid4()}/download",
+        f"/api/v1/finance/reimbursement-exports/{uuid.uuid4()}/download",
         headers=headers,
     )
     assert response.status_code == 404
@@ -676,7 +676,7 @@ def test_download_export_purged_gone(client: TestClient, db: Session) -> None:
     assert user is not None
     record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
     gen_resp = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(record.id)], "retention_days": 7},
         headers=headers,
     )
@@ -688,7 +688,7 @@ def test_download_export_purged_gone(client: TestClient, db: Session) -> None:
     db.add(export)
     db.commit()
     response = client.get(
-        f"/api/v1/reimbursement-exports/{export_id}/download",
+        f"/api/v1/finance/reimbursement-exports/{export_id}/download",
         headers=headers,
     )
     assert response.status_code == 410
@@ -701,7 +701,7 @@ def test_download_export_expired_gone(client: TestClient, db: Session) -> None:
     assert user is not None
     record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
     gen_resp = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(record.id)], "retention_days": 7},
         headers=headers,
     )
@@ -714,13 +714,13 @@ def test_download_export_expired_gone(client: TestClient, db: Session) -> None:
     db.commit()
     # Download should return 410
     response = client.get(
-        f"/api/v1/reimbursement-exports/{export_id}/download",
+        f"/api/v1/finance/reimbursement-exports/{export_id}/download",
         headers=headers,
     )
     assert response.status_code == 410
     # History detail should still be readable
     detail_resp = client.get(
-        f"/api/v1/reimbursement-exports/{export_id}",
+        f"/api/v1/finance/reimbursement-exports/{export_id}",
         headers=headers,
     )
     assert detail_resp.status_code == 200
@@ -739,7 +739,7 @@ def test_download_export_expired_gone(client: TestClient, db: Session) -> None:
 
 def test_settings_read_default(client: TestClient, db: Session) -> None:
     headers = _superuser_headers(client, db)
-    response = client.get("/api/v1/reimbursement-exports/settings", headers=headers)
+    response = client.get("/api/v1/finance/reimbursement-exports/settings", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert data["retention_days"] == DEFAULT_RETENTION_DAYS
@@ -748,7 +748,7 @@ def test_settings_read_default(client: TestClient, db: Session) -> None:
 def test_settings_update_retention(client: TestClient, db: Session) -> None:
     headers = _superuser_headers(client, db)
     response = client.put(
-        "/api/v1/reimbursement-exports/settings",
+        "/api/v1/finance/reimbursement-exports/settings",
         json={"retention_days": 7},
         headers=headers,
     )
@@ -760,7 +760,7 @@ def test_settings_update_retention(client: TestClient, db: Session) -> None:
 def test_settings_update_invalid_retention_low(client: TestClient, db: Session) -> None:
     headers = _superuser_headers(client, db)
     response = client.put(
-        "/api/v1/reimbursement-exports/settings",
+        "/api/v1/finance/reimbursement-exports/settings",
         json={"retention_days": 0},
         headers=headers,
     )
@@ -770,7 +770,7 @@ def test_settings_update_invalid_retention_low(client: TestClient, db: Session) 
 def test_settings_update_invalid_retention_high(client: TestClient, db: Session) -> None:
     headers = _superuser_headers(client, db)
     response = client.put(
-        "/api/v1/reimbursement-exports/settings",
+        "/api/v1/finance/reimbursement-exports/settings",
         json={"retention_days": 366},
         headers=headers,
     )
@@ -784,7 +784,7 @@ def test_settings_update_invalid_retention_high(client: TestClient, db: Session)
 def test_purge_no_expired(client: TestClient, db: Session) -> None:
     headers = _superuser_headers(client, db)
     response = client.post(
-        "/api/v1/reimbursement-exports/purge-expired-files",
+        "/api/v1/finance/reimbursement-exports/purge-expired-files",
         headers=headers,
     )
     assert response.status_code == 200
@@ -799,7 +799,7 @@ def test_purge_expired(client: TestClient, db: Session) -> None:
     assert user is not None
     record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
     gen_resp = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(record.id)], "retention_days": 1},
         headers=headers,
     )
@@ -810,7 +810,7 @@ def test_purge_expired(client: TestClient, db: Session) -> None:
     db.add(export)
     db.commit()
     response = client.post(
-        "/api/v1/reimbursement-exports/purge-expired-files",
+        "/api/v1/finance/reimbursement-exports/purge-expired-files",
         headers=headers,
     )
     assert response.status_code == 200
@@ -830,7 +830,7 @@ def test_purge_only_deletes_physical_file_not_history(client: TestClient, db: Se
     assert user is not None
     record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
     gen_resp = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(record.id)], "retention_days": 1},
         headers=headers,
     )
@@ -841,7 +841,7 @@ def test_purge_only_deletes_physical_file_not_history(client: TestClient, db: Se
     db.add(export)
     db.commit()
     client.post(
-        "/api/v1/reimbursement-exports/purge-expired-files",
+        "/api/v1/finance/reimbursement-exports/purge-expired-files",
         headers=headers,
     )
     # Export history and items should still exist
@@ -864,7 +864,7 @@ def test_file_expires_at_correct(client: TestClient, db: Session) -> None:
     assert user is not None
     record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
     gen_resp = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(record.id)], "retention_days": 7},
         headers=headers,
     )
@@ -882,27 +882,27 @@ def test_file_expires_at_correct(client: TestClient, db: Session) -> None:
 # =============================================================================
 
 def test_records_unauthenticated(client: TestClient) -> None:
-    response = client.get("/api/v1/reimbursement-exports/records")
+    response = client.get("/api/v1/finance/reimbursement-exports/records")
     assert response.status_code == 401
 
 
 def test_generate_unauthenticated(client: TestClient) -> None:
-    response = client.post("/api/v1/reimbursement-exports/generate", json={})
+    response = client.post("/api/v1/finance/reimbursement-exports/generate", json={})
     assert response.status_code == 401
 
 
 def test_history_unauthenticated(client: TestClient) -> None:
-    response = client.get("/api/v1/reimbursement-exports/history")
+    response = client.get("/api/v1/finance/reimbursement-exports/history")
     assert response.status_code == 401
 
 
 def test_settings_read_unauthenticated(client: TestClient) -> None:
-    response = client.get("/api/v1/reimbursement-exports/settings")
+    response = client.get("/api/v1/finance/reimbursement-exports/settings")
     assert response.status_code == 401
 
 
 def test_purge_expired_unauthenticated(client: TestClient) -> None:
-    response = client.post("/api/v1/reimbursement-exports/purge-expired-files")
+    response = client.post("/api/v1/finance/reimbursement-exports/purge-expired-files")
     assert response.status_code == 401
 
 
@@ -918,7 +918,7 @@ def test_generate_rejects_old_record_ids_field(client: TestClient, db: Session) 
     assert user is not None
     record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
     response = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"record_ids": [str(record.id)], "retention_days": 7},
         headers=headers,
     )
@@ -933,7 +933,7 @@ def test_records_exported_all_value(client: TestClient, db: Session) -> None:
     assert user is not None
     _make_eligible_chain(db, owner_id=user.id)
     response = client.get(
-        "/api/v1/reimbursement-exports/records",
+        "/api/v1/finance/reimbursement-exports/records",
         headers=headers,
         params={"exported": "all"},
     )
@@ -946,7 +946,7 @@ def test_records_exported_invalid_value_422(client: TestClient, db: Session) -> 
     """exported must reject values outside all/exported/not_exported."""
     headers = _superuser_headers(client, db)
     response = client.get(
-        "/api/v1/reimbursement-exports/records",
+        "/api/v1/finance/reimbursement-exports/records",
         headers=headers,
         params={"exported": "invalid_value"},
     )
@@ -957,7 +957,7 @@ def test_records_invalid_start_date_format_422(client: TestClient, db: Session) 
     """start_date must reject non-ISO date strings."""
     headers = _superuser_headers(client, db)
     response = client.get(
-        "/api/v1/reimbursement-exports/records",
+        "/api/v1/finance/reimbursement-exports/records",
         headers=headers,
         params={"start_date": "not-a-date"},
     )
@@ -968,7 +968,7 @@ def test_records_invalid_end_date_format_422(client: TestClient, db: Session) ->
     """end_date must reject non-ISO date strings."""
     headers = _superuser_headers(client, db)
     response = client.get(
-        "/api/v1/reimbursement-exports/records",
+        "/api/v1/finance/reimbursement-exports/records",
         headers=headers,
         params={"end_date": "2025/06/01"},
     )
@@ -983,7 +983,7 @@ def test_download_export_physical_file_missing_410(client: TestClient, db: Sessi
     assert user is not None
     record, _inv, _match = _make_eligible_chain(db, owner_id=user.id)
     gen_resp = client.post(
-        "/api/v1/reimbursement-exports/generate",
+        "/api/v1/finance/reimbursement-exports/generate",
         json={"purchase_record_ids": [str(record.id)], "retention_days": 7},
         headers=headers,
     )
@@ -995,7 +995,7 @@ def test_download_export_physical_file_missing_410(client: TestClient, db: Sessi
     db.add(export)
     db.commit()
     response = client.get(
-        f"/api/v1/reimbursement-exports/{export_id}/download",
+        f"/api/v1/finance/reimbursement-exports/{export_id}/download",
         headers=headers,
     )
     assert response.status_code == 410
@@ -1014,7 +1014,7 @@ def test_settings_update_persists_metadata(client: TestClient, db: Session) -> N
     user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     assert user is not None
     response = client.put(
-        "/api/v1/reimbursement-exports/settings",
+        "/api/v1/finance/reimbursement-exports/settings",
         json={"retention_days": 14},
         headers=headers,
     )
@@ -1026,3 +1026,300 @@ def test_settings_update_persists_metadata(client: TestClient, db: Session) -> N
     assert setting.value_type == "int"
     assert setting.description is not None and len(setting.description) > 0
     assert setting.updated_by_id == user.id
+
+
+# =============================================================================
+# BE-R008-FIX-002: settings-driven retention_days fallback
+# =============================================================================
+
+def test_generate_uses_settings_retention_when_omitted(client: TestClient, db: Session) -> None:
+    """If POST /generate omits retention_days, fall back to /settings retention_days."""
+    headers = _superuser_headers(client, db)
+    from app import crud
+    user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    assert user is not None
+
+    # Set platform setting to 14 days
+    put_resp = client.put(
+        "/api/v1/finance/reimbursement-exports/settings",
+        json={"retention_days": 14},
+        headers=headers,
+    )
+    assert put_resp.status_code == 200
+    assert put_resp.json()["retention_days"] == 14
+
+    record, _inv, _match = _make_eligible_chain(db, owner_id=user.id, order_name="settings_fallback_test")
+
+    # Generate without retention_days in body
+    gen_resp = client.post(
+        "/api/v1/finance/reimbursement-exports/generate",
+        json={"purchase_record_ids": [str(record.id)]},
+        headers=headers,
+    )
+    assert gen_resp.status_code == 200
+    data = gen_resp.json()
+    expires_str = data["file_expires_at"].replace("Z", "+00:00")
+    expires = datetime.fromisoformat(expires_str)
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+    delta_days = (expires - now).total_seconds() / 86400
+    # Should be ~14 days, not 1 (DEFAULT_RETENTION_DAYS) and not the previously-set 7
+    assert 13.0 < delta_days < 14.5, f"Expected ~14 days retention, got {delta_days:.2f}"
+
+
+def test_generate_explicit_retention_days_overrides_settings(client: TestClient, db: Session) -> None:
+    """If POST /generate sends retention_days, use that value, ignoring the platform setting."""
+    headers = _superuser_headers(client, db)
+    from app import crud
+    user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    assert user is not None
+
+    # Set platform setting to 30 days
+    client.put(
+        "/api/v1/finance/reimbursement-exports/settings",
+        json={"retention_days": 30},
+        headers=headers,
+    )
+
+    record, _inv, _match = _make_eligible_chain(db, owner_id=user.id, order_name="explicit_retention_test")
+    # Override per-export with retention_days=3
+    gen_resp = client.post(
+        "/api/v1/finance/reimbursement-exports/generate",
+        json={"purchase_record_ids": [str(record.id)], "retention_days": 3},
+        headers=headers,
+    )
+    assert gen_resp.status_code == 200
+    data = gen_resp.json()
+    expires_str = data["file_expires_at"].replace("Z", "+00:00")
+    expires = datetime.fromisoformat(expires_str)
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+    delta_days = (expires - now).total_seconds() / 86400
+    # Override wins: ~3 days, not 30
+    assert 2.0 < delta_days < 3.5, f"Expected ~3 days retention from override, got {delta_days:.2f}"
+
+
+# =============================================================================
+# BE-R008-FIX-002: GET /records count vs data consistency under exported filter
+# =============================================================================
+
+def test_records_exported_count_matches_data(client: TestClient, db: Session) -> None:
+    """count must reflect the filtered total when exported=exported is applied."""
+    headers = _superuser_headers(client, db)
+    from app import crud
+    user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    assert user is not None
+
+    # Use a unique q-substring to fence the test off from other suites' data
+    fence = "rxc-unique-fence-001"
+    r1, _i1, _m1 = _make_eligible_chain(db, owner_id=user.id, order_name=f"{fence} alpha")
+    r2, _i2, _m2 = _make_eligible_chain(db, owner_id=user.id, order_name=f"{fence} bravo")
+    r3, _i3, _m3 = _make_eligible_chain(db, owner_id=user.id, order_name=f"{fence} charlie")
+
+    # Export r1 and r2; leave r3 unexported
+    client.post(
+        "/api/v1/finance/reimbursement-exports/generate",
+        json={"purchase_record_ids": [str(r1.id), str(r2.id)], "retention_days": 7},
+        headers=headers,
+    )
+
+    # exported=exported -> count must equal len(data) and equal 2
+    resp = client.get(
+        "/api/v1/finance/reimbursement-exports/records",
+        headers=headers,
+        params={"q": fence, "exported": "exported"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["count"] == len(body["data"])
+    assert body["count"] == 2
+    ids = {r["id"] for r in body["data"]}
+    assert ids == {str(r1.id), str(r2.id)}
+
+    # exported=not_exported -> count must equal len(data) and equal 1
+    resp = client.get(
+        "/api/v1/finance/reimbursement-exports/records",
+        headers=headers,
+        params={"q": fence, "exported": "not_exported"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["count"] == len(body["data"])
+    assert body["count"] == 1
+    assert body["data"][0]["id"] == str(r3.id)
+
+
+def test_records_exported_pagination_consistent_with_count(client: TestClient, db: Session) -> None:
+    """When the filtered total exceeds the page size, count must still be the filtered total."""
+    headers = _superuser_headers(client, db)
+    from app import crud
+    user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    assert user is not None
+
+    fence = "rxc-pagination-fence-002"
+    records = []
+    for i in range(3):
+        rec, _inv, _match = _make_eligible_chain(
+            db, owner_id=user.id, order_name=f"{fence} item-{i}"
+        )
+        records.append(rec)
+    # Export all three
+    client.post(
+        "/api/v1/finance/reimbursement-exports/generate",
+        json={
+            "purchase_record_ids": [str(r.id) for r in records],
+            "retention_days": 7,
+        },
+        headers=headers,
+    )
+
+    # Page size 2 -> count should still be 3
+    resp = client.get(
+        "/api/v1/finance/reimbursement-exports/records",
+        headers=headers,
+        params={"q": fence, "exported": "exported", "skip": 0, "limit": 2},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["count"] == 3
+    assert len(body["data"]) == 2
+
+    # Next page picks up the rest
+    resp2 = client.get(
+        "/api/v1/finance/reimbursement-exports/records",
+        headers=headers,
+        params={"q": fence, "exported": "exported", "skip": 2, "limit": 2},
+    )
+    assert resp2.status_code == 200
+    body2 = resp2.json()
+    assert body2["count"] == 3
+    assert len(body2["data"]) == 1
+
+
+# =============================================================================
+# BE-R008-FIX-002: GET /history filter parameters
+# =============================================================================
+
+def test_history_filter_by_currency(client: TestClient, db: Session) -> None:
+    headers = _superuser_headers(client, db)
+    from app import crud
+    user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    assert user is not None
+
+    cny_record, _i1, _m1 = _make_eligible_chain(
+        db, owner_id=user.id, currency="CNY", order_name="hist_currency_cny"
+    )
+    usd_record, _i2, _m2 = _make_eligible_chain(
+        db, owner_id=user.id, currency="USD", order_name="hist_currency_usd"
+    )
+    client.post(
+        "/api/v1/finance/reimbursement-exports/generate",
+        json={"purchase_record_ids": [str(cny_record.id)], "retention_days": 7},
+        headers=headers,
+    )
+    client.post(
+        "/api/v1/finance/reimbursement-exports/generate",
+        json={"purchase_record_ids": [str(usd_record.id)], "retention_days": 7},
+        headers=headers,
+    )
+
+    resp = client.get(
+        "/api/v1/finance/reimbursement-exports/history",
+        headers=headers,
+        params={"currency": "USD"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["count"] >= 1
+    # All returned exports must have currency=USD
+    assert all(e["currency"] == "USD" for e in data["data"])
+
+
+def test_history_filter_by_created_by_id(client: TestClient, db: Session) -> None:
+    headers = _superuser_headers(client, db)
+    from app import crud
+    user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    assert user is not None
+
+    record, _inv, _match = _make_eligible_chain(
+        db, owner_id=user.id, order_name="hist_created_by_test"
+    )
+    client.post(
+        "/api/v1/finance/reimbursement-exports/generate",
+        json={"purchase_record_ids": [str(record.id)], "retention_days": 7},
+        headers=headers,
+    )
+
+    resp = client.get(
+        "/api/v1/finance/reimbursement-exports/history",
+        headers=headers,
+        params={"created_by_id": str(user.id)},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["count"] >= 1
+    assert all(e["created_by_id"] == str(user.id) for e in data["data"])
+
+    # An unrelated UUID should yield zero
+    other_id = uuid.uuid4()
+    resp_empty = client.get(
+        "/api/v1/finance/reimbursement-exports/history",
+        headers=headers,
+        params={"created_by_id": str(other_id)},
+    )
+    assert resp_empty.status_code == 200
+    assert resp_empty.json()["count"] == 0
+
+
+def test_history_filter_by_created_at_range(client: TestClient, db: Session) -> None:
+    headers = _superuser_headers(client, db)
+    from app import crud
+    user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    assert user is not None
+
+    record, _inv, _match = _make_eligible_chain(
+        db, owner_id=user.id, order_name="hist_created_at_range"
+    )
+    before = datetime.now(timezone.utc) - timedelta(minutes=1)
+    client.post(
+        "/api/v1/finance/reimbursement-exports/generate",
+        json={"purchase_record_ids": [str(record.id)], "retention_days": 7},
+        headers=headers,
+    )
+    after = datetime.now(timezone.utc) + timedelta(minutes=1)
+
+    # created_at_from in the past -> at least 1 result
+    resp = client.get(
+        "/api/v1/finance/reimbursement-exports/history",
+        headers=headers,
+        params={"created_at_from": before.isoformat()},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["count"] >= 1
+
+    # created_at_from in the future -> 0
+    far_future = datetime.now(timezone.utc) + timedelta(days=30)
+    resp_future = client.get(
+        "/api/v1/finance/reimbursement-exports/history",
+        headers=headers,
+        params={"created_at_from": far_future.isoformat()},
+    )
+    assert resp_future.status_code == 200
+    assert resp_future.json()["count"] == 0
+
+    # created_at_to before the export -> exclude this row
+    far_past = datetime.now(timezone.utc) - timedelta(days=30)
+    resp_past = client.get(
+        "/api/v1/finance/reimbursement-exports/history",
+        headers=headers,
+        params={"created_at_to": far_past.isoformat()},
+    )
+    assert resp_past.status_code == 200
+    # All returned rows (if any) must be on/before far_past
+    for row in resp_past.json()["data"]:
+        row_at = datetime.fromisoformat(row["created_at"].replace("Z", "+00:00"))
+        if row_at.tzinfo is None:
+            row_at = row_at.replace(tzinfo=timezone.utc)
+        assert row_at <= far_past

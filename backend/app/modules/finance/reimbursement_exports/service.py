@@ -62,8 +62,9 @@ def read_records(
     limit: int = 100,
     filters: RecordsFilter,
 ) -> RecordsPublic:
+    from .repository import list_eligible_records
     count = count_eligible_records(session, filters)
-    records = get_eligible_records_by_ids_with_filter(session, filters, skip=skip, limit=limit)
+    records = list_eligible_records(session, filters, skip=skip, limit=limit)
 
     record_ids = [r["id"] for r in records]
     export_meta = get_export_metadata_for_records(session, record_ids)
@@ -103,28 +104,6 @@ def read_records(
         data.append(info)
 
     return RecordsPublic(data=data, count=count)
-
-
-def get_eligible_records_by_ids_with_filter(
-    session: Session,
-    filters: RecordsFilter,
-    skip: int = 0,
-    limit: int = 100,
-) -> list[dict]:
-    from .repository import list_eligible_records
-    all_records = list_eligible_records(session, filters, skip=0, limit=10000)
-
-    if filters.exported:
-        record_ids = [r["id"] for r in all_records]
-        meta = get_export_metadata_for_records(session, record_ids)
-        if filters.exported == "exported":
-            all_records = [r for r in all_records if r["id"] in meta]
-        elif filters.exported == "not_exported":
-            all_records = [r for r in all_records if r["id"] not in meta]
-
-    count = len(all_records)
-    paged = all_records[skip : skip + limit]
-    return paged
 
 
 # =============================================================================
@@ -208,7 +187,11 @@ def generate_export(
     stored_filename = f"reimbursement_export_{timestamp}_{uuid.uuid4().hex[:8]}.xlsx"
     file_path, file_size = save_excel(data=excel_bytes, filename=stored_filename)
 
-    retention_days = data_in.retention_days or DEFAULT_RETENTION_DAYS
+    retention_days = (
+        data_in.retention_days
+        if data_in.retention_days is not None
+        else get_setting_int(session, SETTING_RETENTION_DAYS, DEFAULT_RETENTION_DAYS)
+    )
     file_expires_at = datetime.now(timezone.utc) + timedelta(days=retention_days)
 
     # Persist export record
@@ -281,9 +264,27 @@ def read_history(
     *,
     skip: int = 0,
     limit: int = 100,
+    created_at_from: datetime | None = None,
+    created_at_to: datetime | None = None,
+    created_by_id: uuid.UUID | None = None,
+    currency: str | None = None,
 ) -> ReimbursementExportsPublic:
-    count = count_exports(session)
-    exports = list_exports(session, skip=skip, limit=limit)
+    count = count_exports(
+        session,
+        created_at_from=created_at_from,
+        created_at_to=created_at_to,
+        created_by_id=created_by_id,
+        currency=currency,
+    )
+    exports = list_exports(
+        session,
+        skip=skip,
+        limit=limit,
+        created_at_from=created_at_from,
+        created_at_to=created_at_to,
+        created_by_id=created_by_id,
+        currency=currency,
+    )
     return ReimbursementExportsPublic(
         data=[_export_to_public(e) for e in exports],
         count=count,

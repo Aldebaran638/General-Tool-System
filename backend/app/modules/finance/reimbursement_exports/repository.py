@@ -22,8 +22,22 @@ from .schemas import RecordsFilter
 # Export History
 # =============================================================================
 
-def count_exports(session: Session) -> int:
+def count_exports(
+    session: Session,
+    *,
+    created_at_from: datetime | None = None,
+    created_at_to: datetime | None = None,
+    created_by_id: uuid.UUID | None = None,
+    currency: str | None = None,
+) -> int:
     statement = select(func.count()).select_from(ReimbursementExport)
+    statement = _apply_history_filters(
+        statement,
+        created_at_from=created_at_from,
+        created_at_to=created_at_to,
+        created_by_id=created_by_id,
+        currency=currency,
+    )
     return session.exec(statement).one()  # type: ignore
 
 
@@ -32,14 +46,45 @@ def list_exports(
     *,
     skip: int = 0,
     limit: int = 100,
+    created_at_from: datetime | None = None,
+    created_at_to: datetime | None = None,
+    created_by_id: uuid.UUID | None = None,
+    currency: str | None = None,
 ) -> list[ReimbursementExport]:
+    statement = select(ReimbursementExport)
+    statement = _apply_history_filters(
+        statement,
+        created_at_from=created_at_from,
+        created_at_to=created_at_to,
+        created_by_id=created_by_id,
+        currency=currency,
+    )
     statement = (
-        select(ReimbursementExport)
+        statement
         .order_by(ReimbursementExport.created_at.desc())  # type: ignore
         .offset(skip)
         .limit(limit)
     )
     return list(session.exec(statement).all())
+
+
+def _apply_history_filters(
+    statement,
+    *,
+    created_at_from: datetime | None,
+    created_at_to: datetime | None,
+    created_by_id: uuid.UUID | None,
+    currency: str | None,
+):
+    if created_at_from is not None:
+        statement = statement.where(ReimbursementExport.created_at >= created_at_from)  # type: ignore
+    if created_at_to is not None:
+        statement = statement.where(ReimbursementExport.created_at <= created_at_to)  # type: ignore
+    if created_by_id is not None:
+        statement = statement.where(ReimbursementExport.created_by_id == created_by_id)  # type: ignore
+    if currency is not None:
+        statement = statement.where(ReimbursementExport.currency == currency)  # type: ignore
+    return statement
 
 
 def get_export(session: Session, *, export_id: uuid.UUID) -> ReimbursementExport | None:
@@ -240,6 +285,17 @@ def _build_eligible_base(filters: RecordsFilter):
         stmt = stmt.where(
             (PurchaseRecord.order_name.ilike(q)) | (PurchaseRecord.note.ilike(q))  # type: ignore
         )
+    if filters.exported in ("exported", "not_exported"):
+        # Push the exported filter into SQL so count and data stay aligned.
+        # A purchase record is "exported" iff a ReimbursementExportItem references it.
+        exported_subq = (
+            select(ReimbursementExportItem.id)
+            .where(ReimbursementExportItem.purchase_record_id == PurchaseRecord.id)  # type: ignore
+        )
+        if filters.exported == "exported":
+            stmt = stmt.where(exported_subq.exists())
+        else:
+            stmt = stmt.where(~exported_subq.exists())
 
     return stmt
 

@@ -16,7 +16,7 @@
 | 下载鉴权（已清理返回 410） | 完成 |
 | 设置管理（仅 `retention_days`） | 完成 |
 | 权限控制（admin only） | 完成 |
-| 测试覆盖 | **52** 个测试全部通过 |
+| 测试覆盖 | **59** 个测试全部通过（FIX-001 + FIX-002 后） |
 
 ## 2. 模块文件清单
 
@@ -134,6 +134,88 @@ pytest tests/finance/reimbursement_exports/index_test.py -q
 pytest tests/finance/ -q
 200 passed, 3 warnings in 9.53s
 ```
+
+## 10. 补丁记录 — BE-R008-FIX-002（前端阻塞修复）
+
+针对 round-008 API 契约审计（`docs/rounds/round-008/api-contract-audit.md`）暴露的 4 项前端阻塞问题进行修复，**不调整 schema、不新增 alembic 迁移**。
+
+### 10.1 API 前缀对齐 `/finance/reimbursement-exports`
+
+**问题**：模块原 `prefix="/reimbursement-exports"`，与设计要求 `/api/v1/finance/reimbursement-exports` 缺 `/finance/` 段；前端按 design.md 直拼会全部 404。
+
+**修复**：
+- `router.py`：`APIRouter(prefix="/finance/reimbursement-exports", tags=["reimbursement_exports"])`，与 `invoice_files` / `invoice_matching` / `purchase_records` 兄弟工具风格一致。
+- 旧路径 `/api/v1/reimbursement-exports` 已停止挂载（**不双挂载**），避免前端误用产生半失效契约。
+- 全部测试 URL 同步更新（65 处替换）。
+
+### 10.2 `retention_days` 改为可选并回落到平台设置
+
+**问题**：`GenerateRequest.retention_days` 默认硬编码为 `DEFAULT_RETENTION_DAYS=1`，且 service 层用 `data_in.retention_days or DEFAULT_RETENTION_DAYS`，**完全忽略 `/settings` 设置**——管理员调到 7 天，下次仍按 1 天过期。
+
+**修复**：
+- `schemas.py`：`retention_days: int | None = Field(default=None, ge=MIN_RETENTION_DAYS, le=MAX_RETENTION_DAYS)`；不传等价于「使用平台默认」。
+- `service.py` `generate_export`：
+  ```python
+  retention_days = (
+      data_in.retention_days
+      if data_in.retention_days is not None
+      else get_setting_int(session, SETTING_RETENTION_DAYS, DEFAULT_RETENTION_DAYS)
+  )
+  ```
+  显式传值仍可覆盖（用作单次导出的高级选项）；不传则按 `app_setting.reimbursement_export_retention_days` → `DEFAULT_RETENTION_DAYS=1` 二级回落。
+- 范围校验 (`1..365`) 仅作用于非 None 值，0 / 366 仍 422。
+
+**新增测试**：
+- `test_generate_uses_settings_retention_when_omitted`：PUT 设置 14 天 → 不传 retention_days → 验证 `file_expires_at` 距 now ≈ 14 天（容差 ±0.5 天）。
+- `test_generate_explicit_retention_days_overrides_settings`：PUT 设置 30 天 → 传 retention_days=3 → `file_expires_at` 距 now ≈ 3 天，证明显式值优先。
+
+### 10.3 `/records` `exported` 过滤下推到 SQL，count 与 data 对齐
+
+**问题**：原实现 `count_eligible_records` 不应用 `exported` 过滤，而 `get_eligible_records_by_ids_with_filter` 取 10000 行后再 Python 端筛选；`count` 是过滤前总数，`data` 是过滤后切片。前端按 `count` 翻页会拿到空 data，且 >10000 行的池被截断。
+
+**修复**：
+- `repository.py` `_build_eligible_base`：当 `filters.exported in ("exported", "not_exported")` 时挂上 `EXISTS` / `NOT EXISTS` 子查询：
+  ```python
+  exported_subq = (
+      select(ReimbursementExportItem.id)
+      .where(ReimbursementExportItem.purchase_record_id == PurchaseRecord.id)
+  )
+  stmt = stmt.where(exported_subq.exists())   # 或 ~exported_subq.exists()
+  ```
+- `service.read_records` 直接调 `count_eligible_records(session, filters)` + `list_eligible_records(session, filters, skip, limit)` —— 两边走的是同一棵基础查询树，自然一致。
+- 删除 `get_eligible_records_by_ids_with_filter`（连同 10000 行硬上限）；分页完全交给 SQL `OFFSET / LIMIT`。
+
+**新增测试**：
+- `test_records_exported_count_matches_data`：3 条 fence 记录、导出 2 条 → `exported=exported` 时 `count==len(data)==2`，`exported=not_exported` 时 `count==len(data)==1`。
+- `test_records_exported_pagination_consistent_with_count`：3 条 fence 记录全部导出 → `limit=2` 时 `count==3, len(data)==2`，下一页 `count==3, len(data)==1`。
+
+### 10.4 `/history` 补齐设计过滤参数
+
+**问题**：设计要求 `created_at_from / created_at_to / created_by_id / currency`，实现仅 `skip / limit`。
+
+**修复**：
+- `router.py` `read_history` 增加 4 个 query 参数，`datetime` 自动 ISO 8601 解析。
+- `repository.py` 抽取 `_apply_history_filters`，`count_exports` / `list_exports` 共用，保持 count/data 一致语义。
+
+**新增测试**：
+- `test_history_filter_by_currency`：生成 CNY 与 USD 两份导出，`currency=USD` 仅返回 USD。
+- `test_history_filter_by_created_by_id`：当前 superuser 至少 1 条；随机 UUID 0 条。
+- `test_history_filter_by_created_at_range`：`created_at_from` 1 分钟前 → ≥1 条；30 天后 → 0 条；`created_at_to` 30 天前 → 返回的每行 `created_at <= 30 天前`。
+
+### 10.5 验证结果
+
+```
+docker compose exec backend pytest tests/finance/reimbursement_exports/index_test.py -q
+59 passed, 3 warnings in 5.46s
+
+docker compose exec backend pytest tests/finance/ -q
+207 passed, 3 warnings in 10.67s
+
+docker compose exec backend alembic current
+85dea52b034c (head)
+```
+
+**Schema / 迁移**：未触动 `app/alembic/versions/*`，迁移头仍为 `85dea52b034c`。本轮仅修 application 层与测试层。
 
 ## 7. 运行方式
 

@@ -13,7 +13,6 @@ from sqlmodel import Field, SQLModel
 from app.models_core import Message
 
 from .constants import (
-    DEFAULT_RETENTION_DAYS,
     MAX_RETENTION_DAYS,
     MIN_RETENTION_DAYS,
 )
@@ -149,8 +148,11 @@ class GenerateRequest(SQLModel):
     business_unit: str | None = Field(default=None, max_length=255)
     reimburser: str | None = Field(default=None, max_length=255)
     reimbursement_date: date | None = None
-    retention_days: int = Field(
-        default=DEFAULT_RETENTION_DAYS,
+    # Optional per-export override. When omitted, generate_export falls back to the
+    # platform setting (`reimbursement_export_retention_days`), then to
+    # DEFAULT_RETENTION_DAYS. Range still validated when provided.
+    retention_days: int | None = Field(
+        default=None,
         ge=MIN_RETENTION_DAYS,
         le=MAX_RETENTION_DAYS,
     )
