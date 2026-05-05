@@ -2,6 +2,10 @@ export default {
   groupName: "财务",
   purchaseRecords: {
     title: "购买记录",
+    tabs: {
+      active: "正常",
+      deleted: "已删除",
+    },
     category: {
       transportation: "交通费用",
       meals_entertainment: "膳食 / 应酬费用",
@@ -122,6 +126,10 @@ export default {
   },
   invoiceFiles: {
     title: "发票文件",
+    tabs: {
+      active: "正常",
+      deleted: "已删除",
+    },
     invoiceType: {
       general_invoice: "普通发票",
       vat_special_invoice: "增值税专用发票",

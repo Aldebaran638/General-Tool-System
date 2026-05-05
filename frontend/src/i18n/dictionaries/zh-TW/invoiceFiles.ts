@@ -1,5 +1,9 @@
 export default {
   title: "發票檔案",
+  tabs: {
+    active: "正常",
+    deleted: "已刪除",
+  },
   invoiceType: {
     general_invoice: "普通發票",
     vat_special_invoice: "增值稅專用發票",

@@ -1,5 +1,9 @@
 export default {
   title: "Invoice Files",
+  tabs: {
+    active: "Active",
+    deleted: "Deleted",
+  },
   invoiceType: {
     general_invoice: "General Invoice",
     vat_special_invoice: "VAT Special Invoice",

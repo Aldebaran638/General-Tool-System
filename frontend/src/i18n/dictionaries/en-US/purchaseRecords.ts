@@ -1,5 +1,9 @@
 export default {
   title: "Purchase Records",
+  tabs: {
+    active: "Active",
+    deleted: "Deleted",
+  },
   category: {
     transportation: "Transportation",
     meals_entertainment: "Meals / Entertainment",

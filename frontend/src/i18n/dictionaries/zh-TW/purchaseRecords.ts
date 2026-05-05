@@ -1,5 +1,9 @@
 export default {
   title: "購買記錄",
+  tabs: {
+    active: "正常",
+    deleted: "已刪除",
+  },
   category: {
     transportation: "交通費用",
     meals_entertainment: "膳食 / 應酬費用",

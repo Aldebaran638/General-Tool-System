@@ -54,10 +54,10 @@ export function PurchaseRecordsPage() {
       >
         <TabsList>
           <TabsTrigger value="normal">
-            {t("finance.purchaseRecords.title")}
+            {t("finance.purchaseRecords.tabs.active")}
           </TabsTrigger>
           <TabsTrigger value="deleted">
-            {t("common.status")}
+            {t("finance.purchaseRecords.tabs.deleted")}
           </TabsTrigger>
         </TabsList>
       </Tabs>
