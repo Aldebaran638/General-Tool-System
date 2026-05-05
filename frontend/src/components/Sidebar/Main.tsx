@@ -42,8 +42,8 @@ export function Main({ items }: MainProps) {
           continue
         }
 
-        if (typeof nextGroups[item.title] === "undefined") {
-          nextGroups[item.title] = hasActiveChild(item, currentPath)
+        if (typeof nextGroups[item.id] === "undefined") {
+          nextGroups[item.id] = hasActiveChild(item, currentPath)
           hasChanges = true
         }
       }
@@ -63,14 +63,14 @@ export function Main({ items }: MainProps) {
       setOpen(true)
       setOpenGroups((currentGroups) => ({
         ...currentGroups,
-        [group.title]: true,
+        [group.id]: true,
       }))
       return
     }
 
     setOpenGroups((currentGroups) => ({
       ...currentGroups,
-      [group.title]: !currentGroups[group.title],
+      [group.id]: !currentGroups[group.id],
     }))
   }
 
@@ -81,11 +81,11 @@ export function Main({ items }: MainProps) {
           {items.map((item) => {
             if (item.kind === "group") {
               const groupHasActiveChild = hasActiveChild(item, currentPath)
-              const isOpen = openGroups[item.title] ?? groupHasActiveChild
+              const isOpen = openGroups[item.id] ?? groupHasActiveChild
 
               return (
                 <SidebarMenuItem
-                  key={item.title}
+                  key={item.id}
                   className="transition-[transform,margin] duration-300 ease-out"
                 >
                   <SidebarMenuButton
@@ -230,7 +230,7 @@ function hasActiveChild(group: NavigationGroup, currentPath: string) {
 function buildInitialOpenGroups(items: NavigationEntry[], currentPath: string) {
   return items.reduce<Record<string, boolean>>((groups, item) => {
     if (item.kind === "group") {
-      groups[item.title] = hasActiveChild(item, currentPath)
+      groups[item.id] = hasActiveChild(item, currentPath)
     }
 
     return groups

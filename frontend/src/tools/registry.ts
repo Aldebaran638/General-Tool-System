@@ -107,6 +107,7 @@ class ToolRegistry {
       if (children.length > 0) {
         entries.push({
           kind: "group",
+          id: groupName,
           icon: children[0].icon,
           title: this._formatGroupName(groupName, _t),
           children,
@@ -148,6 +149,7 @@ export type NavigationTool = {
 
 export type NavigationGroup = {
   kind: "group"
+  id: string
   icon: LucideIcon
   title: string
   children: NavigationTool[]

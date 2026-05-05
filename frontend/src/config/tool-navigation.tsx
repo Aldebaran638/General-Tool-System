@@ -24,6 +24,7 @@ function buildPlatformNavigation(t: (key: string) => string): NavigationGroup[] 
   return [
     {
       kind: "group",
+      id: "platform",
       icon: Home,
       title: t("navigation.platform"),
       defaultExpanded: true,
