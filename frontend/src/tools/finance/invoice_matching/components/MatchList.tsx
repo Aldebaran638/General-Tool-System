@@ -1,4 +1,4 @@
-import { Inbox, Eye } from "lucide-react"
+import { FileImage, FileText, Inbox, Eye } from "lucide-react"
 import { useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/table"
 import { useI18n } from "@/i18n/I18nProvider"
 
+import { downloadPdf } from "../../invoice_files/api"
+import { downloadScreenshot } from "../../purchase_records/api"
 import {
   useCancelMatchMutation,
   useMatchesQuery,
@@ -70,7 +72,49 @@ function MatchDetailDialog({
   onClose: () => void
 }) {
   const { t } = useI18n()
+  const [previewLoading, setPreviewLoading] = useState<
+    "screenshot" | "pdf" | null
+  >(null)
+
   if (!match) return null
+
+  const handlePreviewScreenshot = async () => {
+    setPreviewLoading("screenshot")
+    const previewWindow = window.open("", "_blank")
+    if (!previewWindow) {
+      setPreviewLoading(null)
+      return
+    }
+    try {
+      const blob = await downloadScreenshot(match.purchase_record_id)
+      const url = URL.createObjectURL(blob)
+      previewWindow.location.href = url
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
+    } catch {
+      previewWindow.close()
+    } finally {
+      setPreviewLoading(null)
+    }
+  }
+
+  const handlePreviewPdf = async () => {
+    setPreviewLoading("pdf")
+    const previewWindow = window.open("", "_blank")
+    if (!previewWindow) {
+      setPreviewLoading(null)
+      return
+    }
+    try {
+      const blob = await downloadPdf(match.invoice_file_id)
+      const url = URL.createObjectURL(blob)
+      previewWindow.location.href = url
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
+    } catch {
+      previewWindow.close()
+    } finally {
+      setPreviewLoading(null)
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
@@ -83,9 +127,20 @@ function MatchDetailDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div className="rounded-lg border p-4">
-            <h4 className="mb-2 font-semibold">
-              {t("finance.purchaseRecords.title")}
-            </h4>
+            <div className="mb-2 flex items-center justify-between">
+              <h4 className="font-semibold">
+                {t("finance.purchaseRecords.title")}
+              </h4>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviewScreenshot}
+                disabled={previewLoading === "screenshot"}
+              >
+                <FileImage className="mr-2 h-4 w-4" />
+                {t("finance.invoiceMatching.actions.viewScreenshot")}
+              </Button>
+            </div>
             <div className="text-muted-foreground space-y-1 text-sm">
               <p>
                 <span className="font-medium">{t("finance.purchaseRecords.columns.orderName")}:</span>{" "}
@@ -102,9 +157,20 @@ function MatchDetailDialog({
             </div>
           </div>
           <div className="rounded-lg border p-4">
-            <h4 className="mb-2 font-semibold">
-              {t("finance.invoiceFiles.title")}
-            </h4>
+            <div className="mb-2 flex items-center justify-between">
+              <h4 className="font-semibold">
+                {t("finance.invoiceFiles.title")}
+              </h4>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviewPdf}
+                disabled={previewLoading === "pdf"}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                {t("finance.invoiceMatching.actions.viewPdf")}
+              </Button>
+            </div>
             <div className="text-muted-foreground space-y-1 text-sm">
               <p>
                 <span className="font-medium">{t("finance.invoiceFiles.columns.invoiceNumber")}:</span>{" "}

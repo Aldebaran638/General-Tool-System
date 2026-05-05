@@ -72,6 +72,8 @@ export default {
     toggleBreakdown: "切換評分解釋",
     search: "搜尋",
     viewDetail: "查看詳情",
+    viewScreenshot: "查看截圖",
+    viewPdf: "查看 PDF",
   },
   searchPlaceholder: "輸入發票號碼或銷售方名稱",
   searchFailed: "搜尋失敗",

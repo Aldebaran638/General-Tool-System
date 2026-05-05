@@ -313,6 +313,8 @@ export default {
       toggleBreakdown: "切换评分解释",
       search: "搜索",
       viewDetail: "查看详情",
+      viewScreenshot: "查看截图",
+      viewPdf: "查看 PDF",
     },
     searchPlaceholder: "输入发票号码或销售方名称",
     searchFailed: "搜索失败",

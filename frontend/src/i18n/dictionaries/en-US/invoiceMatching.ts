@@ -73,6 +73,8 @@ export default {
     toggleBreakdown: "Toggle score breakdown",
     search: "Search",
     viewDetail: "View Detail",
+    viewScreenshot: "View Screenshot",
+    viewPdf: "View PDF",
   },
   searchPlaceholder: "Enter invoice number or seller name",
   searchFailed: "Search failed",
