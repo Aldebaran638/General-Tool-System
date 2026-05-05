@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router"
 import { Button } from "@/components/ui/button"
+import { useI18n } from "@/i18n"
 
 const NotFound = () => {
+  const { t } = useI18n()
   return (
     <div
       className="flex min-h-screen items-center justify-center flex-col p-4"
@@ -21,7 +23,7 @@ const NotFound = () => {
       </p>
       <div className="z-10">
         <Link to="/">
-          <Button className="mt-4">Go Back</Button>
+          <Button className="mt-4">{t("common.goBack")}</Button>
         </Link>
       </div>
     </div>
