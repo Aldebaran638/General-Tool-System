@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_layout/admin")({
   head: () => ({
     meta: [
       {
-        title: "Admin - 通用工具系统",
+        title: "Admin - 发票管理系统",
       },
     ],
   }),

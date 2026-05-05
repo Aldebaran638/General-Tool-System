@@ -14,7 +14,7 @@ registerTool({
   group: "finance",
   route: {
     path: "/finance/reimbursement-exports",
-    title: "报销导出 - 通用工具系统",
+    title: "报销导出 - 发票管理系统",
     titleKey: "finance.reimbursementExports.title",
     component: ReimbursementExportsPage,
   },

@@ -42,7 +42,7 @@ export const Route = createFileRoute("/recover-password")({
   head: () => ({
     meta: [
       {
-        title: "Recover Password - 通用工具系统",
+        title: "Recover Password - 发票管理系统",
       },
     ],
   }),

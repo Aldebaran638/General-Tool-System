@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_layout/")({
   head: () => ({
     meta: [
       {
-        title: "Dashboard - 通用工具系统",
+        title: "Dashboard - 发票管理系统",
       },
     ],
   }),

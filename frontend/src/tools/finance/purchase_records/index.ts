@@ -14,7 +14,7 @@ registerTool({
   group: "finance",
   route: {
     path: "/finance/purchase-records",
-    title: "购买记录 - 通用工具系统",
+    title: "购买记录 - 发票管理系统",
     component: PurchaseRecordsPage,
   },
   navigation: {

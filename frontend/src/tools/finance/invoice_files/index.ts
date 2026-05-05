@@ -14,7 +14,7 @@ registerTool({
   group: "finance",
   route: {
     path: "/finance/invoice-files",
-    title: "发票文件 - 通用工具系统",
+    title: "发票文件 - 发票管理系统",
     component: InvoiceFilesPage,
   },
   navigation: {

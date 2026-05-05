@@ -15,7 +15,7 @@ registerTool({
   group: "finance",
   route: {
     path: "/finance/invoice-matching",
-    title: "发票匹配 - 通用工具系统",
+    title: "发票匹配 - 发票管理系统",
     titleKey: "finance.invoiceMatching.title",
     component: InvoiceMatchingPage,
   },

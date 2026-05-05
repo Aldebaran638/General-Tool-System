@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_layout/settings")({
   head: () => ({
     meta: [
       {
-        title: "Settings - 通用工具系统",
+        title: "Settings - 发票管理系统",
       },
     ],
   }),
