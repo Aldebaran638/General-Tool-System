@@ -61,6 +61,7 @@ export default {
     clickToUpload: "Click to upload PDF invoice",
     cancel: "Cancel",
     saveDraft: "Save Draft",
+    saveAndConfirm: "Save & Confirm",
     saveEdit: "Save Changes",
     processing: "Parsing PDF...",
     parseFailed: "PDF parse failed, please fill in manually",

@@ -39,6 +39,7 @@ import {
   useCreateInvoiceFileMutation,
   useUpdateInvoiceFileMutation,
   useParsePreviewMutation,
+  useConfirmInvoiceFileMutation,
 } from "../hooks/useInvoiceFiles"
 import { useI18n } from "@/i18n/I18nProvider"
 
@@ -62,6 +63,7 @@ export function InvoiceFileForm({
 
   const createMutation = useCreateInvoiceFileMutation()
   const updateMutation = useUpdateInvoiceFileMutation()
+  const confirmMutation = useConfirmInvoiceFileMutation()
   const parseMutation = useParsePreviewMutation()
 
   const isEditing = !!record
@@ -212,6 +214,38 @@ export function InvoiceFileForm({
 
   const handleSaveDraft = () => {
     form.handleSubmit((values) => onSubmit(values))()
+  }
+
+  const handleSaveAndConfirm = () => {
+    form.handleSubmit((values) => {
+      if (!uploadedFile) {
+        toast.error(t("finance.invoiceFiles.validation.pdfRequired"))
+        return
+      }
+      createMutation.mutate(
+        {
+          invoice_number: values.invoice_number,
+          invoice_date: values.invoice_date,
+          invoice_amount: values.invoice_amount,
+          tax_amount: values.tax_amount || "0.00",
+          currency: values.currency,
+          buyer: values.buyer,
+          seller: values.seller,
+          invoice_type: values.invoice_type,
+          note: values.note,
+          pdf: uploadedFile,
+        },
+        {
+          onSuccess: (created: import("../types").InvoiceFile) => {
+            confirmMutation.mutate(created.id, {
+              onSuccess: () => {
+                onClose()
+              },
+            })
+          },
+        },
+      )
+    })()
   }
 
   return (
@@ -453,16 +487,42 @@ export function InvoiceFileForm({
           <Button variant="outline" onClick={onClose} type="button">
             {t("finance.invoiceFiles.form.cancel")}
           </Button>
-          <Button
-            onClick={handleSaveDraft}
-            disabled={createMutation.isPending || updateMutation.isPending}
-            type="button"
-          >
-            {createMutation.isPending || updateMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : null}
-            {isEditing ? t("finance.invoiceFiles.form.saveEdit") : t("finance.invoiceFiles.form.saveDraft")}
-          </Button>
+          {!isEditing ? (
+            <>
+              <Button
+                variant="secondary"
+                onClick={handleSaveDraft}
+                disabled={createMutation.isPending || updateMutation.isPending}
+                type="button"
+              >
+                {createMutation.isPending || updateMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                {t("finance.invoiceFiles.form.saveDraft")}
+              </Button>
+              <Button
+                onClick={handleSaveAndConfirm}
+                disabled={createMutation.isPending || confirmMutation.isPending}
+                type="button"
+              >
+                {createMutation.isPending || confirmMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                {t("finance.invoiceFiles.form.saveAndConfirm")}
+              </Button>
+            </>
+          ) : (
+            <Button
+              onClick={handleSaveDraft}
+              disabled={createMutation.isPending || updateMutation.isPending}
+              type="button"
+            >
+              {createMutation.isPending || updateMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {t("finance.invoiceFiles.form.saveEdit")}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

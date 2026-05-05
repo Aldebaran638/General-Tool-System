@@ -61,6 +61,7 @@ export default {
     clickToUpload: "點擊上傳 PDF 發票",
     cancel: "取消",
     saveDraft: "儲存草稿",
+    saveAndConfirm: "儲存並確認",
     saveEdit: "儲存修改",
     processing: "正在解析 PDF...",
     parseFailed: "PDF 解析失敗，請手動填寫發票資訊",
