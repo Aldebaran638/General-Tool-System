@@ -116,7 +116,7 @@ export async function downloadExport(
     token = tokenResolver
   }
 
-  const url = `${OpenAPI.BASE}${BASE_URL}/${exportId}/download`
+  const url = `${OpenAPI.BASE}/api/v1/files/exports/${exportId}`
   const response = await fetch(url, {
     method: "GET",
     headers: {

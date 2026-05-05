@@ -189,7 +189,7 @@ export async function restorePurchaseRecord(id: string): Promise<PurchaseRecord>
 
 export async function downloadScreenshot(id: string): Promise<Blob> {
   const token = localStorage.getItem("access_token")
-  const url = `${OpenAPI.BASE}${BASE_URL}/${id}/screenshot`
+  const url = `${OpenAPI.BASE}/api/v1/files/screenshots/${id}`
 
   const response = await fetch(url, {
     headers: {

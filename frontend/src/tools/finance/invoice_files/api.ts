@@ -181,7 +181,7 @@ export async function restoreInvoiceFile(id: string): Promise<InvoiceFile> {
 
 export async function downloadPdf(id: string): Promise<Blob> {
   const token = localStorage.getItem("access_token")
-  const url = `${OpenAPI.BASE}${BASE_URL}/${id}/pdf`
+  const url = `${OpenAPI.BASE}/api/v1/files/invoices/${id}`
 
   const response = await fetch(url, {
     headers: {
