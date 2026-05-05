@@ -85,6 +85,13 @@ export interface InvoiceMatchPublic {
   owner_id: string
   purchase_record_id: string
   invoice_file_id: string
+  purchase_record_name: string | null
+  purchase_date: string | null
+  purchase_amount: string | null
+  invoice_file_number: string | null
+  invoice_date: string | null
+  invoice_amount: string | null
+  seller: string | null
   status: MatchStatus
   score: number
   score_breakdown: Record<string, number>

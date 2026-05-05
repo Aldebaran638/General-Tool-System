@@ -112,7 +112,7 @@ export function InvoiceMatchingPage() {
           <UnmatchedList isAdmin={isAdmin} />
         </TabsContent>
         <TabsContent value="matched">
-          <MatchList status="confirmed" isAdmin={isAdmin} />
+          <MatchList status="confirmed" isAdmin={isAdmin} includeNeedsReview />
         </TabsContent>
         <TabsContent value="needs_review">
           <MatchList status="needs_review" isAdmin={isAdmin} />

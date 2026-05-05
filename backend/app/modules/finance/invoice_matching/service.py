@@ -215,12 +215,24 @@ def get_allocated_for_invoice(
 # =============================================================================
 
 
-def _serialize_match(match: InvoiceMatch) -> dict:
+def _serialize_match(
+    match: InvoiceMatch,
+    *,
+    purchase: PurchaseRecord | None = None,
+    invoice: InvoiceFile | None = None,
+) -> dict:
     return {
         "id": match.id,
         "owner_id": match.owner_id,
         "purchase_record_id": match.purchase_record_id,
         "invoice_file_id": match.invoice_file_id,
+        "purchase_record_name": purchase.order_name if purchase else None,
+        "purchase_date": str(purchase.purchase_date) if purchase and purchase.purchase_date else None,
+        "purchase_amount": str(purchase.amount) if purchase and purchase.amount else None,
+        "invoice_file_number": invoice.invoice_number if invoice else None,
+        "invoice_date": str(invoice.invoice_date) if invoice and invoice.invoice_date else None,
+        "invoice_amount": str(invoice.invoice_amount) if invoice and invoice.invoice_amount else None,
+        "seller": invoice.seller if invoice else None,
         "status": match.status,
         "score": match.score,
         "score_breakdown": match.score_breakdown,
@@ -377,7 +389,7 @@ def read_matches(
             continue
         if invoice is not None and invoice.deleted_at is not None:
             continue
-        result.append(_serialize_match(m))
+        result.append(_serialize_match(m, purchase=purchase, invoice=invoice))
     return result
 
 
