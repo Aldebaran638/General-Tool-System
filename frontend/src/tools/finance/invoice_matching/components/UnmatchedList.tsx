@@ -1,15 +1,16 @@
 import { ChevronDown, ChevronRight, Inbox } from "lucide-react"
-import { useState } from "react"
+import { Fragment, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { useI18n } from "@/i18n/I18nProvider"
 
 import { useUnmatchedPurchaseRecordsQuery } from "../hooks/useInvoiceMatching"
@@ -21,66 +22,22 @@ interface UnmatchedListProps {
   isAdmin: boolean
 }
 
-function PurchaseRecordCard({
-  record,
-  isAdmin,
-}: {
-  record: UnmatchedPurchaseRecord
-  isAdmin: boolean
-}) {
-  const { t } = useI18n()
-  const [open, setOpen] = useState(false)
-
-  return (
-    <Card data-testid="unmatched-purchase-record">
-      <CardHeader className="px-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-1 flex-col gap-1">
-            <CardTitle className="text-base">
-              {record.order_name || t("finance.invoiceMatching.unknownOrder")}
-            </CardTitle>
-            <CardDescription>
-              {t("finance.invoiceMatching.fields.purchaseDate")}:{" "}
-              {record.purchase_date || "-"}
-              {" · "}
-              {t("finance.invoiceMatching.fields.amount")}: {record.amount}{" "}
-              {record.currency}
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">
-              {t(`finance.invoiceMatching.purchaseStatus.${record.status}`)}
-            </Badge>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setOpen((v) => !v)}
-              data-testid="toggle-candidates"
-            >
-              {open ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
-              {open
-                ? t("finance.invoiceMatching.actions.hideCandidates")
-                : t("finance.invoiceMatching.actions.showCandidates")}
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      {open && (
-        <CardContent className="px-6">
-          <CandidateList purchaseRecord={record} isAdmin={isAdmin} />
-        </CardContent>
-      )}
-    </Card>
-  )
-}
-
 export function UnmatchedList({ isAdmin }: UnmatchedListProps) {
   const { t } = useI18n()
   const { data, isLoading } = useUnmatchedPurchaseRecordsQuery()
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+
+  const toggleExpanded = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
 
   if (isLoading) {
     return (
@@ -110,13 +67,86 @@ export function UnmatchedList({ isAdmin }: UnmatchedListProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      {records.map((record) => (
-        <PurchaseRecordCard
-          key={record.id}
-          record={record}
-          isAdmin={isAdmin}
-        />
-      ))}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>
+              {t("finance.purchaseRecords.columns.orderName")}
+            </TableHead>
+            <TableHead>
+              {t("finance.invoiceMatching.fields.purchaseDate")}
+            </TableHead>
+            <TableHead>
+              {t("finance.invoiceMatching.fields.amount")}
+            </TableHead>
+            <TableHead>
+              {t("finance.purchaseRecords.columns.currency")}
+            </TableHead>
+            <TableHead>
+              {t("finance.purchaseRecords.columns.status")}
+            </TableHead>
+            <TableHead className="text-right">
+              {t("finance.purchaseRecords.columns.actions")}
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {records.map((record: UnmatchedPurchaseRecord) => {
+            const expanded = expandedIds.has(record.id)
+            return (
+              <Fragment key={record.id}>
+                <TableRow data-testid="unmatched-purchase-record">
+                  <TableCell className="font-medium">
+                    {record.order_name ||
+                      t("finance.invoiceMatching.unknownOrder")}
+                  </TableCell>
+                  <TableCell>{record.purchase_date || "-"}</TableCell>
+                  <TableCell>{record.amount}</TableCell>
+                  <TableCell>{record.currency}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {t(
+                        `finance.invoiceMatching.purchaseStatus.${record.status}`,
+                      )}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleExpanded(record.id)}
+                      data-testid="toggle-candidates"
+                    >
+                      {expanded ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                      {expanded
+                        ? t(
+                            "finance.invoiceMatching.actions.hideCandidates",
+                          )
+                        : t(
+                            "finance.invoiceMatching.actions.showCandidates",
+                          )}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+                {expanded && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="bg-muted/30 p-4">
+                      <CandidateList
+                        purchaseRecord={record}
+                        isAdmin={isAdmin}
+                      />
+                    </TableCell>
+                  </TableRow>
+                )}
+              </Fragment>
+            )
+          })}
+        </TableBody>
+      </Table>
     </div>
   )
 }
