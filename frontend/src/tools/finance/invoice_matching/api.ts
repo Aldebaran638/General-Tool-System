@@ -9,6 +9,7 @@ import type {
   InvoiceMatchesPublic,
   MatchStatus,
   MatchSummary,
+  SearchAvailableInvoicesResponse,
   UnmatchedPurchaseRecordsResponse,
 } from "./types"
 
@@ -44,6 +45,18 @@ export async function listAvailableInvoices(params?: {
     query: params,
   })
   return response as AvailableInvoicesResponse
+}
+
+export async function searchAvailableInvoices(params: {
+  purchase_record_id: string
+  search?: string
+}): Promise<SearchAvailableInvoicesResponse> {
+  const response = await __request(OpenAPI, {
+    method: "GET",
+    url: `${BASE_URL}/available-invoices/search`,
+    query: params,
+  })
+  return response as SearchAvailableInvoicesResponse
 }
 
 export async function listCandidates(

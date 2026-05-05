@@ -14,6 +14,8 @@ export default {
     matched: "Matched",
     needsReview: "Needs Review",
     cancelled: "Cancelled",
+    recommend: "Recommended",
+    manualSearch: "Manual Search",
   },
   summary: {
     confirmed: "Matched",
@@ -69,7 +71,10 @@ export default {
     hideCandidates: "Hide Candidates",
     scoreBreakdown: "Score Breakdown",
     toggleBreakdown: "Toggle score breakdown",
+    search: "Search",
   },
+  searchPlaceholder: "Enter invoice number or seller name",
+  searchFailed: "Search failed",
   empty: {
     unmatchedTitle: "No purchase records waiting for matching",
     unmatchedDescription:
@@ -78,6 +83,7 @@ export default {
     confirmed: "No matched records yet",
     needs_review: "No matches needing review",
     cancelled: "No cancelled matches",
+    searchResults: "No matching invoices found",
   },
   messages: {
     confirmSuccess: "Match confirmed",

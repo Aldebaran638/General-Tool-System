@@ -253,6 +253,8 @@ export default {
       matched: "已匹配",
       needsReview: "需复核",
       cancelled: "已取消",
+      recommend: "系统推荐",
+      manualSearch: "手动搜索",
     },
     summary: {
       confirmed: "已匹配",
@@ -308,7 +310,10 @@ export default {
       hideCandidates: "收起候选发票",
       scoreBreakdown: "评分解释",
       toggleBreakdown: "切换评分解释",
+      search: "搜索",
     },
+    searchPlaceholder: "输入发票号码或销售方名称",
+    searchFailed: "搜索失败",
     empty: {
       unmatchedTitle: "暂无待匹配的购买记录",
       unmatchedDescription: "请先创建并提交购买记录后再回到此页面",
@@ -316,6 +321,7 @@ export default {
       confirmed: "暂无已匹配的记录",
       needs_review: "暂无需复核的匹配",
       cancelled: "暂无已取消的匹配",
+      searchResults: "未找到匹配的发票",
     },
     messages: {
       confirmSuccess: "匹配已确认",

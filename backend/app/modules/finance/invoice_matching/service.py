@@ -513,6 +513,70 @@ def reconfirm_match(
 
 
 # =============================================================================
+# Manual Search
+# =============================================================================
+
+
+def search_available_invoices(
+    session: Session,
+    *,
+    current_user: User,
+    purchase_record_id: uuid.UUID,
+    search: str | None = None,
+) -> list[dict]:
+    """Search available invoices for manual matching.
+
+    Filters by hard match rules (currency + date window) then by
+    invoice_number prefix or seller substring.
+    """
+    purchase = get_purchase_record(session, record_id=purchase_record_id)
+    if not purchase:
+        raise ValueError("Purchase record not found")
+    _require_read_access(current_user=current_user, owner_id=purchase.owner_id)
+    if not _purchase_eligible_for_match(purchase):
+        raise ValueError(
+            "Purchase record is not eligible for matching "
+            f"(status={purchase.status}, deleted={purchase.deleted_at is not None})"
+        )
+
+    invoices = list_available_invoices(session, current_user=current_user)
+    result: list[dict] = []
+    search_lower = search.strip().lower() if search else ""
+
+    for inv in invoices:
+        if not _currencies_match(purchase, inv):
+            continue
+        if not _within_date_window(purchase, inv):
+            continue
+
+        if search_lower:
+            match_number = (inv.invoice_number or "").lower().startswith(search_lower)
+            match_seller = search_lower in (inv.seller or "").lower()
+            if not match_number and not match_seller:
+                continue
+
+        allocated = get_allocated_for_invoice(session, invoice_file_id=inv.id)
+        remaining = (
+            inv.invoice_amount - allocated if inv.invoice_amount else Decimal("0")
+        )
+        result.append(
+            {
+                "id": inv.id,
+                "owner_id": inv.owner_id,
+                "invoice_number": inv.invoice_number or "",
+                "invoice_date": str(inv.invoice_date) if inv.invoice_date else "",
+                "invoice_amount": str(inv.invoice_amount) if inv.invoice_amount else "0",
+                "currency": inv.currency or "",
+                "seller": inv.seller or "",
+                "remaining_amount": str(remaining),
+                "status": inv.status or "",
+            }
+        )
+
+    return result
+
+
+# =============================================================================
 # Cross-Module Integration Hooks (called by purchase_records / invoice_files)
 # =============================================================================
 

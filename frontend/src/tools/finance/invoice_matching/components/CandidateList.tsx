@@ -1,4 +1,4 @@
-import { AlertCircle, ChevronDown, ChevronUp } from "lucide-react"
+import { AlertCircle, ChevronDown, ChevronUp, Search } from "lucide-react"
 import { useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
@@ -10,15 +10,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useI18n } from "@/i18n/I18nProvider"
 
 import {
   useCandidatesQuery,
   useConfirmMatchMutation,
+  useSearchAvailableInvoicesQuery,
 } from "../hooks/useInvoiceMatching"
 import type {
   CandidateInvoice,
   MatchLevel,
+  SearchableInvoice,
   UnmatchedPurchaseRecord,
 } from "../types"
 
@@ -149,53 +153,237 @@ function CandidateRow({
   )
 }
 
+function SearchResultRow({
+  invoice,
+  purchaseRecordId,
+  isAdmin,
+}: {
+  invoice: SearchableInvoice
+  purchaseRecordId: string
+  isAdmin: boolean
+}) {
+  const { t } = useI18n()
+  const confirmMutation = useConfirmMatchMutation()
+
+  const handleConfirm = () => {
+    confirmMutation.mutate({
+      purchase_record_id: purchaseRecordId,
+      invoice_file_id: invoice.id,
+    })
+  }
+
+  return (
+    <Card className="py-4" data-testid="search-result-row">
+      <CardContent className="flex flex-col gap-2 px-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-1 flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-medium">
+                {invoice.invoice_number ||
+                  t("finance.invoiceMatching.unknownInvoice")}
+              </span>
+            </div>
+            <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              <span>
+                {t("finance.invoiceMatching.fields.seller")}:{" "}
+                {invoice.seller || "-"}
+              </span>
+              <span>
+                {t("finance.invoiceMatching.fields.invoiceDate")}:{" "}
+                {invoice.invoice_date || "-"}
+              </span>
+              <span>
+                {t("finance.invoiceMatching.fields.invoiceAmount")}:{" "}
+                {invoice.invoice_amount} {invoice.currency}
+              </span>
+            </div>
+            <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              <span>
+                {t("finance.invoiceMatching.fields.remainingAmount")}:{" "}
+                {invoice.remaining_amount}
+              </span>
+            </div>
+          </div>
+          {!isAdmin && (
+            <Button
+              size="sm"
+              onClick={handleConfirm}
+              disabled={confirmMutation.isPending}
+            >
+              {confirmMutation.isPending
+                ? t("finance.invoiceMatching.actions.confirming")
+                : t("finance.invoiceMatching.actions.confirm")}
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export function CandidateList({ purchaseRecord, isAdmin }: CandidateListProps) {
   const { t } = useI18n()
-  const { data, isLoading, error } = useCandidatesQuery(purchaseRecord.id)
+  const [activeTab, setActiveTab] = useState<"recommend" | "search">("recommend")
+  const [searchInput, setSearchInput] = useState("")
+  const [committedSearch, setCommittedSearch] = useState("")
 
-  if (isLoading) {
+  const { data, isLoading, error } = useCandidatesQuery(purchaseRecord.id)
+  const searchQuery = useSearchAvailableInvoicesQuery(
+    purchaseRecord.id,
+    committedSearch,
+    activeTab === "search" && committedSearch.trim().length > 0,
+  )
+
+  const handleSearch = () => {
+    setCommittedSearch(searchInput)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch()
+    }
+  }
+
+  const renderRecommendContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-6">
+          <div className="border-primary h-6 w-6 animate-spin rounded-full border-4 border-t-transparent" />
+        </div>
+      )
+    }
+
+    if (error) {
+      const msg = (error as Error).message || ""
+      return (
+        <Card className="py-4">
+          <CardHeader className="px-4">
+            <CardTitle className="text-destructive flex items-center gap-2 text-base">
+              <AlertCircle className="h-4 w-4" />
+              {t("finance.invoiceMatching.candidateBlocked")}
+            </CardTitle>
+            <CardDescription>{msg}</CardDescription>
+          </CardHeader>
+        </Card>
+      )
+    }
+
+    const candidates = data?.data ?? []
+
+    if (candidates.length === 0) {
+      return (
+        <p className="text-muted-foreground py-4 text-sm">
+          {t("finance.invoiceMatching.empty.candidates")}
+        </p>
+      )
+    }
+
     return (
-      <div className="flex items-center justify-center py-6">
-        <div className="border-primary h-6 w-6 animate-spin rounded-full border-4 border-t-transparent" />
+      <div className="flex flex-col gap-2">
+        {candidates.map((c) => (
+          <CandidateRow
+            key={c.invoice_file_id}
+            candidate={c}
+            purchaseRecordId={purchaseRecord.id}
+            isAdmin={isAdmin}
+          />
+        ))}
       </div>
     )
   }
 
-  if (error) {
-    const msg = (error as Error).message || ""
+  const renderSearchContent = () => {
     return (
-      <Card className="py-4">
-        <CardHeader className="px-4">
-          <CardTitle className="text-destructive flex items-center gap-2 text-base">
-            <AlertCircle className="h-4 w-4" />
-            {t("finance.invoiceMatching.candidateBlocked")}
-          </CardTitle>
-          <CardDescription>{msg}</CardDescription>
-        </CardHeader>
-      </Card>
-    )
-  }
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-2">
+          <Input
+            placeholder={t("finance.invoiceMatching.searchPlaceholder")}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="flex-1"
+          />
+          <Button
+            variant="secondary"
+            onClick={handleSearch}
+            disabled={searchQuery.isFetching || searchInput.trim().length === 0}
+          >
+            {searchQuery.isFetching ? (
+              <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+            {t("finance.invoiceMatching.actions.search")}
+          </Button>
+        </div>
 
-  const candidates = data?.data ?? []
+        {searchQuery.isLoading && (
+          <div className="flex items-center justify-center py-6">
+            <div className="border-primary h-6 w-6 animate-spin rounded-full border-4 border-t-transparent" />
+          </div>
+        )}
 
-  if (candidates.length === 0) {
-    return (
-      <p className="text-muted-foreground py-4 text-sm">
-        {t("finance.invoiceMatching.empty.candidates")}
-      </p>
+        {searchQuery.error && (
+          <Card className="py-4">
+            <CardHeader className="px-4">
+              <CardTitle className="text-destructive flex items-center gap-2 text-base">
+                <AlertCircle className="h-4 w-4" />
+                {t("finance.invoiceMatching.searchFailed")}
+              </CardTitle>
+              <CardDescription>
+                {(searchQuery.error as Error).message || ""}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
+
+        {!searchQuery.isLoading &&
+          !searchQuery.error &&
+          committedSearch.trim().length > 0 && (
+            <>
+              {(() => {
+                const results = searchQuery.data?.data ?? []
+                if (results.length === 0) {
+                  return (
+                    <p className="text-muted-foreground py-4 text-sm">
+                      {t("finance.invoiceMatching.empty.searchResults")}
+                    </p>
+                  )
+                }
+                return (
+                  <div className="flex flex-col gap-2">
+                    {results.map((inv) => (
+                      <SearchResultRow
+                        key={inv.id}
+                        invoice={inv}
+                        purchaseRecordId={purchaseRecord.id}
+                        isAdmin={isAdmin}
+                      />
+                    ))}
+                  </div>
+                )
+              })()}
+            </>
+          )}
+      </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      {candidates.map((c) => (
-        <CandidateRow
-          key={c.invoice_file_id}
-          candidate={c}
-          purchaseRecordId={purchaseRecord.id}
-          isAdmin={isAdmin}
-        />
-      ))}
-    </div>
+    <Tabs
+      value={activeTab}
+      onValueChange={(v) => setActiveTab(v as "recommend" | "search")}
+    >
+      <TabsList className="mb-3">
+        <TabsTrigger value="recommend">
+          {t("finance.invoiceMatching.tabs.recommend")}
+        </TabsTrigger>
+        <TabsTrigger value="search">
+          {t("finance.invoiceMatching.tabs.manualSearch")}
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="recommend">{renderRecommendContent()}</TabsContent>
+      <TabsContent value="search">{renderSearchContent()}</TabsContent>
+    </Tabs>
   )
 }

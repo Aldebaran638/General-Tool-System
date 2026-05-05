@@ -70,6 +70,27 @@ def list_available_invoices(
     return {"count": len(data), "data": data}
 
 
+@router.get("/available-invoices/search")
+def search_available_invoices(
+    session: SessionDep,
+    current_user: CurrentUser,
+    purchase_record_id: uuid.UUID,
+    search: str | None = None,
+) -> dict:
+    try:
+        invoices = service.search_available_invoices(
+            session=session,
+            current_user=current_user,
+            purchase_record_id=purchase_record_id,
+            search=search,
+        )
+    except ValueError as e:
+        if "not found" in str(e).lower():
+            raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"count": len(invoices), "data": invoices}
+
+
 @router.get("/candidates")
 def list_candidates(
     session: SessionDep,

@@ -12,6 +12,7 @@ import {
   listMatches,
   listUnmatchedPurchaseRecords,
   reconfirmMatch,
+  searchAvailableInvoices,
 } from "../api"
 import type { ConfirmMatchRequest, MatchStatus } from "../types"
 
@@ -32,6 +33,16 @@ export const invoiceMatchingMatchesKey = (status?: MatchStatus) =>
   [...invoiceMatchingQueryKey, "matches", status ?? "all"] as const
 export const invoiceMatchingCandidatesKey = (purchaseRecordId: string) =>
   [...invoiceMatchingQueryKey, "candidates", purchaseRecordId] as const
+export const invoiceMatchingSearchKey = (
+  purchaseRecordId: string,
+  search: string,
+) =>
+  [
+    ...invoiceMatchingQueryKey,
+    "search-invoices",
+    purchaseRecordId,
+    search,
+  ] as const
 
 export function useMatchSummaryQuery() {
   return useQuery({
@@ -70,6 +81,23 @@ export function useMatchesQuery(status?: MatchStatus) {
   return useQuery({
     queryKey: invoiceMatchingMatchesKey(status),
     queryFn: () => listMatches(status ? { status } : undefined),
+  })
+}
+
+export function useSearchAvailableInvoicesQuery(
+  purchaseRecordId: string | null,
+  search: string,
+  enabled: boolean = true,
+) {
+  return useQuery({
+    queryKey: invoiceMatchingSearchKey(purchaseRecordId ?? "", search),
+    queryFn: () =>
+      searchAvailableInvoices({
+        purchase_record_id: purchaseRecordId as string,
+        search,
+      }),
+    enabled: enabled && !!purchaseRecordId && search.trim().length > 0,
+    retry: false,
   })
 }
 

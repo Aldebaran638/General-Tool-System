@@ -13,6 +13,8 @@ export default {
     matched: "已匹配",
     needsReview: "需複核",
     cancelled: "已取消",
+    recommend: "系統推薦",
+    manualSearch: "手動搜尋",
   },
   summary: {
     confirmed: "已匹配",
@@ -68,7 +70,10 @@ export default {
     hideCandidates: "收起候選發票",
     scoreBreakdown: "評分解釋",
     toggleBreakdown: "切換評分解釋",
+    search: "搜尋",
   },
+  searchPlaceholder: "輸入發票號碼或銷售方名稱",
+  searchFailed: "搜尋失敗",
   empty: {
     unmatchedTitle: "暫無待匹配的購買記錄",
     unmatchedDescription: "請先建立並提交購買記錄後再回到此頁面",
@@ -76,6 +81,7 @@ export default {
     confirmed: "暫無已匹配的記錄",
     needs_review: "暫無需複核的匹配",
     cancelled: "暫無已取消的匹配",
+    searchResults: "未找到匹配的發票",
   },
   messages: {
     confirmSuccess: "匹配已確認",

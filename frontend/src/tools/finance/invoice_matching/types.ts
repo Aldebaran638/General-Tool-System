@@ -44,6 +44,23 @@ export interface AvailableInvoicesResponse {
   data: AvailableInvoice[]
 }
 
+export interface SearchableInvoice {
+  id: string
+  owner_id: string
+  invoice_number: string
+  invoice_date: string
+  invoice_amount: string
+  currency: string
+  seller: string
+  remaining_amount: string
+  status: string
+}
+
+export interface SearchAvailableInvoicesResponse {
+  count: number
+  data: SearchableInvoice[]
+}
+
 export interface CandidateInvoice {
   invoice_file_id: string
   invoice_number: string
