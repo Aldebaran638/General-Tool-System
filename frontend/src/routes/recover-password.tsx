@@ -23,12 +23,7 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
-
-const formSchema = z.object({
-  email: z.email(),
-})
-
-type FormData = z.infer<typeof formSchema>
+import { useI18n } from "@/i18n"
 
 export const Route = createFileRoute("/recover-password")({
   component: RecoverPassword,
@@ -49,6 +44,14 @@ export const Route = createFileRoute("/recover-password")({
 })
 
 function RecoverPassword() {
+  const { t } = useI18n()
+
+  const formSchema = z.object({
+    email: z.email({ message: t("auth.emailInvalid") }),
+  })
+
+  type FormData = z.infer<typeof formSchema>
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -66,7 +69,7 @@ function RecoverPassword() {
   const mutation = useMutation({
     mutationFn: recoverPassword,
     onSuccess: () => {
-      showSuccessToast("Password recovery email sent successfully")
+      showSuccessToast(t("auth.passwordRecoverySuccess"))
       form.reset()
     },
     onError: handleError.bind(showErrorToast),
@@ -85,7 +88,7 @@ function RecoverPassword() {
           className="flex flex-col gap-6"
         >
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold">Password Recovery</h1>
+            <h1 className="text-2xl font-bold">{t("auth.recoverPasswordTitle")}</h1>
           </div>
 
           <div className="grid gap-4">
@@ -94,11 +97,11 @@ function RecoverPassword() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t("auth.email")}</FormLabel>
                   <FormControl>
                     <Input
                       data-testid="email-input"
-                      placeholder="user@example.com"
+                      placeholder={t("auth.emailPlaceholder")}
                       type="email"
                       {...field}
                     />
@@ -113,14 +116,14 @@ function RecoverPassword() {
               className="w-full"
               loading={mutation.isPending}
             >
-              Continue
+              {t("auth.continue")}
             </LoadingButton>
           </div>
 
           <div className="text-center text-sm">
-            Remember your password?{" "}
+            {t("auth.rememberPassword")}{" "}
             <RouterLink to="/login" className="underline underline-offset-4">
-              Log in
+              {t("auth.logIn")}
             </RouterLink>
           </div>
         </form>

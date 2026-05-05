@@ -2,6 +2,7 @@ import common from "./common"
 import navigation from "./navigation"
 import admin from "./admin"
 import settings from "./settings"
+import auth from "./auth"
 import purchaseRecords from "./purchaseRecords"
 import invoiceFiles from "./invoiceFiles"
 import invoiceMatching from "./invoiceMatching"
@@ -12,6 +13,7 @@ const dict = {
   navigation,
   admin,
   settings,
+  auth,
   finance: {
     groupName: "Finance",
     purchaseRecords,

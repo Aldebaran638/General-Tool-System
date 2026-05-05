@@ -24,16 +24,8 @@ import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
+import { useI18n } from "@/i18n"
 
-const formSchema = z.object({
-  username: z.email(),
-  password: z
-    .string()
-    .min(1, { message: "Password is required" })
-    .min(8, { message: "Password must be at least 8 characters" }),
-}) satisfies z.ZodType<AccessToken>
-
-type FormData = z.infer<typeof formSchema>
 const SESSION_EXPIRED_NOTICE_KEY = "session_expired_notice"
 
 export const Route = createFileRoute("/login")({
@@ -55,6 +47,17 @@ export const Route = createFileRoute("/login")({
 })
 
 function Login() {
+  const { t } = useI18n()
+  const formSchema = z.object({
+    username: z.email({ message: t("auth.emailInvalid") }),
+    password: z
+      .string()
+      .min(1, { message: t("auth.passwordRequired") })
+      .min(8, { message: t("auth.passwordMinLength") }),
+  }) satisfies z.ZodType<AccessToken>
+
+  type FormData = z.infer<typeof formSchema>
+
   const { loginMutation } = useAuth()
   const [showSessionExpiredNotice, setShowSessionExpiredNotice] = useState(false)
   const form = useForm<FormData>({
@@ -92,15 +95,15 @@ function Login() {
           className="flex flex-col gap-6"
         >
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold">Login to your account</h1>
+            <h1 className="text-2xl font-bold">{t("auth.loginTitle")}</h1>
           </div>
 
           {showSessionExpiredNotice ? (
             <Alert>
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>登录已过期</AlertTitle>
+              <AlertTitle>{t("auth.sessionExpired")}</AlertTitle>
               <AlertDescription>
-                当前登录已经过期，请重新登录
+                {t("auth.sessionExpiredDesc")}
               </AlertDescription>
             </Alert>
           ) : null}
@@ -111,11 +114,11 @@ function Login() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t("auth.email")}</FormLabel>
                   <FormControl>
                     <Input
                       data-testid="email-input"
-                      placeholder="user@example.com"
+                      placeholder={t("auth.emailPlaceholder")}
                       type="email"
                       {...field}
                     />
@@ -131,18 +134,18 @@ function Login() {
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center">
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("auth.password")}</FormLabel>
                     <RouterLink
                       to="/recover-password"
                       className="ml-auto text-sm underline-offset-4 hover:underline"
                     >
-                      Forgot your password?
+                      {t("auth.forgotPassword")}
                     </RouterLink>
                   </div>
                   <FormControl>
                     <PasswordInput
                       data-testid="password-input"
-                      placeholder="Password"
+                      placeholder={t("auth.passwordPlaceholder")}
                       {...field}
                     />
                   </FormControl>
@@ -152,14 +155,14 @@ function Login() {
             />
 
             <LoadingButton type="submit" loading={loginMutation.isPending}>
-              Log In
+              {t("auth.logIn")}
             </LoadingButton>
           </div>
 
           <div className="text-center text-sm">
-            Don't have an account yet?{" "}
+            {t("auth.noAccount")}{" "}
             <RouterLink to="/signup" className="underline underline-offset-4">
-              Sign up
+              {t("auth.signUp")}
             </RouterLink>
           </div>
         </form>

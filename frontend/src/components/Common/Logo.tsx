@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router"
 import { Receipt } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useI18n } from "@/i18n"
 
 interface LogoProps {
   variant?: "full" | "icon" | "responsive"
@@ -9,13 +10,14 @@ interface LogoProps {
   asLink?: boolean
 }
 
-const PRODUCT_NAME = "发票管理系统"
-
 export function Logo({
   variant = "full",
   className,
   asLink = true,
 }: LogoProps) {
+  const { t } = useI18n()
+  const productName = t("auth.productName")
+
   const renderFull = (extraCls?: string) => (
     <span
       className={cn(
@@ -25,14 +27,14 @@ export function Logo({
       )}
     >
       <Receipt className="h-[1.2em] w-[1.2em] shrink-0" aria-hidden="true" />
-      <span>{PRODUCT_NAME}</span>
+      <span>{productName}</span>
     </span>
   )
 
   const renderIcon = (extraCls?: string) => (
     <Receipt
       className={cn("size-5", extraCls, className)}
-      aria-label={PRODUCT_NAME}
+      aria-label={productName}
     />
   )
 
