@@ -4,6 +4,7 @@ import { FileSpreadsheet, Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import {
   Select,
   SelectContent,
@@ -104,31 +105,23 @@ export function RecordsTab() {
           value={filters.q ?? ""}
           onChange={(e) => updateFilter("q", e.target.value || undefined)}
         />
-        <Input
-          type="date"
-          placeholder={t("finance.reimbursementExports.filters.startDate")}
-          value={filters.start_date ?? ""}
-          onChange={(e) =>
-            updateFilter("start_date", e.target.value || undefined)
-          }
+        <DatePicker
+          value={filters.start_date}
+          onChange={(v) => updateFilter("start_date", v)}
         />
-        <Input
-          type="date"
-          placeholder={t("finance.reimbursementExports.filters.endDate")}
-          value={filters.end_date ?? ""}
-          onChange={(e) =>
-            updateFilter("end_date", e.target.value || undefined)
-          }
+        <DatePicker
+          value={filters.end_date}
+          onChange={(v) => updateFilter("end_date", v)}
         />
         <Select
-          value={filters.category ?? ""}
-          onValueChange={(v) => updateFilter("category", v || undefined)}
+          value={filters.category ?? "__all__"}
+          onValueChange={(v) => updateFilter("category", v === "__all__" ? undefined : v)}
         >
           <SelectTrigger className="w-40">
             <SelectValue placeholder={t("finance.reimbursementExports.filters.category")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">
+            <SelectItem value="__all__">
               {t("finance.reimbursementExports.filters.allCategories")}
             </SelectItem>
             {CATEGORY_OPTIONS.map((opt) => (
@@ -139,14 +132,14 @@ export function RecordsTab() {
           </SelectContent>
         </Select>
         <Select
-          value={filters.currency ?? ""}
-          onValueChange={(v) => updateFilter("currency", v || undefined)}
+          value={filters.currency ?? "__all__"}
+          onValueChange={(v) => updateFilter("currency", v === "__all__" ? undefined : v)}
         >
           <SelectTrigger className="w-32">
             <SelectValue placeholder={t("finance.reimbursementExports.filters.currency")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">
+            <SelectItem value="__all__">
               {t("finance.reimbursementExports.filters.allCurrencies")}
             </SelectItem>
             <SelectItem value="CNY">CNY</SelectItem>
@@ -158,9 +151,9 @@ export function RecordsTab() {
           </SelectContent>
         </Select>
         <Select
-          value={filters.exported ?? ""}
+          value={filters.exported ?? "all"}
           onValueChange={(v) =>
-            updateFilter("exported", (v as RecordsQuery["exported"]) || undefined)
+            updateFilter("exported", v === "all" ? undefined : (v as RecordsQuery["exported"]))
           }
         >
           <SelectTrigger className="w-36">

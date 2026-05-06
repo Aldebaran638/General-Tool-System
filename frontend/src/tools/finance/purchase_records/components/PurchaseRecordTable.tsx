@@ -33,12 +33,8 @@ import {
   useRestorePurchaseRecordMutation,
   useSubmitPurchaseRecordMutation,
   useWithdrawPurchaseRecordMutation,
-  useApprovePurchaseRecordMutation,
-  useRejectPurchaseRecordMutation,
-  useUnapprovePurchaseRecordMutation,
 } from "../hooks/usePurchaseRecords"
 import { downloadScreenshot } from "../api"
-import useAuth from "@/hooks/useAuth"
 import { useState } from "react"
 import { useI18n } from "@/i18n/I18nProvider"
 
@@ -54,6 +50,7 @@ function StatusBadge({ status, t }: { status: PurchaseRecord["status"]; t: (key:
     submitted: "default",
     approved: "default",
     rejected: "destructive",
+    deleted: "outline",
   }
 
   const labels: Record<PurchaseRecord["status"], string> = {
@@ -61,6 +58,7 @@ function StatusBadge({ status, t }: { status: PurchaseRecord["status"]; t: (key:
     submitted: t("finance.purchaseRecords.status.submitted"),
     approved: t("finance.purchaseRecords.status.approved"),
     rejected: t("finance.purchaseRecords.status.rejected"),
+    deleted: t("finance.purchaseRecords.status.deleted"),
   }
 
   return <Badge variant={variants[status]}>{labels[status]}</Badge>
@@ -78,8 +76,6 @@ export function PurchaseRecordTable({
   onEdit,
   showDeleted,
 }: PurchaseRecordTableProps) {
-  const { user } = useAuth()
-  const isAdmin = user?.is_superuser ?? false
   const { t } = useI18n()
   const { CATEGORIES, SUBCATEGORIES } = createPurchaseRecordSchemas(t)
 
@@ -94,9 +90,6 @@ export function PurchaseRecordTable({
 
   const submitMutation = useSubmitPurchaseRecordMutation()
   const withdrawMutation = useWithdrawPurchaseRecordMutation()
-  const approveMutation = useApprovePurchaseRecordMutation()
-  const rejectMutation = useRejectPurchaseRecordMutation()
-  const unapproveMutation = useUnapprovePurchaseRecordMutation()
   const deleteMutation = useDeletePurchaseRecordMutation()
   const restoreMutation = useRestorePurchaseRecordMutation()
 
@@ -106,18 +99,6 @@ export function PurchaseRecordTable({
 
   const handleWithdraw = (id: string) => {
     withdrawMutation.mutate(id)
-  }
-
-  const handleApprove = (id: string) => {
-    approveMutation.mutate(id)
-  }
-
-  const handleReject = (id: string) => {
-    rejectMutation.mutate({ id, data: { reason: t("finance.purchaseRecords.messages.adminRejectReason") } })
-  }
-
-  const handleUnapprove = (id: string) => {
-    unapproveMutation.mutate(id)
   }
 
   const handleDelete = (id: string) => {
@@ -175,14 +156,14 @@ export function PurchaseRecordTable({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {!showDeleted && (record.status === "draft" || record.status === "rejected") && (
+                  {!showDeleted && record.status === "draft" && (
                     <DropdownMenuItem onClick={() => onEdit(record)}>
                       <Pencil className="mr-2 h-4 w-4" />
                       {t("finance.purchaseRecords.actions.edit")}
                     </DropdownMenuItem>
                   )}
 
-                  {!showDeleted && (record.status === "draft" || record.status === "rejected") && (
+                  {!showDeleted && record.status === "draft" && (
                     <DropdownMenuItem onClick={() => handleSubmit(record.id)}>
                       <Send className="mr-2 h-4 w-4" />
                       {t("finance.purchaseRecords.actions.submit")}
@@ -193,26 +174,6 @@ export function PurchaseRecordTable({
                     <DropdownMenuItem onClick={() => handleWithdraw(record.id)}>
                       <Undo2 className="mr-2 h-4 w-4" />
                       {t("finance.purchaseRecords.actions.withdrawSubmit")}
-                    </DropdownMenuItem>
-                  )}
-
-                  {isAdmin && !showDeleted && record.status === "submitted" && (
-                    <>
-                      <DropdownMenuItem onClick={() => handleApprove(record.id)}>
-                        <Send className="mr-2 h-4 w-4" />
-                        {t("finance.purchaseRecords.actions.approve")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleReject(record.id)}>
-                        <RotateCcw className="mr-2 h-4 w-4" />
-                        {t("finance.purchaseRecords.actions.reject")}
-                      </DropdownMenuItem>
-                    </>
-                  )}
-
-                  {isAdmin && !showDeleted && record.status === "approved" && (
-                    <DropdownMenuItem onClick={() => handleUnapprove(record.id)}>
-                      <Undo2 className="mr-2 h-4 w-4" />
-                      {t("finance.purchaseRecords.actions.unapprove")}
                     </DropdownMenuItem>
                   )}
 

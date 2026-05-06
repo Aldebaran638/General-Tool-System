@@ -7,7 +7,6 @@ import type {
   PurchaseRecordListResponse,
   PurchaseRecordUpdate,
   OcrPreviewResponse,
-  RejectRequest,
 } from "./types"
 
 const BASE_URL = "/api/v1/finance/purchase-records"
@@ -134,38 +133,6 @@ export async function withdrawPurchaseRecord(id: string): Promise<PurchaseRecord
   const response = await __request(OpenAPI, {
     method: "POST",
     url: `${BASE_URL}/${id}/withdraw`,
-  })
-
-  return response as PurchaseRecord
-}
-
-export async function approvePurchaseRecord(id: string): Promise<PurchaseRecord> {
-  const response = await __request(OpenAPI, {
-    method: "POST",
-    url: `${BASE_URL}/${id}/approve`,
-  })
-
-  return response as PurchaseRecord
-}
-
-export async function rejectPurchaseRecord(
-  id: string,
-  data: RejectRequest,
-): Promise<PurchaseRecord> {
-  const response = await __request(OpenAPI, {
-    method: "POST",
-    url: `${BASE_URL}/${id}/reject`,
-    body: data,
-    mediaType: "application/json",
-  })
-
-  return response as PurchaseRecord
-}
-
-export async function unapprovePurchaseRecord(id: string): Promise<PurchaseRecord> {
-  const response = await __request(OpenAPI, {
-    method: "POST",
-    url: `${BASE_URL}/${id}/unapprove`,
   })
 
   return response as PurchaseRecord

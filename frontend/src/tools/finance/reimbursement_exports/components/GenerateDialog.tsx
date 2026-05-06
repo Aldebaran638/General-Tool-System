@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Label } from "@/components/ui/label"
 import { useI18n } from "@/i18n/I18nProvider"
 
@@ -131,10 +132,9 @@ export function GenerateDialog({
             </div>
             <div className="flex flex-col gap-2">
               <Label>{t("finance.reimbursementExports.generate.reimbursementDate")}</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={reimbursementDate}
-                onChange={(e) => setReimbursementDate(e.target.value)}
+                onChange={setReimbursementDate}
               />
             </div>
           </div>

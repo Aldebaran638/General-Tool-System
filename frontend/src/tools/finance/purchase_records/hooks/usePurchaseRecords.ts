@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
-import type { PurchaseRecordUpdate, RejectRequest } from "../types"
+import type { PurchaseRecordUpdate } from "../types"
 import {
   listPurchaseRecords,
   createPurchaseRecord,
@@ -9,9 +9,6 @@ import {
   deletePurchaseRecord,
   submitPurchaseRecord,
   withdrawPurchaseRecord,
-  approvePurchaseRecord,
-  rejectPurchaseRecord,
-  unapprovePurchaseRecord,
   restorePurchaseRecord,
   ocrPreview,
 } from "../api"
@@ -93,55 +90,6 @@ export function useWithdrawPurchaseRecordMutation() {
     },
     onError: (error: Error) => {
       toast.error(error.message || t("finance.purchaseRecords.messages.withdrawFailed"))
-    },
-  })
-}
-
-export function useApprovePurchaseRecordMutation() {
-  const queryClient = useQueryClient()
-  const { t } = useI18n()
-
-  return useMutation({
-    mutationFn: approvePurchaseRecord,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: purchaseRecordsQueryKey })
-      toast.success(t("finance.purchaseRecords.messages.approveSuccess"))
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || t("finance.purchaseRecords.messages.approveFailed"))
-    },
-  })
-}
-
-export function useRejectPurchaseRecordMutation() {
-  const queryClient = useQueryClient()
-  const { t } = useI18n()
-
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: RejectRequest }) =>
-      rejectPurchaseRecord(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: purchaseRecordsQueryKey })
-      toast.success(t("finance.purchaseRecords.messages.rejectSuccess"))
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || t("finance.purchaseRecords.messages.rejectFailed"))
-    },
-  })
-}
-
-export function useUnapprovePurchaseRecordMutation() {
-  const queryClient = useQueryClient()
-  const { t } = useI18n()
-
-  return useMutation({
-    mutationFn: unapprovePurchaseRecord,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: purchaseRecordsQueryKey })
-      toast.success(t("finance.purchaseRecords.messages.unapproveSuccess"))
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || t("finance.purchaseRecords.messages.unapproveFailed"))
     },
   })
 }
