@@ -11,11 +11,13 @@ Defines business constants for the invoice_matching tool module.
 MATCH_STATUS_CONFIRMED = "confirmed"
 MATCH_STATUS_CANCELLED = "cancelled"
 MATCH_STATUS_NEEDS_REVIEW = "needs_review"
+MATCH_STATUS_APPROVED = "approved"
 
 VALID_MATCH_STATUSES = [
     MATCH_STATUS_CONFIRMED,
     MATCH_STATUS_CANCELLED,
     MATCH_STATUS_NEEDS_REVIEW,
+    MATCH_STATUS_APPROVED,
 ]
 
 # =============================================================================

@@ -79,6 +79,16 @@ class InvoiceMatch(InvoiceMatchBase, table=True):
         sa_type=DateTime(timezone=True),  # type: ignore
     )
 
+    approved_by_id: uuid.UUID | None = Field(
+        default=None,
+        foreign_key="user.id",
+        nullable=True,
+    )
+    approved_at: datetime | None = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
         sa_type=DateTime(timezone=True),  # type: ignore
@@ -102,6 +112,8 @@ class InvoiceMatchPublic(InvoiceMatchBase):
     confirmed_at: datetime | None
     cancelled_by_id: uuid.UUID | None
     cancelled_at: datetime | None
+    approved_by_id: uuid.UUID | None
+    approved_at: datetime | None
     created_at: datetime | None
     updated_at: datetime | None
 

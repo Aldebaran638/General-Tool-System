@@ -12,6 +12,7 @@ from sqlmodel import Session, select
 from app.models_core import get_datetime_utc
 
 from .constants import (
+    MATCH_STATUS_APPROVED,
     MATCH_STATUS_CANCELLED,
     MATCH_STATUS_CONFIRMED,
     MATCH_STATUS_NEEDS_REVIEW,
@@ -149,6 +150,39 @@ def reconfirm_match(
     return match
 
 
+def approve_match(
+    session: Session,
+    *,
+    match: InvoiceMatch,
+    approved_by_id: uuid.UUID,
+) -> InvoiceMatch:
+    now = get_datetime_utc()
+    match.status = MATCH_STATUS_APPROVED
+    match.approved_by_id = approved_by_id
+    match.approved_at = now
+    match.updated_at = now
+    session.add(match)
+    session.commit()
+    session.refresh(match)
+    return match
+
+
+def unapprove_match(
+    session: Session,
+    *,
+    match: InvoiceMatch,
+) -> InvoiceMatch:
+    now = get_datetime_utc()
+    match.status = MATCH_STATUS_CONFIRMED
+    match.approved_by_id = None
+    match.approved_at = None
+    match.updated_at = now
+    session.add(match)
+    session.commit()
+    session.refresh(match)
+    return match
+
+
 def mark_needs_review(
     session: Session,
     *,
@@ -177,6 +211,9 @@ def mark_matches_needing_review_for_purchase_record(
     )
     count = 0
     for match in session.exec(stmt).all():
+        # Skip approved matches — they are immutable
+        if match.status == MATCH_STATUS_APPROVED:
+            continue
         match.status = MATCH_STATUS_NEEDS_REVIEW
         match.review_reason = review_reason
         match.updated_at = get_datetime_utc()
@@ -198,6 +235,9 @@ def mark_matches_needing_review_for_invoice_file(
     )
     count = 0
     for match in session.exec(stmt).all():
+        # Skip approved matches — they are immutable
+        if match.status == MATCH_STATUS_APPROVED:
+            continue
         match.status = MATCH_STATUS_NEEDS_REVIEW
         match.review_reason = review_reason
         match.updated_at = get_datetime_utc()

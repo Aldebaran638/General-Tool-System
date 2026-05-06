@@ -128,6 +128,29 @@ def read_matches(
     return {"count": len(data), "data": data}
 
 
+@router.get("/audit")
+def read_all_matches_for_audit(
+    session: SessionDep,
+    current_user: CurrentUser,
+    status: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
+) -> dict:
+    try:
+        data = service.read_all_matches_for_audit(
+            session=session,
+            current_user=current_user,
+            status=status,
+            skip=skip,
+            limit=limit,
+        )
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail=str(e)
+        )
+    return {"count": len(data), "data": data}
+
+
 from pydantic import BaseModel
 
 
@@ -193,6 +216,46 @@ def reconfirm_match(
 ) -> dict:
     try:
         return service.reconfirm_match(
+            session=session, current_user=current_user, match_id=match_id
+        )
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail=str(e)
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
+
+
+@router.post("/{match_id}/approve")
+def approve_match(
+    session: SessionDep,
+    current_user: CurrentUser,
+    match_id: uuid.UUID,
+) -> dict:
+    try:
+        return service.approve_match(
+            session=session, current_user=current_user, match_id=match_id
+        )
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail=str(e)
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
+
+
+@router.post("/{match_id}/unapprove")
+def unapprove_match(
+    session: SessionDep,
+    current_user: CurrentUser,
+    match_id: uuid.UUID,
+) -> dict:
+    try:
+        return service.unapprove_match(
             session=session, current_user=current_user, match_id=match_id
         )
     except PermissionError as e:

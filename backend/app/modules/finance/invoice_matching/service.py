@@ -24,6 +24,7 @@ from ..purchase_records.repository import get_record as get_purchase_record
 
 from .constants import (
     AMOUNT_TOLERANCE,
+    MATCH_STATUS_APPROVED,
     MATCH_STATUS_CANCELLED,
     MATCH_STATUS_CONFIRMED,
     MATCH_STATUS_NEEDS_REVIEW,
@@ -57,8 +58,13 @@ def _require_owner_only(*, current_user: User, owner_id: uuid.UUID) -> None:
 
 
 def _require_read_access(*, current_user: User, owner_id: uuid.UUID) -> None:
-    """Owner sees own; superuser sees all."""
-    if not current_user.is_superuser and current_user.id != owner_id:
+    """Owner sees own; no admin bypass (admins use audit endpoints)."""
+    if current_user.id != owner_id:
+        raise PermissionError("Not enough permissions")
+
+
+def _require_admin(*, current_user: User) -> None:
+    if not current_user.is_superuser:
         raise PermissionError("Not enough permissions")
 
 
@@ -241,6 +247,8 @@ def _serialize_match(
         "confirmed_at": match.confirmed_at,
         "cancelled_by_id": match.cancelled_by_id,
         "cancelled_at": match.cancelled_at,
+        "approved_by_id": match.approved_by_id,
+        "approved_at": match.approved_at,
         "created_at": match.created_at,
         "updated_at": match.updated_at,
     }
@@ -256,9 +264,12 @@ def read_summary(
     *,
     current_user: User,
 ) -> dict:
-    owner_id = None if current_user.is_superuser else current_user.id
+    owner_id = current_user.id
     confirmed = repository.count_matches(
         session, owner_id=owner_id, status=MATCH_STATUS_CONFIRMED
+    )
+    approved = repository.count_matches(
+        session, owner_id=owner_id, status=MATCH_STATUS_APPROVED
     )
     cancelled = repository.count_matches(
         session, owner_id=owner_id, status=MATCH_STATUS_CANCELLED
@@ -270,6 +281,7 @@ def read_summary(
     available = list_available_invoices(session, current_user=current_user)
     return {
         "total_confirmed": confirmed,
+        "total_approved": approved,
         "total_cancelled": cancelled,
         "total_needs_review": needs_review,
         "total_unmatched_purchase_records": len(unmatched),
@@ -286,8 +298,7 @@ def list_unmatched_purchase_records(
 ) -> list[PurchaseRecord]:
     from ..purchase_records.repository import list_records
 
-    owner_id = None if current_user.is_superuser else current_user.id
-    records = list_records(session, owner_id=owner_id, skip=skip, limit=limit)
+    records = list_records(session, owner_id=current_user.id, skip=skip, limit=limit)
     unmatched: list[PurchaseRecord] = []
     for record in records:
         if not _purchase_eligible_for_match(record):
@@ -309,8 +320,7 @@ def list_available_invoices(
 ) -> list[InvoiceFile]:
     from ..invoice_files.repository import list_records
 
-    owner_id = None if current_user.is_superuser else current_user.id
-    records = list_records(session, owner_id=owner_id, skip=skip, limit=limit)
+    records = list_records(session, owner_id=current_user.id, skip=skip, limit=limit)
     return [r for r in records if _invoice_eligible_for_match(r)]
 
 
@@ -377,9 +387,32 @@ def read_matches(
     skip: int = 0,
     limit: int = 100,
 ) -> list[dict]:
-    owner_id = None if current_user.is_superuser else current_user.id
     matches = repository.list_matches(
-        session, owner_id=owner_id, status=status, skip=skip, limit=limit
+        session, owner_id=current_user.id, status=status, skip=skip, limit=limit
+    )
+    result: list[dict] = []
+    for m in matches:
+        purchase = get_purchase_record(session, record_id=m.purchase_record_id)
+        invoice = get_invoice_file(session, record_id=m.invoice_file_id)
+        if purchase is not None and purchase.deleted_at is not None:
+            continue
+        if invoice is not None and invoice.deleted_at is not None:
+            continue
+        result.append(_serialize_match(m, purchase=purchase, invoice=invoice))
+    return result
+
+
+def read_all_matches_for_audit(
+    session: Session,
+    *,
+    current_user: User,
+    status: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
+) -> list[dict]:
+    _require_admin(current_user=current_user)
+    matches = repository.list_matches(
+        session, owner_id=None, status=status, skip=skip, limit=limit
     )
     result: list[dict] = []
     for m in matches:
@@ -480,6 +513,8 @@ def cancel_match(
     _require_owner_only(current_user=current_user, owner_id=match.owner_id)
     if match.status == MATCH_STATUS_CANCELLED:
         raise ValueError("Match is already cancelled")
+    if match.status == MATCH_STATUS_APPROVED:
+        raise ValueError("Approved matches cannot be cancelled")
     updated = repository.cancel_match(
         session, match=match, cancelled_by_id=current_user.id
     )
@@ -496,6 +531,8 @@ def reconfirm_match(
     if not match:
         raise HTTPException(status_code=404, detail="Match not found")
     _require_owner_only(current_user=current_user, owner_id=match.owner_id)
+    if match.status == MATCH_STATUS_APPROVED:
+        raise ValueError("Approved matches cannot be modified")
     if match.status != MATCH_STATUS_NEEDS_REVIEW:
         raise ValueError("Match must be in needs_review status to reconfirm")
 
@@ -521,6 +558,40 @@ def reconfirm_match(
         score=score,
         score_breakdown=score_breakdown,
     )
+    return _serialize_match(updated)
+
+
+def approve_match(
+    session: Session,
+    *,
+    current_user: User,
+    match_id: uuid.UUID,
+) -> dict:
+    _require_admin(current_user=current_user)
+    match = repository.get_match(session, match_id=match_id)
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+    if match.status != MATCH_STATUS_CONFIRMED:
+        raise ValueError("Only confirmed matches can be approved")
+    updated = repository.approve_match(
+        session, match=match, approved_by_id=current_user.id
+    )
+    return _serialize_match(updated)
+
+
+def unapprove_match(
+    session: Session,
+    *,
+    current_user: User,
+    match_id: uuid.UUID,
+) -> dict:
+    _require_admin(current_user=current_user)
+    match = repository.get_match(session, match_id=match_id)
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+    if match.status != MATCH_STATUS_APPROVED:
+        raise ValueError("Only approved matches can be unapproved")
+    updated = repository.unapprove_match(session, match=match)
     return _serialize_match(updated)
 
 
