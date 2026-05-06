@@ -16,7 +16,6 @@ import {
 interface DatePickerProps {
   value?: Date | string | null
   onChange: (value: string | undefined) => void
-  placeholder?: string
   disabled?: boolean
   className?: string
 }
@@ -24,7 +23,6 @@ interface DatePickerProps {
 function DatePicker({
   value,
   onChange,
-  placeholder = "Pick a date",
   disabled,
   className,
 }: DatePickerProps) {

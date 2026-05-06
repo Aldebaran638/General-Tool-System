@@ -133,7 +133,6 @@ export function UnmatchedList() {
                     <TableCell colSpan={6} className="bg-muted/30 p-4">
                       <CandidateList
                         purchaseRecord={record}
-                        isAdmin={isAdmin}
                       />
                     </TableCell>
                   </TableRow>

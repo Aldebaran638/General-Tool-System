@@ -50,7 +50,6 @@ function StatusBadge({ status, t }: { status: PurchaseRecord["status"]; t: (key:
     submitted: "default",
     approved: "default",
     rejected: "destructive",
-    deleted: "outline",
   }
 
   const labels: Record<PurchaseRecord["status"], string> = {
@@ -58,7 +57,6 @@ function StatusBadge({ status, t }: { status: PurchaseRecord["status"]; t: (key:
     submitted: t("finance.purchaseRecords.status.submitted"),
     approved: t("finance.purchaseRecords.status.approved"),
     rejected: t("finance.purchaseRecords.status.rejected"),
-    deleted: t("finance.purchaseRecords.status.deleted"),
   }
 
   return <Badge variant={variants[status]}>{labels[status]}</Badge>

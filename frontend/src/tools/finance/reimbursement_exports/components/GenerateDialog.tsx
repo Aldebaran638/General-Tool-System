@@ -34,7 +34,7 @@ export function GenerateDialog({
   const [department, setDepartment] = useState("")
   const [businessUnit, setBusinessUnit] = useState("")
   const [reimburser, setReimburser] = useState("")
-  const [reimbursementDate, setReimbursementDate] = useState("")
+  const [reimbursementDate, setReimbursementDate] = useState<string | undefined>("")
   const [retentionDays, setRetentionDays] = useState("")
 
   const generateMutation = useGenerateExportMutation()
