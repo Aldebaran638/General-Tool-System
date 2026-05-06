@@ -21,11 +21,17 @@ async function gotoReimbursementExportsFromSidebar(page: Page) {
   }
 
   await expect(link).toBeVisible()
-  await link.click()
+  await link.evaluate((el: HTMLElement) => el.click())
   await expect(page).toHaveURL(/\/finance\/reimbursement-exports/)
 }
 
 test.describe("Round 008 / reimbursement_exports 前端", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/")
+    await page.evaluate(() => localStorage.setItem("app_locale", "zh-CN"))
+    await page.reload()
+  })
+
   test("报销导出页面可正常打开并显示标题", async ({ page }) => {
     await page.goto("/finance/reimbursement-exports")
     await expect(
@@ -111,6 +117,7 @@ test.describe("普通用户视角", () => {
 
   test.beforeEach(async ({ page }) => {
     await logInUser(page, email, password)
+    await setLocale(page, "zh-CN")
   })
 
   test("普通用户侧边栏看不到报销导出入口", async ({ page }) => {

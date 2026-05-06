@@ -9,6 +9,7 @@ node_modules/
 # Runtime uploads and models generated during tests/runtime
 backend/runtime_data/
 runtime_data/
+backend/test_data/
 
 # Claude Code local configuration
 .claude/

@@ -90,7 +90,7 @@ export default defineConfig({
     ? {}
     : {
         webServer: {
-          command: 'bun run dev',
+          command: 'npm run dev',
           url: baseURL,
           reuseExistingServer: !process.env.CI,
         },

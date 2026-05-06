@@ -29,7 +29,10 @@ const handleApiError = (error: Error) => {
   }
 
   const isExpiredSession =
-    [401, 403].includes(error.status) ||
+    error.status === 401 ||
+    (error.status === 403 &&
+      (error.body as { detail?: string } | undefined)?.detail ===
+        "Could not validate credentials") ||
     (error.status === 404 &&
       (error.body as { detail?: string } | undefined)?.detail === "User not found")
 
