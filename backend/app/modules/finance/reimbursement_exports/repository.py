@@ -198,12 +198,9 @@ def mark_file_deleted(session: Session, *, export: ReimbursementExport) -> Reimb
 # =============================================================================
 
 from app.modules.finance.purchase_records.models import PurchaseRecord  # noqa: E402
-from app.modules.finance.purchase_records.constants import (
-    STATUS_APPROVED as PR_STATUS_APPROVED,
-)
 from app.modules.finance.invoice_matching.models import InvoiceMatch  # noqa: E402
 from app.modules.finance.invoice_matching.constants import (
-    MATCH_STATUS_CONFIRMED,
+    MATCH_STATUS_APPROVED,
 )
 from app.modules.finance.invoice_files.models import InvoiceFile  # noqa: E402
 
@@ -261,8 +258,7 @@ def _build_eligible_base(filters: RecordsFilter):
         .join(InvoiceFile, InvoiceMatch.invoice_file_id == InvoiceFile.id)
         .where(
             PurchaseRecord.deleted_at.is_(None),  # type: ignore
-            PurchaseRecord.status == PR_STATUS_APPROVED,
-            InvoiceMatch.status == MATCH_STATUS_CONFIRMED,
+            InvoiceMatch.status == MATCH_STATUS_APPROVED,
             InvoiceFile.deleted_at.is_(None),  # type: ignore
             InvoiceFile.status != "voided",
         )

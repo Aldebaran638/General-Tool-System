@@ -202,33 +202,6 @@ def withdraw_record(
     return service.withdraw_record(session, current_user=current_user, record_id=id)
 
 
-@router.post("/{id}/approve", response_model=PurchaseRecordPublic)
-def approve_record(
-    session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
-) -> Any:
-    return service.approve_record(session, current_user=current_user, record_id=id)
-
-
-@router.post("/{id}/reject", response_model=PurchaseRecordPublic)
-def reject_record(
-    session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
-) -> Any:
-    return service.reject_record(session, current_user=current_user, record_id=id)
-
-
-@router.post("/{id}/unapprove", response_model=PurchaseRecordPublic)
-def unapprove_record(
-    session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
-) -> Any:
-    return service.unapprove_record(session, current_user=current_user, record_id=id)
-
-
 # =============================================================================
 # Soft Delete / Restore / Purge
 # =============================================================================

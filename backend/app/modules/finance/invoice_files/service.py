@@ -69,8 +69,7 @@ def _require_record_access(
         raise HTTPException(status_code=404, detail="Record not found")
     if not allow_deleted and record.deleted_at is not None:
         raise HTTPException(status_code=404, detail="Record not found")
-    if current_user.is_superuser:
-        return record
+    # Everyone only sees their own records
     if record.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     return record
@@ -159,16 +158,15 @@ def read_records(
             limit=limit,
         )
     else:
-        owner_id = None if current_user.is_superuser else current_user.id
         count = repository.count_records(
             session,
-            owner_id=owner_id,
+            owner_id=current_user.id,
             deleted=False,
             status=status,
         )
         records = repository.list_records(
             session,
-            owner_id=owner_id,
+            owner_id=current_user.id,
             deleted=False,
             status=status,
             skip=skip,

@@ -14,7 +14,6 @@ from app.models_core import User
 from . import repository
 from .constants import (
     CATEGORY_OTHER_PROJECT,
-    STATUS_APPROVED,
     STATUS_DRAFT,
     STATUS_REJECTED,
     STATUS_SUBMITTED,
@@ -74,8 +73,8 @@ def _require_record_access(
         if record.deleted_by_id != current_user.id:
             raise HTTPException(status_code=403, detail="Not enough permissions")
         return record
-    # Normal records: owner sees own; superuser sees all
-    if not current_user.is_superuser and record.owner_id != current_user.id:
+    # Everyone only sees their own records (admin audit moved to invoice matching)
+    if record.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     return record
 
@@ -106,13 +105,12 @@ def read_records(
             deleted_by_id=current_user.id,
         )
     else:
-        owner_id = None if current_user.is_superuser else current_user.id
-        count = repository.count_records(session, owner_id=owner_id, deleted=False)
+        count = repository.count_records(session, owner_id=current_user.id, deleted=False)
         records = repository.list_records(
             session,
             skip=skip,
             limit=limit,
-            owner_id=owner_id,
+            owner_id=current_user.id,
             deleted=False,
         )
     return PurchaseRecordsPublic(data=records, count=count)
@@ -246,64 +244,6 @@ def withdraw_record(
     session.refresh(updated)
 
     return updated
-
-
-def approve_record(
-    session: Session, *, current_user: User, record_id: uuid.UUID
-) -> PurchaseRecord:
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    record = repository.get_record(session, record_id=record_id)
-    record = _require_record_access(record=record, current_user=current_user)
-    if record.status != STATUS_SUBMITTED:
-        raise HTTPException(
-            status_code=403,
-            detail="Only submitted records can be approved",
-        )
-    return repository.update_record_status(session, record=record, status=STATUS_APPROVED)
-
-
-def reject_record(
-    session: Session, *, current_user: User, record_id: uuid.UUID
-) -> PurchaseRecord:
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    record = repository.get_record(session, record_id=record_id)
-    record = _require_record_access(record=record, current_user=current_user)
-    if record.status != STATUS_SUBMITTED:
-        raise HTTPException(
-            status_code=403,
-            detail="Only submitted records can be rejected",
-        )
-    updated = repository.update_record_status(session, record=record, status=STATUS_REJECTED)
-
-    from app.modules.finance.invoice_matching.service import (
-        mark_needs_review_for_purchase_record,
-    )
-
-    mark_needs_review_for_purchase_record(
-        session,
-        purchase_record_id=updated.id,
-        review_reason="purchase record rejected",
-    )
-    session.refresh(updated)
-
-    return updated
-
-
-def unapprove_record(
-    session: Session, *, current_user: User, record_id: uuid.UUID
-) -> PurchaseRecord:
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    record = repository.get_record(session, record_id=record_id)
-    record = _require_record_access(record=record, current_user=current_user)
-    if record.status != STATUS_APPROVED:
-        raise HTTPException(
-            status_code=403,
-            detail="Only approved records can be unapproved",
-        )
-    return repository.update_record_status(session, record=record, status=STATUS_SUBMITTED)
 
 
 def delete_record(
