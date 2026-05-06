@@ -4,15 +4,18 @@ import { toast } from "sonner"
 import { useI18n } from "@/i18n/I18nProvider"
 
 import {
+  approveMatch,
   cancelMatch,
   confirmMatch,
   getMatchSummary,
+  listAllMatchesForAudit,
   listAvailableInvoices,
   listCandidates,
   listMatches,
   listUnmatchedPurchaseRecords,
   reconfirmMatch,
   searchAvailableInvoices,
+  unapproveMatch,
 } from "../api"
 import type { ConfirmMatchRequest, MatchStatus } from "../types"
 
@@ -31,6 +34,8 @@ export const invoiceMatchingAvailableInvoicesKey = [
 ] as const
 export const invoiceMatchingMatchesKey = (status?: MatchStatus) =>
   [...invoiceMatchingQueryKey, "matches", status ?? "all"] as const
+export const invoiceMatchingAuditKey = (status?: MatchStatus) =>
+  [...invoiceMatchingQueryKey, "audit", status ?? "all"] as const
 export const invoiceMatchingCandidatesKey = (purchaseRecordId: string) =>
   [...invoiceMatchingQueryKey, "candidates", purchaseRecordId] as const
 export const invoiceMatchingSearchKey = (
@@ -81,6 +86,13 @@ export function useMatchesQuery(status?: MatchStatus) {
   return useQuery({
     queryKey: invoiceMatchingMatchesKey(status),
     queryFn: () => listMatches(status ? { status } : undefined),
+  })
+}
+
+export function useAllMatchesForAuditQuery(status?: MatchStatus) {
+  return useQuery({
+    queryKey: invoiceMatchingAuditKey(status),
+    queryFn: () => listAllMatchesForAudit(status ? { status } : undefined),
   })
 }
 
@@ -154,6 +166,42 @@ export function useReconfirmMatchMutation() {
     onError: (error: Error) => {
       toast.error(
         error.message || t("finance.invoiceMatching.messages.reconfirmFailed"),
+      )
+    },
+  })
+}
+
+export function useApproveMatchMutation() {
+  const queryClient = useQueryClient()
+  const { t } = useI18n()
+
+  return useMutation({
+    mutationFn: (matchId: string) => approveMatch(matchId),
+    onSuccess: () => {
+      invalidateAll(queryClient)
+      toast.success(t("finance.invoiceMatching.messages.approveSuccess"))
+    },
+    onError: (error: Error) => {
+      toast.error(
+        error.message || t("finance.invoiceMatching.messages.approveFailed"),
+      )
+    },
+  })
+}
+
+export function useUnapproveMatchMutation() {
+  const queryClient = useQueryClient()
+  const { t } = useI18n()
+
+  return useMutation({
+    mutationFn: (matchId: string) => unapproveMatch(matchId),
+    onSuccess: () => {
+      invalidateAll(queryClient)
+      toast.success(t("finance.invoiceMatching.messages.unapproveSuccess"))
+    },
+    onError: (error: Error) => {
+      toast.error(
+        error.message || t("finance.invoiceMatching.messages.unapproveFailed"),
       )
     },
   })

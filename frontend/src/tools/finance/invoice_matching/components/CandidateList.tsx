@@ -28,7 +28,6 @@ import type {
 
 interface CandidateListProps {
   purchaseRecord: UnmatchedPurchaseRecord
-  isAdmin: boolean
 }
 
 function levelVariant(
@@ -42,11 +41,9 @@ function levelVariant(
 function CandidateRow({
   candidate,
   purchaseRecordId,
-  isAdmin,
 }: {
   candidate: CandidateInvoice
   purchaseRecordId: string
-  isAdmin: boolean
 }) {
   const { t } = useI18n()
   const [expanded, setExpanded] = useState(false)
@@ -115,17 +112,15 @@ function CandidateRow({
               )}
               {t("finance.invoiceMatching.actions.scoreBreakdown")}
             </Button>
-            {!isAdmin && (
-              <Button
-                size="sm"
-                onClick={handleConfirm}
-                disabled={confirmMutation.isPending}
-              >
-                {confirmMutation.isPending
-                  ? t("finance.invoiceMatching.actions.confirming")
-                  : t("finance.invoiceMatching.actions.confirm")}
-              </Button>
-            )}
+            <Button
+              size="sm"
+              onClick={handleConfirm}
+              disabled={confirmMutation.isPending}
+            >
+              {confirmMutation.isPending
+                ? t("finance.invoiceMatching.actions.confirming")
+                : t("finance.invoiceMatching.actions.confirm")}
+            </Button>
           </div>
         </div>
         {expanded && (
@@ -134,17 +129,17 @@ function CandidateRow({
               {t("finance.invoiceMatching.scoreBreakdownTitle")}
             </div>
             <ul className="text-muted-foreground space-y-1 text-sm">
-              {Object.keys(candidate.score_breakdown).length === 0 && (
+              {Object.keys(candidate.score_breakdown).length === 0 ? (
                 <li>{t("finance.invoiceMatching.scoreBreakdownEmpty")}</li>
-              )}
-              {Object.entries(candidate.score_breakdown).map(([key, value]) => (
+              ) : (
+                Object.entries(candidate.score_breakdown).map(([key, value]) => (
                 <li key={key}>
                   <span className="font-medium">
                     {t(`finance.invoiceMatching.scoreCategory.${key}`)}
                   </span>
                   : +{value}
                 </li>
-              ))}
+              )))}
             </ul>
           </div>
         )}
@@ -156,11 +151,9 @@ function CandidateRow({
 function SearchResultRow({
   invoice,
   purchaseRecordId,
-  isAdmin,
 }: {
   invoice: SearchableInvoice
   purchaseRecordId: string
-  isAdmin: boolean
 }) {
   const { t } = useI18n()
   const confirmMutation = useConfirmMatchMutation()
@@ -204,7 +197,7 @@ function SearchResultRow({
               </span>
             </div>
           </div>
-          {!isAdmin && (
+          
             <Button
               size="sm"
               onClick={handleConfirm}
@@ -214,14 +207,14 @@ function SearchResultRow({
                 ? t("finance.invoiceMatching.actions.confirming")
                 : t("finance.invoiceMatching.actions.confirm")}
             </Button>
-          )}
+          
         </div>
       </CardContent>
     </Card>
   )
 }
 
-export function CandidateList({ purchaseRecord, isAdmin }: CandidateListProps) {
+export function CandidateList({ purchaseRecord }: CandidateListProps) {
   const { t } = useI18n()
   const [activeTab, setActiveTab] = useState<"recommend" | "search">("recommend")
   const [searchInput, setSearchInput] = useState("")
@@ -285,7 +278,6 @@ export function CandidateList({ purchaseRecord, isAdmin }: CandidateListProps) {
             key={c.invoice_file_id}
             candidate={c}
             purchaseRecordId={purchaseRecord.id}
-            isAdmin={isAdmin}
           />
         ))}
       </div>
@@ -357,7 +349,6 @@ export function CandidateList({ purchaseRecord, isAdmin }: CandidateListProps) {
                         key={inv.id}
                         invoice={inv}
                         purchaseRecordId={purchaseRecord.id}
-                        isAdmin={isAdmin}
                       />
                     ))}
                   </div>

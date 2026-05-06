@@ -1,9 +1,10 @@
-export type MatchStatus = "confirmed" | "needs_review" | "cancelled"
+export type MatchStatus = "confirmed" | "needs_review" | "cancelled" | "approved"
 
 export type MatchLevel = "strong" | "weak" | "low"
 
 export interface MatchSummary {
   total_confirmed: number
+  total_approved: number
   total_cancelled: number
   total_needs_review: number
   total_unmatched_purchase_records: number
@@ -100,6 +101,8 @@ export interface InvoiceMatchPublic {
   confirmed_at: string | null
   cancelled_by_id: string | null
   cancelled_at: string | null
+  approved_by_id: string | null
+  approved_at: string | null
   created_at: string
   updated_at: string | null
 }

@@ -18,11 +18,7 @@ import type { UnmatchedPurchaseRecord } from "../types"
 
 import { CandidateList } from "./CandidateList"
 
-interface UnmatchedListProps {
-  isAdmin: boolean
-}
-
-export function UnmatchedList({ isAdmin }: UnmatchedListProps) {
+export function UnmatchedList() {
   const { t } = useI18n()
   const { data, isLoading } = useUnmatchedPurchaseRecordsQuery()
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())

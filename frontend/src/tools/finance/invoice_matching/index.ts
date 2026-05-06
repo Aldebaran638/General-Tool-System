@@ -29,5 +29,6 @@ registerTool({
 })
 
 export { InvoiceMatchingPage }
+export { AuditPage } from "./components/AuditPage"
 export * from "./api"
 export * from "./types"

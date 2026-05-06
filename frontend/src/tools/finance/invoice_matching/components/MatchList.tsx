@@ -31,7 +31,6 @@ import type { InvoiceMatchPublic, MatchStatus } from "../types"
 
 interface MatchListProps {
   status: MatchStatus
-  isAdmin: boolean
   includeNeedsReview?: boolean
 }
 
@@ -57,12 +56,13 @@ function getReviewReasonKey(reason: string | null): string {
 function statusVariant(
   status: MatchStatus,
 ): "default" | "secondary" | "destructive" | "outline" {
+  if (status === "approved") return "default"
   if (status === "confirmed") return "default"
   if (status === "needs_review") return "secondary"
   return "destructive"
 }
 
-function MatchDetailDialog({
+export function MatchDetailDialog({
   match,
   open,
   onClose,
@@ -196,9 +196,10 @@ function MatchDetailDialog({
   )
 }
 
-export function MatchList({ status, isAdmin, includeNeedsReview }: MatchListProps) {
+export function MatchList({ status, includeNeedsReview }: MatchListProps) {
   const { t } = useI18n()
   const confirmedQuery = useMatchesQuery("confirmed")
+  const approvedQuery = useMatchesQuery("approved")
   const needsReviewQuery = useMatchesQuery("needs_review")
   const cancelledQuery = useMatchesQuery("cancelled")
 
@@ -223,6 +224,9 @@ export function MatchList({ status, isAdmin, includeNeedsReview }: MatchListProp
       )
       isLoading = confirmedQuery.isLoading || needsReviewQuery.isLoading
     }
+  } else if (status === "approved") {
+    data = approvedQuery.data?.data ?? []
+    isLoading = approvedQuery.isLoading
   } else if (status === "needs_review") {
     data = needsReviewQuery.data?.data ?? []
     isLoading = needsReviewQuery.isLoading
@@ -284,6 +288,8 @@ export function MatchList({ status, isAdmin, includeNeedsReview }: MatchListProp
               ? t(`finance.invoiceMatching.reviewReasons.${reasonKey}`)
               : ""
 
+            const canAct = match.status !== "cancelled" && match.status !== "approved"
+
             return (
               <TableRow key={match.id}>
                 <TableCell className="font-medium">
@@ -328,7 +334,7 @@ export function MatchList({ status, isAdmin, includeNeedsReview }: MatchListProp
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    {!isAdmin && match.status === "needs_review" && (
+                    {canAct && match.status === "needs_review" && (
                       <Button
                         size="sm"
                         onClick={() => reconfirmMutation.mutate(match.id)}
@@ -339,7 +345,7 @@ export function MatchList({ status, isAdmin, includeNeedsReview }: MatchListProp
                           : t("finance.invoiceMatching.actions.reconfirm")}
                       </Button>
                     )}
-                    {!isAdmin && match.status !== "cancelled" && (
+                    {canAct && (
                       <Button
                         variant="destructive"
                         size="sm"

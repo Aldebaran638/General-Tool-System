@@ -83,6 +83,19 @@ export async function listMatches(params?: {
   return response as InvoiceMatchesPublic
 }
 
+export async function listAllMatchesForAudit(params?: {
+  status?: MatchStatus
+  skip?: number
+  limit?: number
+}): Promise<InvoiceMatchesPublic> {
+  const response = await __request(OpenAPI, {
+    method: "GET",
+    url: `${BASE_URL}/audit`,
+    query: params,
+  })
+  return response as InvoiceMatchesPublic
+}
+
 export async function confirmMatch(
   data: ConfirmMatchRequest,
 ): Promise<InvoiceMatchPublic> {
@@ -109,6 +122,26 @@ export async function reconfirmMatch(
   const response = await __request(OpenAPI, {
     method: "POST",
     url: `${BASE_URL}/${matchId}/reconfirm`,
+  })
+  return response as InvoiceMatchPublic
+}
+
+export async function approveMatch(
+  matchId: string,
+): Promise<InvoiceMatchPublic> {
+  const response = await __request(OpenAPI, {
+    method: "POST",
+    url: `${BASE_URL}/${matchId}/approve`,
+  })
+  return response as InvoiceMatchPublic
+}
+
+export async function unapproveMatch(
+  matchId: string,
+): Promise<InvoiceMatchPublic> {
+  const response = await __request(OpenAPI, {
+    method: "POST",
+    url: `${BASE_URL}/${matchId}/unapprove`,
   })
   return response as InvoiceMatchPublic
 }

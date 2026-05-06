@@ -2,13 +2,11 @@ import { useState } from "react"
 
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import useAuth from "@/hooks/useAuth"
 import { useI18n } from "@/i18n/I18nProvider"
 
 import { useMatchSummaryQuery } from "../hooks/useInvoiceMatching"
@@ -16,12 +14,10 @@ import { useMatchSummaryQuery } from "../hooks/useInvoiceMatching"
 import { MatchList } from "./MatchList"
 import { UnmatchedList } from "./UnmatchedList"
 
-type TabValue = "unmatched" | "matched" | "needs_review" | "cancelled"
+type TabValue = "unmatched" | "matched" | "needs_review" | "cancelled" | "approved"
 
 export function InvoiceMatchingPage() {
   const { t } = useI18n()
-  const { user } = useAuth()
-  const isAdmin = user?.is_superuser ?? false
   const [tab, setTab] = useState<TabValue>("unmatched")
 
   const { data: summary } = useMatchSummaryQuery()
@@ -38,7 +34,7 @@ export function InvoiceMatchingPage() {
       </div>
 
       {summary && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
           <Card data-testid="summary-confirmed">
             <CardHeader className="px-4">
               <CardDescription>
@@ -46,6 +42,16 @@ export function InvoiceMatchingPage() {
               </CardDescription>
               <CardTitle className="text-2xl">
                 {summary.total_confirmed}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card data-testid="summary-approved">
+            <CardHeader className="px-4">
+              <CardDescription>
+                {t("finance.invoiceMatching.summary.approved")}
+              </CardDescription>
+              <CardTitle className="text-2xl">
+                {summary.total_approved}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -106,29 +112,27 @@ export function InvoiceMatchingPage() {
           <TabsTrigger value="cancelled">
             {t("finance.invoiceMatching.tabs.cancelled")}
           </TabsTrigger>
+          <TabsTrigger value="approved">
+            {t("finance.invoiceMatching.tabs.approved")}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="unmatched">
-          <UnmatchedList isAdmin={isAdmin} />
+          <UnmatchedList />
         </TabsContent>
         <TabsContent value="matched">
-          <MatchList status="confirmed" isAdmin={isAdmin} includeNeedsReview />
+          <MatchList status="confirmed" includeNeedsReview />
         </TabsContent>
         <TabsContent value="needs_review">
-          <MatchList status="needs_review" isAdmin={isAdmin} />
+          <MatchList status="needs_review" />
         </TabsContent>
         <TabsContent value="cancelled">
-          <MatchList status="cancelled" isAdmin={isAdmin} />
+          <MatchList status="cancelled" />
+        </TabsContent>
+        <TabsContent value="approved">
+          <MatchList status="approved" />
         </TabsContent>
       </Tabs>
-
-      {isAdmin && (
-        <Card>
-          <CardContent className="text-muted-foreground px-6 py-4 text-sm">
-            {t("finance.invoiceMatching.adminReadOnlyHint")}
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }
