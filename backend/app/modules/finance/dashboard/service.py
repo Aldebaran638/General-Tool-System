@@ -96,11 +96,11 @@ def _purchase_has_active_match(
 
 
 def _scope_label(current_user: User) -> str:
-    return SCOPE_GLOBAL if current_user.is_superuser else SCOPE_SELF
+    return SCOPE_SELF
 
 
 def _scoped_owner_id(current_user: User) -> uuid.UUID | None:
-    return None if current_user.is_superuser else current_user.id
+    return current_user.id
 
 
 # =============================================================================
