@@ -19,6 +19,9 @@ const dict = {
     purchaseRecords,
     invoiceFiles,
     invoiceMatching,
+    invoiceMatchAudit: {
+      title: "Invoice Match Audit",
+    },
     reimbursementExports,
   },
 }

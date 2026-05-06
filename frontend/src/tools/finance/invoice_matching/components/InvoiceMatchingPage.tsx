@@ -14,7 +14,7 @@ import { useMatchSummaryQuery } from "../hooks/useInvoiceMatching"
 import { MatchList } from "./MatchList"
 import { UnmatchedList } from "./UnmatchedList"
 
-type TabValue = "unmatched" | "matched" | "needs_review" | "cancelled" | "approved"
+type TabValue = "unmatched" | "matched" | "needs_review" | "cancelled"
 
 export function InvoiceMatchingPage() {
   const { t } = useI18n()
@@ -42,16 +42,6 @@ export function InvoiceMatchingPage() {
               </CardDescription>
               <CardTitle className="text-2xl">
                 {summary.total_confirmed}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card data-testid="summary-approved">
-            <CardHeader className="px-4">
-              <CardDescription>
-                {t("finance.invoiceMatching.summary.approved")}
-              </CardDescription>
-              <CardTitle className="text-2xl">
-                {summary.total_approved}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -112,9 +102,6 @@ export function InvoiceMatchingPage() {
           <TabsTrigger value="cancelled">
             {t("finance.invoiceMatching.tabs.cancelled")}
           </TabsTrigger>
-          <TabsTrigger value="approved">
-            {t("finance.invoiceMatching.tabs.approved")}
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="unmatched">
@@ -128,9 +115,6 @@ export function InvoiceMatchingPage() {
         </TabsContent>
         <TabsContent value="cancelled">
           <MatchList status="cancelled" />
-        </TabsContent>
-        <TabsContent value="approved">
-          <MatchList status="approved" />
         </TabsContent>
       </Tabs>
     </div>

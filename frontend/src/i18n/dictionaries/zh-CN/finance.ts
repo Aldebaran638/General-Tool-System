@@ -368,6 +368,9 @@ export default {
       unapproveFailed: "取消审核失败",
     },
   },
+  invoiceMatchAudit: {
+    title: "发票匹配审核",
+  },
   reimbursementExports: {
     title: "报销导出",
     subtitle: "导出已批准的购买记录并生成 Excel 报销文件",

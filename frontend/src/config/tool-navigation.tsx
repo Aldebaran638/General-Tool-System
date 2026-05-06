@@ -13,6 +13,7 @@ import { toolRegistry } from "@/tools/registry"
 import "@/tools/finance/purchase_records"
 import "@/tools/finance/invoice_files"
 import "@/tools/finance/invoice_matching"
+import "@/tools/finance/invoice_match_audit"
 import "@/tools/finance/reimbursement_exports"
 
 /**
