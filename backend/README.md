@@ -1,4 +1,4 @@
-# FastAPI Project - Backend
+# 课程培训及考核管理平台 - 后端
 
 ## Requirements
 

@@ -1,5 +1,5 @@
 {
-  "name": "general-tool-system",
+  "name": "course-training-assessment-platform",
   "private": true,
   "workspaces": [
     "frontend"

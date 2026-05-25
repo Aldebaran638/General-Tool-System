@@ -1,4 +1,4 @@
-# FastAPI Project - Frontend
+# 课程培训及考核管理平台 - 前端
 
 The frontend is built with [Vite](https://vitejs.dev/), [React](https://reactjs.org/), [TypeScript](https://www.typescriptlang.org/), [TanStack Query](https://tanstack.com/query), [TanStack Router](https://tanstack.com/router) and [Tailwind CSS](https://tailwindcss.com/).
 
