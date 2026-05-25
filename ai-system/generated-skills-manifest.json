@@ -17,7 +17,7 @@
       "skill_path": "skills/members/架构师skill.md",
       "builder_skill_path": null,
       "status": "existing_project_skill",
-      "selection_reason": "The repository already contains a strict architect workflow that decomposes work into design, test, task, and dispatch artifacts for single-tool execution.",
+      "selection_reason": "The repository already contains a strict architect workflow that decomposes work into design, test, task, and dispatch artifacts for single-module execution.",
       "depends_on": [
         "skills/tool-system/README.md",
         "skills/tool-system/system-principles.md",
@@ -25,8 +25,8 @@
         "skills/tool-system/delivery-packet.md",
         "docs/tool-module-architecture.md",
         "backend/app/MODULE_ARCHITECTURE.md",
-        "frontend/src/tools/README.md",
-        "backend/app/modules/README.md"
+        "frontend/src/routes/README.md",
+        "backend/app/models/README.md"
       ],
       "owned_scopes": [
         "requirement clarification",
@@ -42,18 +42,18 @@
       "skill_path": "skills/members/前端skill.md",
       "builder_skill_path": "skills/tool-frontend-builder/SKILL.md",
       "status": "existing_project_skill",
-      "selection_reason": "The repository already has a frontend member skill plus a dedicated single-tool builder aligned with real route and navigation integration points.",
+      "selection_reason": "The repository already has a frontend member skill plus a dedicated single-module builder aligned with real route and navigation integration points.",
       "depends_on": [
         "skills/members/架构师skill.md",
         "skills/tool-system/system-principles.md",
         "skills/tool-system/group-tool-contract.md",
         "skills/tool-frontend-builder/SKILL.md",
-        "frontend/src/config/tool-navigation.tsx",
+        "frontend/src/config/navigation.tsx",
         "frontend/src/routes/_layout.tsx"
       ],
       "owned_scopes": [
-        "frontend tool implementation",
-        "frontend tool tests"
+        "frontend module implementation",
+        "frontend module tests"
       ]
     },
     {
@@ -70,11 +70,11 @@
         "skills/tool-system/group-tool-contract.md",
         "skills/tool-module-builder/SKILL.md",
         "backend/app/MODULE_ARCHITECTURE.md",
-        "backend/app/modules/README.md"
+        "backend/app/models/README.md"
       ],
       "owned_scopes": [
-        "backend tool implementation",
-        "backend tool tests"
+        "backend module implementation",
+        "backend module tests"
       ]
     },
     {
@@ -84,7 +84,7 @@
       "skill_path": "skills/members/测试skill.md",
       "builder_skill_path": null,
       "status": "existing_project_skill",
-      "selection_reason": "The repository already contains a dedicated test worker skill that validates reports, file boundaries, and automated test execution for a single tool.",
+      "selection_reason": "The repository already contains a dedicated test worker skill that validates reports, file boundaries, and automated test execution for a single module.",
       "depends_on": [
         "skills/members/架构师skill.md",
         "skills/tool-system/validation-and-consistency.md"

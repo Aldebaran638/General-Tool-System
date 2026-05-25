@@ -1,8 +1,8 @@
-# 通用工具系统 Skill Manual
+# 课程培训及考核管理平台 Skill Manual
 
 ## 初始化结果
 
-当前仓库已经具备“架构师主导的多 Agent 工具流水线”初始化基线。
+当前仓库已经具备“架构师主导的多 Agent 业务域模块流水线”初始化基线。
 
 本次初始化没有复制一套重复的成员 skill，而是先完成了两件事：
 
@@ -25,19 +25,22 @@
 
 ## 当前仓库的目录映射
 
-- 抽象工具根：`src/tools/<group>/<tool_key>/`
-- 前端真实工具根：`frontend/src/tools/<group>/<tool_key>/`
-- 前端真实测试根：`frontend/tests/<group>/<tool_key>/`
-- 后端真实工具根：`backend/app/modules/<group>/<tool_key>/`
-- 后端真实测试根：`backend/tests/<group>/<tool_key>/`
+- 抽象模块根：`src/modules/<module_key>/`
+- 前端路由根：`frontend/src/routes/<module>/`
+- 前端组件根：`frontend/src/components/<module>/`
+- 前端真实测试根：`frontend/tests/<module>/`
+- 后端模块根：`backend/app/modules/<module>/`
+- 后端路由文件：`backend/app/routers/<module>.py`
+- 后端模型文件：`backend/app/models/<module>.py`
+- 后端真实测试根：`backend/tests/<module>/`
 
-当前仓库允许遗留结构继续存在，但新增工具必须收敛到上述路径。
+当前仓库允许遗留结构继续存在，但新增模块必须收敛到上述路径。
 
 ## 标准运行方式
 
 1. 用户只直接驱动 `architect`。
 2. `architect` 先完成需求澄清，再输出设计文档、测试文档、任务清单、派单包。
-3. `frontend_tool_worker` 与 `backend_tool_worker` 只各自执行一个工具。
+3. `frontend_tool_worker` 与 `backend_tool_worker` 只各自执行一个模块。
 4. 两个执行角色都必须回报结构化 report。
 5. `test_worker` 只在前后端 report 齐全后启动验收。
 

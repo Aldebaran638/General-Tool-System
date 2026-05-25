@@ -2,14 +2,14 @@
   "profile_version": "1.0",
   "generated_at": "2026-04-22",
   "project": {
-    "name": "通用工具系统",
+    "name": "课程培训及考核管理平台",
     "repository_root": ".",
-    "summary": "A tool-oriented full-stack repository with a React frontend, FastAPI backend, and an architect-led multi-agent skill system."
+    "summary": "A course training and assessment management platform with a React frontend, FastAPI backend, and an architect-led multi-agent skill system."
   },
   "system_target": {
     "orchestration_model": "architect-led-multi-agent",
-    "canonical_group_key": "group",
-    "canonical_tool_key": "tool_key",
+    "canonical_group_key": "domain",
+    "canonical_tool_key": "module_key",
     "supports_group_tool_pipeline": true
   },
   "technology": {
@@ -41,23 +41,25 @@
   },
   "repository_mapping": {
     "canonical_patterns": {
-      "tool_root": "src/tools/<group>/<tool_key>/",
-      "tool_test_root": "tests/<group>/<tool_key>/"
+      "module_root": "src/modules/<module_key>/",
+      "module_test_root": "tests/<module_key>/"
     },
     "executable_patterns": {
-      "frontend_tool_root": "frontend/src/tools/<group>/<tool_key>/",
-      "frontend_route_file": "frontend/src/routes/_layout/<tool_key>.tsx",
-      "frontend_test_root": "frontend/tests/<group>/<tool_key>/",
-      "backend_tool_root": "backend/app/modules/<group>/<tool_key>/",
-      "backend_test_root": "backend/tests/<group>/<tool_key>/"
+      "frontend_route_root": "frontend/src/routes/<module>/",
+      "frontend_component_root": "frontend/src/components/<module>/",
+      "frontend_route_file": "frontend/src/routes/<module>.tsx",
+      "frontend_test_root": "frontend/tests/<module>/",
+      "backend_router_file": "backend/app/routers/<module>.py",
+      "backend_model_file": "backend/app/models/<module>.py",
+      "backend_test_root": "backend/tests/<module>/"
     },
     "integration_files": [
-      "frontend/src/config/tool-navigation.tsx",
+      "frontend/src/config/navigation.tsx",
       "frontend/src/routes/_layout.tsx",
-      "frontend/src/tools/README.md",
+      "frontend/src/routes/README.md",
       "backend/app/api/main.py",
       "backend/app/MODULE_ARCHITECTURE.md",
-      "backend/app/modules/README.md",
+      "backend/app/models/README.md",
       "docs/tool-module-architecture.md"
     ]
   },
@@ -89,12 +91,12 @@
     {
       "role_id": "frontend_tool_worker",
       "role_kind": "executor",
-      "scope": "single-tool-frontend",
+      "scope": "single-module-frontend",
       "skill_path": "skills/members/前端skill.md",
       "builder_skill_path": "skills/tool-frontend-builder/SKILL.md",
       "allowed_path_patterns": [
-        "frontend/src/tools/",
         "frontend/src/routes/",
+        "frontend/src/components/",
         "frontend/src/config/",
         "frontend/tests/"
       ],
@@ -113,11 +115,12 @@
     {
       "role_id": "backend_tool_worker",
       "role_kind": "executor",
-      "scope": "single-tool-backend",
+      "scope": "single-module-backend",
       "skill_path": "skills/members/后端skill.md",
       "builder_skill_path": "skills/tool-module-builder/SKILL.md",
       "allowed_path_patterns": [
-        "backend/app/modules/",
+        "backend/app/routers/",
+        "backend/app/models/",
         "backend/app/api/",
         "backend/tests/"
       ],
@@ -136,7 +139,7 @@
     {
       "role_id": "test_worker",
       "role_kind": "reviewer",
-      "scope": "single-tool-verification",
+      "scope": "single-module-verification",
       "skill_path": "skills/members/测试skill.md",
       "builder_skill_path": null,
       "allowed_path_patterns": [
@@ -164,7 +167,7 @@
       "command_id": "frontend_build",
       "cwd": "frontend",
       "command": "npm run build",
-      "purpose": "Validate the frontend build for tool-based UI changes."
+      "purpose": "Validate the frontend build for module-based UI changes."
     },
     {
       "command_id": "frontend_playwright",
@@ -175,8 +178,8 @@
     {
       "command_id": "backend_pytest",
       "cwd": "backend",
-      "command": "pytest tests/workbench/project_management/index_test.py -q",
-      "purpose": "Run backend verification for a tool module."
+      "command": "pytest -q",
+      "purpose": "Run backend verification for domain modules."
     },
     {
       "command_id": "initializer_validation",

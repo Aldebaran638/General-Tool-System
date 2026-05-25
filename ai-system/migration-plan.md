@@ -1,4 +1,4 @@
-# 通用工具系统 Migration Plan
+# 课程培训及考核管理平台 Migration Plan
 
 ## 已执行
 
@@ -9,7 +9,7 @@
 
 ## 建议后续执行
 
-- 持续把新增工具统一落到 `frontend/src/tools/<group>/<tool_key>/` 与 `backend/app/modules/<group>/<tool_key>/`。
+- 持续把新增工具统一落到 `frontend/src/routes/<module>/` 与 `backend/app/modules/<module>/`。
 - 在架构师交付包中逐步增加更稳定的机器可读字段，降低后续生成 role skill 的人工判断成本。
 - 等现有成员 skill 稳定后，再决定是否把运行时 canonical skill 路径统一迁移到 `skills/generated/`。
 
