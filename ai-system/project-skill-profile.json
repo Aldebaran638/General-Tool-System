@@ -45,13 +45,13 @@
       "module_test_root": "tests/<module_key>/"
     },
     "executable_patterns": {
-      "frontend_route_root": "frontend/src/routes/<module>/",
       "frontend_component_root": "frontend/src/components/<module>/",
-      "frontend_route_file": "frontend/src/routes/<module>.tsx",
       "frontend_test_root": "frontend/tests/<module>/",
-      "backend_router_file": "backend/app/routers/<module>.py",
-      "backend_model_file": "backend/app/models/<module>.py",
-      "backend_test_root": "backend/tests/<module>/"
+      "backend_test_root": "backend/tests/<module>/",
+      "backend_module_root": "backend/app/modules/<domain>/<module>/",
+      "frontend_layout_route_root": "frontend/src/routes/_layout/<module>/",
+      "frontend_layout_route_file": "frontend/src/routes/_layout/<module>.tsx",
+      "frontend_standalone_route_file": "frontend/src/routes/<module>.tsx"
     },
     "integration_files": [
       "frontend/src/config/navigation.tsx",
@@ -59,7 +59,7 @@
       "frontend/src/routes/README.md",
       "backend/app/api/main.py",
       "backend/app/MODULE_ARCHITECTURE.md",
-      "backend/app/models/README.md",
+      "backend/app/modules/README.md",
       "docs/tool-module-architecture.md"
     ]
   },
@@ -119,8 +119,7 @@
       "skill_path": "skills/members/后端skill.md",
       "builder_skill_path": "skills/tool-module-builder/SKILL.md",
       "allowed_path_patterns": [
-        "backend/app/routers/",
-        "backend/app/models/",
+        "backend/app/modules/",
         "backend/app/api/",
         "backend/tests/"
       ],
