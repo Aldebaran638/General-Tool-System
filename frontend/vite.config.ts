@@ -20,6 +20,10 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
+    // Allow all hosts so cloudflare tunnel / WeCom H5 domains are not blocked.
+    // Vite's default host-check would reject *.trycloudflare.com with
+    // "Blocked request" even though the traffic is legitimate dev traffic.
+    allowedHosts: true,
     // Proxy API requests to the backend so the frontend and API share the
     // same origin. This is required for:
     //   1. Local dev (avoids CORS preflight failures)
