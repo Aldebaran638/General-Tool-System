@@ -7,16 +7,22 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { isLoggedIn } from "@/hooks/useAuth"
+import { isLoggedIn, isWecomBrowser, redirectToWecomOAuth } from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/_layout")({
   component: Layout,
   beforeLoad: async () => {
-    if (!isLoggedIn()) {
-      throw redirect({
-        to: "/login",
-      })
+    if (isLoggedIn()) return
+
+    if (isWecomBrowser()) {
+      // Inside WeCom: trigger OAuth flow instead of showing the login form.
+      // Full-page navigation hands control to WeCom; the browser won't render
+      // this route at all, so we suspend with a never-resolving Promise.
+      redirectToWecomOAuth()
+      await new Promise<never>(() => {})
     }
+
+    throw redirect({ to: "/login" })
   },
 })
 
