@@ -1,11 +1,13 @@
 import sentry_sdk
 from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 from pathlib import Path
 
 from app.api.main import api_router
+from app.api.routes import wecom_auth
 from app.core.config import settings
 
 
@@ -33,6 +35,13 @@ if settings.all_cors_origins:
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(wecom_auth.router, prefix="/api/auth")
+
+
+@app.get("/WW_verify_HUz4rWBElVbwEoOX.txt", response_class=PlainTextResponse)
+async def wecom_verify() -> str:
+    verify_path = Path(__file__).parent / "WW_verify_HUz4rWBElVbwEoOX.txt"
+    return verify_path.read_text(encoding="utf-8")
 
 
 def _resolve_upload_root_dir() -> Path:

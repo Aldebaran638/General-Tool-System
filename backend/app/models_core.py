@@ -33,6 +33,7 @@ class UserBase(SQLModel):
     is_active: bool = True
     is_superuser: bool = False
     full_name: str | None = Field(default=None, max_length=255)
+    wecom_userid: str | None = Field(default=None, unique=True, index=True, max_length=64)
 
 
 class UserCreate(UserBase):
@@ -105,3 +106,28 @@ class NewPassword(SQLModel):
 
 class Message(SQLModel):
     message: str
+
+
+# =============================================================================
+# WeCom Models
+# =============================================================================
+
+class WecomConfig(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    corp_id: str = Field(max_length=64)
+    agent_id: str = Field(max_length=64)
+    secret_encrypted: str = Field(max_length=255)
+    trusted_domain: str | None = Field(default=None, max_length=255)
+    access_token: str | None = Field(default=None, max_length=512)
+    access_token_expire_at: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))
+    created_at: datetime | None = Field(default_factory=get_datetime_utc, sa_type=DateTime(timezone=True))
+    updated_at: datetime | None = Field(default_factory=get_datetime_utc, sa_type=DateTime(timezone=True))
+
+
+class SystemUserRole(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    userid: str = Field(index=True, max_length=64)
+    role_code: str = Field(max_length=64)
+    created_by: str | None = Field(default=None, max_length=64)
+    created_at: datetime | None = Field(default_factory=get_datetime_utc, sa_type=DateTime(timezone=True))
+    updated_at: datetime | None = Field(default_factory=get_datetime_utc, sa_type=DateTime(timezone=True))

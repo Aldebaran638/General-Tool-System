@@ -21,6 +21,7 @@ This file will be removed in a future major version once all legacy code is migr
 from app.models_core import (
     Message,
     NewPassword,
+    SystemUserRole,
     Token,
     TokenPayload,
     UpdatePassword,
@@ -32,6 +33,7 @@ from app.models_core import (
     UsersPublic,
     UserUpdate,
     UserUpdateMe,
+    WecomConfig,
     get_datetime_utc,
 )
 
@@ -50,4 +52,6 @@ __all__ = [
     "TokenPayload",
     "NewPassword",
     "Message",
+    "WecomConfig",
+    "SystemUserRole",
 ]
