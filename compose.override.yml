@@ -58,7 +58,7 @@ services:
   backend:
     restart: "no"
     ports:
-      - "8000:8000"
+      - "8001:8000"
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -101,7 +101,7 @@ services:
   frontend:
     restart: "no"
     ports:
-      - "15173:5173"
+      - "8000:5173"
     build:
       context: .
       dockerfile: frontend/Dockerfile.dev
