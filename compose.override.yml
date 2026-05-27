@@ -114,7 +114,11 @@ services:
       - --port
       - "5173"
     environment:
-      VITE_API_URL: "http://localhost:8000"
+      # 空字符串 → OpenAPI.BASE="" → 前端使用相对路径
+      # /api/* 由 Vite proxy 转发到 backend 容器，无需跨域
+      VITE_API_URL: ""
+      # Vite proxy 在容器内使用 Docker 内部服务名到达 backend
+      BACKEND_URL: "http://backend:8000"
       CHOKIDAR_USEPOLLING: "true"
     volumes:
       - ./frontend:/app/frontend

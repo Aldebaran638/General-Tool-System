@@ -33,10 +33,10 @@ for f in "$CLOUDFLARE_DIR"/*.json; do
     echo "已备份旧凭证：$CLOUDFLARE_DIR/$BACKUP_NAME"
 done
 
-# 检查后端是否运行
-if ! curl -s http://localhost:8000/api/v1/utils/health-check/ > /dev/null 2>&1; then
-    echo "警告：localhost:8000 似乎没有响应"
-    echo "请确保后端服务已启动（docker compose up backend 或 fastapi run）"
+# 检查前端（Vite dev server）是否运行
+if ! curl -s http://localhost:15173 > /dev/null 2>&1; then
+    echo "警告：localhost:15173 似乎没有响应"
+    echo "请确保前端服务已启动（docker compose up frontend）"
     echo ""
     read -p "仍要继续吗？(y/N): " confirm
     if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
@@ -45,9 +45,11 @@ if ! curl -s http://localhost:8000/api/v1/utils/health-check/ > /dev/null 2>&1; 
 fi
 
 # 启动 cloudflared，输出到临时文件
+# 注意：隧道指向 Vite dev server（15173）而非 backend（8000）
+# Vite 内置 proxy 会把 /api/* 转发到 backend:8000，无需两条隧道
 TMPFILE=$(mktemp)
-echo "正在启动临时隧道（指向 localhost:8000）..."
-cloudflared tunnel --url http://localhost:8000 > "$TMPFILE" 2>&1 &
+echo "正在启动临时隧道（指向 localhost:15173）..."
+cloudflared tunnel --url http://localhost:15173 > "$TMPFILE" 2>&1 &
 PID=$!
 
 # 等待并捕获域名

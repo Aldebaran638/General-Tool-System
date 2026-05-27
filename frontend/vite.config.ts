@@ -19,4 +19,24 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    // Proxy API requests to the backend so the frontend and API share the
+    // same origin. This is required for:
+    //   1. Local dev (avoids CORS preflight failures)
+    //   2. WeCom H5 (cloudflare tunnel → Vite → backend works on mobile)
+    proxy: {
+      "/api": {
+        target: process.env.BACKEND_URL ?? "http://localhost:8000",
+        changeOrigin: true,
+      },
+      "/WW_verify_HUz4rWBElVbwEoOX.txt": {
+        target: process.env.BACKEND_URL ?? "http://localhost:8000",
+        changeOrigin: true,
+      },
+      "/uploads": {
+        target: process.env.BACKEND_URL ?? "http://localhost:8000",
+        changeOrigin: true,
+      },
+    },
+  },
 })
