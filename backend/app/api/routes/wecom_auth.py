@@ -110,7 +110,9 @@ async def _code_to_jwt(code: str, session: Any) -> str:
 
     if db_user is None:
         # Auto-provision: create a local account tied to this WeCom identity
-        email = f"wecom_{wecom_userid}@wecom.local"
+        # Use @wechat.work as placeholder domain (.work is a real TLD so it
+        # passes EmailStr validation; these addresses are never used for mail)
+        email = f"wecom_{wecom_userid}@wechat.work"
         # Edge-case: a manually pre-created account with this email
         db_user = session.exec(select(User).where(User.email == email)).first()
         if db_user:
