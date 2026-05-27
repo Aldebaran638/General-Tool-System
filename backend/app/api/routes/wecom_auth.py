@@ -13,9 +13,9 @@ Flow
 2. Employee authorises → WeCom redirects to:
        GET /api/auth/wecom/callback?code=CODE&state=STATE
    → Backend exchanges code for userid, issues JWT,
-     302-redirects to frontend:  /auth/wecom/callback?token=JWT
+     302-redirects to frontend:  /auth/wecom-callback?token=JWT
 
-3. Frontend /auth/wecom/callback page stores JWT in localStorage
+3. Frontend /auth/wecom-callback page stores JWT in localStorage
    and navigates to the main layout.
 
 JSON variants
@@ -196,7 +196,7 @@ async def wecom_callback(
     jwt_token = await _code_to_jwt(code, session)
     frontend = settings.FRONTEND_HOST.rstrip("/")
     return RedirectResponse(
-        url=f"{frontend}/auth/wecom/callback?token={jwt_token}",
+        url=f"{frontend}/auth/wecom-callback?token={jwt_token}",
         status_code=302,
     )
 
