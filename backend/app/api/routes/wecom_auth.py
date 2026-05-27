@@ -32,6 +32,8 @@ Security
 
 import secrets
 from datetime import timedelta
+from typing import Any
+
 from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import RedirectResponse
 from sqlmodel import select

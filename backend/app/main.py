@@ -38,7 +38,7 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(wecom_auth.router, prefix="/api/auth")
 
 
-@app.get("/WW_verify_HUz4rWBElVbwEoOX.txt", response_class=PlainTextResponse)
+@app.get("/WW_verify_HUz4rWBElVbwEoOX.txt", response_class=PlainTextResponse, tags=["wecom-verify"])
 async def wecom_verify() -> str:
     verify_path = Path(__file__).parent / "WW_verify_HUz4rWBElVbwEoOX.txt"
     return verify_path.read_text(encoding="utf-8")

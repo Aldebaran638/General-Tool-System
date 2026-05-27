@@ -1,7 +1,7 @@
 """add wecom models
 
 Revision ID: f3a9c2b1d4e5
-Revises: fe56fa70289e
+Revises: 8bf59a1e7457
 Create Date: 2025-05-27 10:00:00.000000+00:00
 
 """
@@ -11,7 +11,7 @@ import sqlmodel
 
 # revision identifiers, used by Alembic.
 revision = 'f3a9c2b1d4e5'
-down_revision = 'fe56fa70289e'
+down_revision = '8bf59a1e7457'
 branch_labels = None
 depends_on = None
 
