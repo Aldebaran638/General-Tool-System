@@ -21,6 +21,8 @@ fileConfig(config.config_file_name)
 from sqlmodel import SQLModel  # noqa
 import app.models  # noqa  – registers all core models with SQLModel.metadata
 import app.models_core  # noqa  – ensures WecomConfig, SystemUserRole are included
+import app.modules.data_sync.models  # noqa  – WecomDepartment, SyncTask
+import app.modules.exam_management.models  # noqa  – Exam, Question, etc.
 from app.core.config import settings  # noqa
 
 target_metadata = SQLModel.metadata

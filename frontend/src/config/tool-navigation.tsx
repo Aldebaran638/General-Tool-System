@@ -12,6 +12,7 @@ import { toolRegistry } from "@/tools/registry"
 // This is the ONLY place where tool modules should be explicitly imported.
 import "@/tools/data_sync/wecom_department_sync"
 import "@/tools/data_sync/wecom_member_sync"
+import "@/tools/exam/exam_management"
 
 /**
  * Platform-level navigation entries.

@@ -19,7 +19,11 @@ import { Route as AuthWecomCallbackRouteImport } from './routes/auth/wecom-callb
 import { Route as LayoutWecomMemberSyncRouteImport } from './routes/_layout/wecom-member-sync'
 import { Route as LayoutWecomDepartmentSyncRouteImport } from './routes/_layout/wecom-department-sync'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutExamsRouteImport } from './routes/_layout/exams'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LayoutExamsIndexRouteImport } from './routes/_layout/exams/index'
+import { Route as LayoutExamsNewRouteImport } from './routes/_layout/exams/new'
+import { Route as LayoutExamsExamIdRouteImport } from './routes/_layout/exams/$examId'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -71,10 +75,30 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutExamsRoute = LayoutExamsRouteImport.update({
+  id: '/exams',
+  path: '/exams',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutAdminRoute = LayoutAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutExamsIndexRoute = LayoutExamsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LayoutExamsRoute,
+} as any)
+const LayoutExamsNewRoute = LayoutExamsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => LayoutExamsRoute,
+} as any)
+const LayoutExamsExamIdRoute = LayoutExamsExamIdRouteImport.update({
+  id: '/$examId',
+  path: '/$examId',
+  getParentRoute: () => LayoutExamsRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -84,10 +108,14 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
+  '/exams': typeof LayoutExamsRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
   '/wecom-department-sync': typeof LayoutWecomDepartmentSyncRoute
   '/wecom-member-sync': typeof LayoutWecomMemberSyncRoute
   '/auth/wecom-callback': typeof AuthWecomCallbackRoute
+  '/exams/$examId': typeof LayoutExamsExamIdRoute
+  '/exams/new': typeof LayoutExamsNewRoute
+  '/exams/': typeof LayoutExamsIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -100,6 +128,9 @@ export interface FileRoutesByTo {
   '/wecom-member-sync': typeof LayoutWecomMemberSyncRoute
   '/auth/wecom-callback': typeof AuthWecomCallbackRoute
   '/': typeof LayoutIndexRoute
+  '/exams/$examId': typeof LayoutExamsExamIdRoute
+  '/exams/new': typeof LayoutExamsNewRoute
+  '/exams': typeof LayoutExamsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -109,11 +140,15 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
+  '/_layout/exams': typeof LayoutExamsRouteWithChildren
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/wecom-department-sync': typeof LayoutWecomDepartmentSyncRoute
   '/_layout/wecom-member-sync': typeof LayoutWecomMemberSyncRoute
   '/auth/wecom-callback': typeof AuthWecomCallbackRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/exams/$examId': typeof LayoutExamsExamIdRoute
+  '/_layout/exams/new': typeof LayoutExamsNewRoute
+  '/_layout/exams/': typeof LayoutExamsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -124,10 +159,14 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
+    | '/exams'
     | '/settings'
     | '/wecom-department-sync'
     | '/wecom-member-sync'
     | '/auth/wecom-callback'
+    | '/exams/$examId'
+    | '/exams/new'
+    | '/exams/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -140,6 +179,9 @@ export interface FileRouteTypes {
     | '/wecom-member-sync'
     | '/auth/wecom-callback'
     | '/'
+    | '/exams/$examId'
+    | '/exams/new'
+    | '/exams'
   id:
     | '__root__'
     | '/_layout'
@@ -148,11 +190,15 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_layout/admin'
+    | '/_layout/exams'
     | '/_layout/settings'
     | '/_layout/wecom-department-sync'
     | '/_layout/wecom-member-sync'
     | '/auth/wecom-callback'
     | '/_layout/'
+    | '/_layout/exams/$examId'
+    | '/_layout/exams/new'
+    | '/_layout/exams/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -236,6 +282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/exams': {
+      id: '/_layout/exams'
+      path: '/exams'
+      fullPath: '/exams'
+      preLoaderRoute: typeof LayoutExamsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/admin': {
       id: '/_layout/admin'
       path: '/admin'
@@ -243,11 +296,49 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/exams/': {
+      id: '/_layout/exams/'
+      path: '/'
+      fullPath: '/exams/'
+      preLoaderRoute: typeof LayoutExamsIndexRouteImport
+      parentRoute: typeof LayoutExamsRoute
+    }
+    '/_layout/exams/new': {
+      id: '/_layout/exams/new'
+      path: '/new'
+      fullPath: '/exams/new'
+      preLoaderRoute: typeof LayoutExamsNewRouteImport
+      parentRoute: typeof LayoutExamsRoute
+    }
+    '/_layout/exams/$examId': {
+      id: '/_layout/exams/$examId'
+      path: '/$examId'
+      fullPath: '/exams/$examId'
+      preLoaderRoute: typeof LayoutExamsExamIdRouteImport
+      parentRoute: typeof LayoutExamsRoute
+    }
   }
 }
 
+interface LayoutExamsRouteChildren {
+  LayoutExamsExamIdRoute: typeof LayoutExamsExamIdRoute
+  LayoutExamsNewRoute: typeof LayoutExamsNewRoute
+  LayoutExamsIndexRoute: typeof LayoutExamsIndexRoute
+}
+
+const LayoutExamsRouteChildren: LayoutExamsRouteChildren = {
+  LayoutExamsExamIdRoute: LayoutExamsExamIdRoute,
+  LayoutExamsNewRoute: LayoutExamsNewRoute,
+  LayoutExamsIndexRoute: LayoutExamsIndexRoute,
+}
+
+const LayoutExamsRouteWithChildren = LayoutExamsRoute._addFileChildren(
+  LayoutExamsRouteChildren,
+)
+
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
+  LayoutExamsRoute: typeof LayoutExamsRouteWithChildren
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutWecomDepartmentSyncRoute: typeof LayoutWecomDepartmentSyncRoute
   LayoutWecomMemberSyncRoute: typeof LayoutWecomMemberSyncRoute
@@ -256,6 +347,7 @@ interface LayoutRouteChildren {
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
+  LayoutExamsRoute: LayoutExamsRouteWithChildren,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutWecomDepartmentSyncRoute: LayoutWecomDepartmentSyncRoute,
   LayoutWecomMemberSyncRoute: LayoutWecomMemberSyncRoute,

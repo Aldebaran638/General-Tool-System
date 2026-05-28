@@ -45,13 +45,17 @@ CurrentWecomUser = Annotated[User, Depends(_require_wecom_user)]
 
 # ─── Role-based access ────────────────────────────────────────────────────────
 
-def _make_role_checker(*role_codes: str):
+def _make_role_checker(*role_codes: str, require_wecom: bool = True):
     """
     Dependency factory for role enforcement.
 
     is_superuser flag bypasses all role checks (always granted).
     Otherwise the user must have one of the given role_codes in
     the system_user_role table.
+
+    When require_wecom=True (default), non-superusers must have a
+    WeCom identity.  When require_wecom=False, local users with the
+    right role are also accepted.
 
     Example
     -------
@@ -60,13 +64,29 @@ def _make_role_checker(*role_codes: str):
         ]
     """
 
-    def _check(current_user: CurrentWecomUser, session: SessionDep) -> User:
+    def _check(current_user: CurrentUser, session: SessionDep) -> User:
         if current_user.is_superuser:
             return current_user
 
+        if require_wecom and not current_user.wecom_userid:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    "This endpoint requires a WeCom identity. "
+                    "Please log in via the WeCom app."
+                ),
+            )
+
+        userid = current_user.wecom_userid
+        if not userid:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Required role: {' or '.join(role_codes)}.",
+            )
+
         role = session.exec(
             select(SystemUserRole).where(
-                SystemUserRole.userid == current_user.wecom_userid,
+                SystemUserRole.userid == userid,
                 SystemUserRole.role_code.in_(list(role_codes)),
             )
         ).first()
@@ -91,5 +111,5 @@ RequireSuperAdmin = Annotated[
 
 RequireExamAdmin = Annotated[
     User,
-    Depends(_make_role_checker("SUPER_ADMIN", "EXAM_ADMIN")),
+    Depends(_make_role_checker("SUPER_ADMIN", "EXAM_ADMIN", require_wecom=False)),
 ]
