@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
+import { useMatch, useNavigate } from "@tanstack/react-router"
 import {
   ArrowLeft,
   Save,
@@ -708,7 +708,8 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
 // ─── Main Detail Page ───────────────────────────────────────────────────────
 
 export function ExamDetailPage() {
-  const examId = window.location.pathname.split("/").pop() || ""
+  const match = useMatch({ from: "/_layout/exams/$examId" })
+  const examId = match.params.examId
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
