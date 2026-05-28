@@ -15,7 +15,7 @@ export function WecomDepartmentSyncPage() {
       tasksQueryKey={(page) => ["sync-tasks", "wecom_department", page]}
       fetchStatus={getDepartmentStatus}
       fetchTasks={(page) => getDepartmentTasks(page)}
-      triggerSync={triggerDepartmentSync}
+      triggerSync={(mode) => triggerDepartmentSync({ mode })}
       fetchDepartments={(page) => getDepartments(page)}
     />
   )

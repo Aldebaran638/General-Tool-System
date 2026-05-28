@@ -15,7 +15,7 @@ export function WecomMemberSyncPage() {
       tasksQueryKey={(page) => ["sync-tasks", "wecom_member", page]}
       fetchStatus={getMemberStatus}
       fetchTasks={(page) => getMemberTasks(page)}
-      triggerSync={triggerMemberSync}
+      triggerSync={(mode) => triggerMemberSync({ mode })}
       fetchMembers={(page, q) => getMembers(page, 20, q)}
     />
   )
