@@ -6,7 +6,6 @@ import { ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Card,
   CardContent,
@@ -78,15 +77,16 @@ export function NewExamPage() {
             <Input
               placeholder="例如：化妆品出口欧美合规培训"
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, name: e.target.value })}
             />
           </div>
           <div className="grid gap-2">
             <Label>考试说明</Label>
-            <Textarea
+            <textarea
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="给学员看的考试说明（可选）"
               value={form.description ?? ""}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, description: e.target.value })}
               rows={3}
             />
           </div>
@@ -96,7 +96,7 @@ export function NewExamPage() {
               <Input
                 type="datetime-local"
                 value={form.start_at}
-                onChange={(e) => setForm({ ...form, start_at: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, start_at: e.target.value })}
               />
             </div>
             <div className="grid gap-2">
@@ -104,7 +104,7 @@ export function NewExamPage() {
               <Input
                 type="datetime-local"
                 value={form.end_at}
-                onChange={(e) => setForm({ ...form, end_at: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, end_at: e.target.value })}
               />
             </div>
           </div>
@@ -114,7 +114,7 @@ export function NewExamPage() {
               <Input
                 type="number"
                 value={form.duration_minutes}
-                onChange={(e) => setForm({ ...form, duration_minutes: Number(e.target.value) })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, duration_minutes: Number(e.target.value) })}
               />
             </div>
             <div className="grid gap-2">
@@ -122,7 +122,7 @@ export function NewExamPage() {
               <Input
                 type="number"
                 value={form.pass_score}
-                onChange={(e) => setForm({ ...form, pass_score: Number(e.target.value) })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, pass_score: Number(e.target.value) })}
               />
             </div>
           </div>
@@ -154,7 +154,7 @@ export function NewExamPage() {
                 <Input
                   type="number"
                   value={form.attempt_limit_count ?? ""}
-                  onChange={(e) => setForm({ ...form, attempt_limit_count: Number(e.target.value) })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, attempt_limit_count: Number(e.target.value) })}
                 />
               </div>
             )}

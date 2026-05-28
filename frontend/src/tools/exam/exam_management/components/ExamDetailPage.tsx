@@ -12,13 +12,13 @@ import {
   GripVertical,
   CheckCircle2,
   XCircle,
+  Search,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Card,
@@ -34,7 +34,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 import {
   Table,
   TableBody,
@@ -43,21 +42,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 
 import {
   getExam,
   updateExam,
   publishExam,
   archiveExam,
-  validateExam,
   getPaper,
   savePaper,
   listParticipants,
@@ -69,10 +60,7 @@ import {
 import type {
   Exam,
   ExamUpdate,
-  Question,
   QuestionCreate,
-  PaperData,
-  ExamParticipant,
 } from "../types"
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -132,17 +120,18 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
             <Label>考试名称</Label>
             <Input
               value={form.name ?? ""}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, name: e.target.value })}
               disabled={!isDraft}
             />
           </div>
           <div className="grid gap-2">
             <Label>考试说明</Label>
-            <Textarea
+            <textarea
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               value={form.description ?? ""}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, description: e.target.value })}
               disabled={!isDraft}
-              rows={3}
+              placeholder="给学员看的考试说明（可选）"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -151,7 +140,7 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
               <Input
                 type="datetime-local"
                 value={form.start_at ?? ""}
-                onChange={(e) => setForm({ ...form, start_at: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, start_at: e.target.value })}
                 disabled={!isDraft}
               />
             </div>
@@ -160,7 +149,7 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
               <Input
                 type="datetime-local"
                 value={form.end_at ?? ""}
-                onChange={(e) => setForm({ ...form, end_at: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, end_at: e.target.value })}
                 disabled={!isDraft}
               />
             </div>
@@ -171,7 +160,7 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
               <Input
                 type="number"
                 value={form.duration_minutes ?? ""}
-                onChange={(e) => setForm({ ...form, duration_minutes: Number(e.target.value) })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, duration_minutes: Number(e.target.value) })}
                 disabled={!isDraft}
               />
             </div>
@@ -180,19 +169,10 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
               <Input
                 type="number"
                 value={form.pass_score ?? ""}
-                onChange={(e) => setForm({ ...form, pass_score: Number(e.target.value) })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, pass_score: Number(e.target.value) })}
                 disabled={!isDraft}
               />
             </div>
-          </div>
-          <div className="grid gap-2">
-            <Label>考试说明</Label>
-            <Textarea
-              value={form.description ?? ""}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              disabled={!isDraft}
-              placeholder="给学员看的考试说明（可选）"
-            />
           </div>
         </CardContent>
       </Card>
@@ -207,7 +187,7 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
               <Label>考试次数</Label>
               <Select
                 value={form.attempt_limit_type ?? "UNLIMITED"}
-                onValueChange={(v) => setForm({ ...form, attempt_limit_type: v as "UNLIMITED" | "LIMITED" })}
+                onValueChange={(v: string) => setForm({ ...form, attempt_limit_type: v as "UNLIMITED" | "LIMITED" })}
                 disabled={!isDraft}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -223,7 +203,7 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
                 <Input
                   type="number"
                   value={form.attempt_limit_count ?? ""}
-                  onChange={(e) => setForm({ ...form, attempt_limit_count: Number(e.target.value) })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, attempt_limit_count: Number(e.target.value) })}
                   disabled={!isDraft}
                 />
               </div>
@@ -233,7 +213,7 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
             <Label>交卷要求</Label>
             <Select
               value={form.submit_rule ?? "ALL_REQUIRED"}
-              onValueChange={(v) => setForm({ ...form, submit_rule: v as "ALL_REQUIRED" | "ANY" })}
+              onValueChange={(v: string) => setForm({ ...form, submit_rule: v as "ALL_REQUIRED" | "ANY" })}
               disabled={!isDraft}
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
@@ -248,9 +228,9 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
               <Label>提交后展示正确答案</Label>
               <p className="text-sm text-muted-foreground">学员提交试卷后是否可以查看正确答案</p>
             </div>
-            <Switch
+            <Checkbox
               checked={form.show_answer ?? false}
-              onCheckedChange={(v) => setForm({ ...form, show_answer: v })}
+              onCheckedChange={(v: boolean) => setForm({ ...form, show_answer: v })}
               disabled={!isDraft}
             />
           </div>
@@ -259,9 +239,9 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
               <Label>随机题目顺序</Label>
               <p className="text-sm text-muted-foreground">每位学员看到的题目顺序不同</p>
             </div>
-            <Switch
+            <Checkbox
               checked={form.random_question_order ?? false}
-              onCheckedChange={(v) => setForm({ ...form, random_question_order: v })}
+              onCheckedChange={(v: boolean) => setForm({ ...form, random_question_order: v })}
               disabled={!isDraft}
             />
           </div>
@@ -270,9 +250,9 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
               <Label>随机选项顺序</Label>
               <p className="text-sm text-muted-foreground">每道题的选项顺序随机打乱</p>
             </div>
-            <Switch
+            <Checkbox
               checked={form.random_option_order ?? false}
-              onCheckedChange={(v) => setForm({ ...form, random_option_order: v })}
+              onCheckedChange={(v: boolean) => setForm({ ...form, random_option_order: v })}
               disabled={!isDraft}
             />
           </div>
@@ -473,7 +453,7 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
                   type="number"
                   className="w-16 h-7 text-sm"
                   value={q.score}
-                  onChange={(e) => updateQuestion(qIdx, { score: Number(e.target.value) })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateQuestion(qIdx, { score: Number(e.target.value) })}
                   disabled={!isDraft}
                 />
               </div>
@@ -487,12 +467,12 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
           <CardContent className="flex flex-col gap-4">
             <div className="grid gap-2">
               <Label>题干</Label>
-              <Textarea
+              <textarea
+                className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 value={q.stem}
-                onChange={(e) => updateQuestion(qIdx, { stem: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateQuestion(qIdx, { stem: e.target.value })}
                 disabled={!isDraft}
                 placeholder="请输入题目内容"
-                rows={2}
               />
             </div>
             <div className="grid gap-2">
@@ -510,7 +490,7 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
                   </Button>
                   <Input
                     value={opt.option_text}
-                    onChange={(e) => updateOption(qIdx, oIdx, { option_text: e.target.value })}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateOption(qIdx, oIdx, { option_text: e.target.value })}
                     disabled={!isDraft || q.question_type === "TRUE_FALSE"}
                     placeholder={q.question_type === "TRUE_FALSE" ? opt.option_text : `选项 ${opt.option_key}`}
                     className="flex-1"
@@ -531,11 +511,11 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
             {isDraft && (
               <div className="grid gap-2">
                 <Label>答案解析（可选）</Label>
-                <Textarea
+                <textarea
+                  className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={q.analysis ?? ""}
-                  onChange={(e) => updateQuestion(qIdx, { analysis: e.target.value })}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateQuestion(qIdx, { analysis: e.target.value })}
                   placeholder="提交后展示给学员的解析"
-                  rows={2}
                 />
               </div>
             )}
@@ -643,7 +623,7 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
                     : `输入${addMode === "centers" ? "中心" : "部门"} ID，逗号分隔`
                 }
                 value={addInput}
-                onChange={(e) => setAddInput(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddInput(e.target.value)}
               />
               <Button onClick={handleAdd} disabled={isMutating}>
                 {isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -663,7 +643,7 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
         <Input
           placeholder="搜索姓名或 userid…"
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setSearch(e.target.value); setPage(1) }}
           className="pl-8"
         />
       </div>
@@ -751,10 +731,6 @@ export function ExamDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["exam", examId] })
       queryClient.invalidateQueries({ queryKey: ["exams"] })
     },
-  })
-
-  const validateMutation = useMutation({
-    mutationFn: () => validateExam(examId),
   })
 
   const exam = examQuery.data
