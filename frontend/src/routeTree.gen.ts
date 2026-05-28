@@ -16,8 +16,9 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as AuthWecomCallbackRouteImport } from './routes/auth/wecom-callback'
+import { Route as LayoutWecomMemberSyncRouteImport } from './routes/_layout/wecom-member-sync'
+import { Route as LayoutWecomDepartmentSyncRouteImport } from './routes/_layout/wecom-department-sync'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
-import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 
 const SignupRoute = SignupRouteImport.update({
@@ -54,14 +55,20 @@ const AuthWecomCallbackRoute = AuthWecomCallbackRouteImport.update({
   path: '/auth/wecom-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LayoutWecomMemberSyncRoute = LayoutWecomMemberSyncRouteImport.update({
+  id: '/wecom-member-sync',
+  path: '/wecom-member-sync',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutWecomDepartmentSyncRoute =
+  LayoutWecomDepartmentSyncRouteImport.update({
+    id: '/wecom-department-sync',
+    path: '/wecom-department-sync',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutItemsRoute = LayoutItemsRouteImport.update({
-  id: '/items',
-  path: '/items',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutAdminRoute = LayoutAdminRouteImport.update({
@@ -77,8 +84,9 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
-  '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
+  '/wecom-department-sync': typeof LayoutWecomDepartmentSyncRoute
+  '/wecom-member-sync': typeof LayoutWecomMemberSyncRoute
   '/auth/wecom-callback': typeof AuthWecomCallbackRoute
 }
 export interface FileRoutesByTo {
@@ -87,8 +95,9 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
-  '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
+  '/wecom-department-sync': typeof LayoutWecomDepartmentSyncRoute
+  '/wecom-member-sync': typeof LayoutWecomMemberSyncRoute
   '/auth/wecom-callback': typeof AuthWecomCallbackRoute
   '/': typeof LayoutIndexRoute
 }
@@ -100,8 +109,9 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
-  '/_layout/items': typeof LayoutItemsRoute
   '/_layout/settings': typeof LayoutSettingsRoute
+  '/_layout/wecom-department-sync': typeof LayoutWecomDepartmentSyncRoute
+  '/_layout/wecom-member-sync': typeof LayoutWecomMemberSyncRoute
   '/auth/wecom-callback': typeof AuthWecomCallbackRoute
   '/_layout/': typeof LayoutIndexRoute
 }
@@ -114,8 +124,9 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
-    | '/items'
     | '/settings'
+    | '/wecom-department-sync'
+    | '/wecom-member-sync'
     | '/auth/wecom-callback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -124,8 +135,9 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
-    | '/items'
     | '/settings'
+    | '/wecom-department-sync'
+    | '/wecom-member-sync'
     | '/auth/wecom-callback'
     | '/'
   id:
@@ -136,8 +148,9 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_layout/admin'
-    | '/_layout/items'
     | '/_layout/settings'
+    | '/_layout/wecom-department-sync'
+    | '/_layout/wecom-member-sync'
     | '/auth/wecom-callback'
     | '/_layout/'
   fileRoutesById: FileRoutesById
@@ -202,18 +215,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthWecomCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_layout/wecom-member-sync': {
+      id: '/_layout/wecom-member-sync'
+      path: '/wecom-member-sync'
+      fullPath: '/wecom-member-sync'
+      preLoaderRoute: typeof LayoutWecomMemberSyncRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/wecom-department-sync': {
+      id: '/_layout/wecom-department-sync'
+      path: '/wecom-department-sync'
+      fullPath: '/wecom-department-sync'
+      preLoaderRoute: typeof LayoutWecomDepartmentSyncRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/settings': {
       id: '/_layout/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof LayoutSettingsRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/items': {
-      id: '/_layout/items'
-      path: '/items'
-      fullPath: '/items'
-      preLoaderRoute: typeof LayoutItemsRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/admin': {
@@ -228,15 +248,17 @@ declare module '@tanstack/react-router' {
 
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
-  LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
+  LayoutWecomDepartmentSyncRoute: typeof LayoutWecomDepartmentSyncRoute
+  LayoutWecomMemberSyncRoute: typeof LayoutWecomMemberSyncRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
-  LayoutItemsRoute: LayoutItemsRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
+  LayoutWecomDepartmentSyncRoute: LayoutWecomDepartmentSyncRoute,
+  LayoutWecomMemberSyncRoute: LayoutWecomMemberSyncRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }
 

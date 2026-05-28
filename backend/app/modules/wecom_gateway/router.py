@@ -6,9 +6,10 @@ Admin & operational endpoints:
   GET  /api/v1/wecom/status           – check WeCom config + token health
   GET  /api/v1/wecom/centers          – list 中心 (root-level departments)
   GET  /api/v1/wecom/departments      – list 部门 (center's first-level children)
-  POST /api/v1/wecom/sync/departments – admin: pull department tree from WeCom
-  POST /api/v1/wecom/sync/users       – admin: pull user list from WeCom
-  POST /api/v1/wecom/sync/all         – admin: sync departments + users
+
+Sync endpoints have been moved to the data_sync module:
+  /api/v1/data-sync/wecom-department/*
+  /api/v1/data-sync/wecom-member/*
 
 Auth routes (/api/auth/wecom/*) live in app/api/routes/wecom_auth.py
 and are registered directly on the ASGI app, outside /api/v1.
@@ -140,79 +141,3 @@ async def list_departments(
         for d in result
     ]
 
-
-# ─── Sync operations (admin only) ─────────────────────────────────────────────
-
-@router.post(
-    "/sync/departments",
-    response_model=WecomSyncResult,
-    summary="Pull department tree from WeCom (admin)",
-)
-async def sync_departments(current_user: RequireSuperAdmin) -> WecomSyncResult:
-    """
-    Fetches the full department tree from WeCom.
-
-    Currently returns a summary.  Persistence into wecom_department table
-    will be implemented in the contact-sync module.
-    """
-    errors: list[str] = []
-    try:
-        client = get_wecom_client()
-        departments = await client.list_departments()
-        return WecomSyncResult(departments_synced=len(departments), errors=errors)
-    except Exception as exc:
-        return WecomSyncResult(errors=[str(exc)])
-
-
-@router.post(
-    "/sync/users",
-    response_model=WecomSyncResult,
-    summary="Pull user list from WeCom root department (admin)",
-)
-async def sync_users(current_user: RequireSuperAdmin) -> WecomSyncResult:
-    """
-    Fetches all users from WeCom root department (fetch_child=1).
-
-    Persistence will be implemented in the contact-sync module.
-    """
-    errors: list[str] = []
-    try:
-        client = get_wecom_client()
-        users = await client.list_department_users(department_id=1, fetch_child=1)
-        return WecomSyncResult(users_synced=len(users), errors=errors)
-    except Exception as exc:
-        return WecomSyncResult(errors=[str(exc)])
-
-
-@router.post(
-    "/sync/all",
-    response_model=WecomSyncResult,
-    summary="Sync departments + users from WeCom (admin)",
-)
-async def sync_all(current_user: RequireSuperAdmin) -> WecomSyncResult:
-    """
-    One-shot full sync: departments then users.
-    """
-    errors: list[str] = []
-    departments_synced = 0
-    users_synced = 0
-
-    try:
-        client = get_wecom_client()
-        departments = await client.list_departments()
-        departments_synced = len(departments)
-    except Exception as exc:
-        errors.append(f"Department sync: {exc}")
-
-    try:
-        client = get_wecom_client()
-        users = await client.list_department_users(department_id=1, fetch_child=1)
-        users_synced = len(users)
-    except Exception as exc:
-        errors.append(f"User sync: {exc}")
-
-    return WecomSyncResult(
-        departments_synced=departments_synced,
-        users_synced=users_synced,
-        errors=errors,
-    )

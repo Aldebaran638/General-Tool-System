@@ -10,7 +10,8 @@ import { toolRegistry } from "@/tools/registry"
 
 // Import all tool modules to trigger their self-registration
 // This is the ONLY place where tool modules should be explicitly imported.
-import "@/tools/workbench/project_management"
+import "@/tools/data_sync/wecom_department_sync"
+import "@/tools/data_sync/wecom_member_sync"
 
 /**
  * Platform-level navigation entries.
