@@ -94,7 +94,28 @@ def update_exam(
 def delete_exam(session: Session, exam: Exam) -> None:
     if exam.status == "PUBLISHED":
         raise ValueError("已发布的考试不能删除，请先归档")
-    # Cascade: questions, options, participants
+
+    from app.modules.exam_management.models import (
+        ExamAnswer,
+        ExamAttempt,
+        ExamPaperSnapshot,
+    )
+
+    # Cascade: answers, attempts, questions, options, participants, snapshots
+
+    # Delete exam answers
+    attempts = session.exec(
+        select(ExamAttempt).where(ExamAttempt.exam_id == exam.id)
+    ).all()
+    for a in attempts:
+        answers = session.exec(
+            select(ExamAnswer).where(ExamAnswer.attempt_id == a.id)
+        ).all()
+        for ans in answers:
+            session.delete(ans)
+        session.delete(a)
+
+    # Delete questions and options
     questions = session.exec(
         select(Question).where(Question.exam_id == exam.id)
     ).all()
@@ -106,11 +127,19 @@ def delete_exam(session: Session, exam: Exam) -> None:
             session.delete(o)
         session.delete(q)
 
+    # Delete participants
     participants = session.exec(
         select(ExamParticipant).where(ExamParticipant.exam_id == exam.id)
     ).all()
     for p in participants:
         session.delete(p)
+
+    # Delete paper snapshots
+    snapshots = session.exec(
+        select(ExamPaperSnapshot).where(ExamPaperSnapshot.exam_id == exam.id)
+    ).all()
+    for s in snapshots:
+        session.delete(s)
 
     session.delete(exam)
     session.commit()
@@ -280,6 +309,59 @@ def publish_exam(session: Session, exam: Exam) -> Exam:
     if not validation.valid:
         raise ValueError("发布校验失败: " + "; ".join(validation.errors))
 
+    # Create paper snapshot
+    from app.modules.exam_management.models import ExamPaperSnapshot, Question, QuestionOption
+
+    questions = session.exec(
+        select(Question).where(Question.exam_id == exam.id).order_by(Question.sort_no)
+    ).all()
+
+    # Batch load all options to avoid N+1 query
+    question_ids = [q.id for q in questions]
+    all_options = session.exec(
+        select(QuestionOption)
+        .where(QuestionOption.question_id.in_(question_ids))
+        .order_by(QuestionOption.sort_no)
+    ).all()
+    options_by_question: dict[uuid.UUID, list[QuestionOption]] = {}
+    for opt in all_options:
+        options_by_question.setdefault(opt.question_id, []).append(opt)
+
+    snapshot_questions = []
+    total_score = 0
+    for q in questions:
+        total_score += q.score
+        options = options_by_question.get(q.id, [])
+
+        snapshot_questions.append({
+            "id": str(q.id),
+            "question_type": q.question_type,
+            "stem": q.stem,
+            "score": q.score,
+            "sort_no": q.sort_no,
+            "analysis": q.analysis,
+            "options": [
+                {
+                    "id": str(o.id),
+                    "option_key": o.option_key,
+                    "option_text": o.option_text,
+                    "is_correct": o.is_correct,
+                    "sort_no": o.sort_no,
+                }
+                for o in options
+            ],
+        })
+
+    snapshot = ExamPaperSnapshot(
+        exam_id=exam.id,
+        snapshot_json={"questions": snapshot_questions},
+        total_score=total_score,
+        question_count=len(questions),
+    )
+    session.add(snapshot)
+    session.flush()  # Get snapshot.id
+
+    # Update exam with snapshot reference
     exam.status = "PUBLISHED"
     exam.published_at = _now()
     exam.updated_at = _now()
@@ -315,12 +397,18 @@ def _add_participants(
 
     added = 0
     for user in users:
-        if user.wecom_userid in existing_set:
+        # Use wecom_userid if available, otherwise use user UUID as identifier
+        userid = user.wecom_userid or str(user.id)
+        if userid in existing_set:
             continue
+
+        # Create snapshot with available user info
         participant = ExamParticipant(
             exam_id=exam_id,
-            userid=user.wecom_userid or "",
+            userid=userid,
             name_snapshot=user.full_name,
+            # Note: center_snapshot, department_snapshot, position_snapshot, wecom_status_snapshot
+            # would need to be populated from wecom_member data if available
         )
         session.add(participant)
         added += 1
@@ -396,10 +484,31 @@ def add_participants_by_users(
     exam_id: uuid.UUID,
     userids: list[str],
 ) -> int:
-    """Add specific users by userid."""
+    """Add specific users by userid (supports both wecom_userid and user UUID)."""
+    from sqlalchemy import or_
+
+    # Try to parse as UUIDs
+    uuid_list = []
+    str_list = []
+    for uid in userids:
+        try:
+            uuid_list.append(uuid.UUID(uid))
+        except ValueError:
+            str_list.append(uid)
+
+    # Query by wecom_userid OR user id (UUID)
+    conditions = []
+    if str_list:
+        conditions.append(User.wecom_userid.in_(str_list))  # type: ignore[union-attr]
+    if uuid_list:
+        conditions.append(User.id.in_(uuid_list))  # type: ignore[union-attr]
+
+    if not conditions:
+        return 0
+
     users = session.exec(
         select(User).where(
-            User.wecom_userid.in_(userids),  # type: ignore[union-attr]
+            or_(*conditions),
             User.is_active == True,  # noqa: E712
         )
     ).all()
