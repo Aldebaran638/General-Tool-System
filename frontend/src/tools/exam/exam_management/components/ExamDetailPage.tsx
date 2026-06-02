@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useMatch, useNavigate } from "@tanstack/react-router"
+import { useNavigate } from "@tanstack/react-router"
+import { toast } from "sonner"
 import {
   ArrowLeft,
   Save,
@@ -13,6 +14,8 @@ import {
   CheckCircle2,
   XCircle,
   Search,
+  X,
+  Check,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -56,7 +59,9 @@ import {
   addParticipantsByDepartments,
   addParticipantsByUsers,
   removeParticipant,
+  searchUsers,
 } from "../api"
+import type { WecomUser } from "../api"
 import type {
   Exam,
   ExamUpdate,
@@ -526,6 +531,152 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
   )
 }
 
+// ─── User Search Select Component ────────────────────────────────────────────
+
+interface UserSearchSelectProps {
+  selectedUsers: WecomUser[]
+  onSelectionChange: (users: WecomUser[]) => void
+  disabled?: boolean
+}
+
+function UserSearchSelect({ selectedUsers, onSelectionChange, disabled }: UserSearchSelectProps) {
+  const [open, setOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const containerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const searchQuery_ = useQuery({
+    queryKey: ["userSearch", searchQuery],
+    queryFn: () => searchUsers({ q: searchQuery || undefined, limit: 20 }),
+    enabled: open && searchQuery.length >= 0,
+  })
+
+  const users = searchQuery_?.data?.data ?? []
+  const isLoading = searchQuery_?.isLoading ?? false
+
+  // Filter out already selected users from search results
+  const selectedUserids = new Set(selectedUsers.map(u => u.userid))
+  const availableUsers = users.filter(u => !selectedUserids.has(u.userid))
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  function handleSelect(user: WecomUser) {
+    onSelectionChange([...selectedUsers, user])
+    setSearchQuery("")
+    inputRef.current?.focus()
+  }
+
+  function handleRemove(userid: string) {
+    onSelectionChange(selectedUsers.filter(u => u.userid !== userid))
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Escape") {
+      setOpen(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {/* Selected users tags */}
+      {selectedUsers.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {selectedUsers.map(user => (
+            <Badge key={user.userid} variant="secondary" className="pr-1">
+              <span className="mr-1">{user.name}</span>
+              <span className="text-xs text-muted-foreground">({user.userid})</span>
+              {!disabled && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-4 w-4 ml-1 hover:bg-destructive/20"
+                  onClick={() => handleRemove(user.userid)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      {/* Search input with dropdown */}
+      <div ref={containerRef} className="relative">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            ref={inputRef}
+            placeholder="输入姓名或 userid 搜索..."
+            value={searchQuery}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setSearchQuery(e.target.value)
+              if (!open) setOpen(true)
+            }}
+            onFocus={() => setOpen(true)}
+            onKeyDown={handleKeyDown}
+            className="pl-8"
+            disabled={disabled}
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1 h-7 w-7"
+              onClick={() => {
+                setSearchQuery("")
+                inputRef.current?.focus()
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
+        {/* Dropdown */}
+        {open && (
+          <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
+            <div className="max-h-[300px] overflow-auto p-1">
+              {isLoading && (
+                <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  搜索中...
+                </div>
+              )}
+              {!isLoading && availableUsers.length === 0 && (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  {searchQuery ? "未找到匹配的用户" : "请输入关键词搜索"}
+                </div>
+              )}
+              {!isLoading && availableUsers.map(user => (
+                <div
+                  key={user.userid}
+                  className="flex cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                  onClick={() => handleSelect(user)}
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium">{user.name}</span>
+                    <span className="text-xs text-muted-foreground">{user.userid}</span>
+                  </div>
+                  <Check className="h-4 w-4 opacity-0" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Participants Tab ───────────────────────────────────────────────────────
 
 function ParticipantsTab({ exam }: { exam: Exam }) {
@@ -534,6 +685,7 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
   const [search, setSearch] = useState("")
   const [addMode, setAddMode] = useState<"centers" | "departments" | "users" | null>(null)
   const [addInput, setAddInput] = useState("")
+  const [selectedUsers, setSelectedUsers] = useState<WecomUser[]>([])
 
   const participantsQuery = useQuery({
     queryKey: ["participants", exam.id, page, search],
@@ -563,7 +715,7 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["participants", exam.id] })
       setAddMode(null)
-      setAddInput("")
+      setSelectedUsers([])
     },
   })
 
@@ -578,64 +730,85 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   function handleAdd() {
-    const ids = addInput.split(",").map((s) => s.trim()).filter(Boolean)
-    if (ids.length === 0) return
-
-    if (addMode === "centers") {
-      addByCentersMutation.mutate(ids.map(Number))
-    } else if (addMode === "departments") {
-      addByDeptsMutation.mutate(ids.map(Number))
+    if (addMode === "centers" || addMode === "departments") {
+      const ids = addInput.split(",").map((s) => s.trim()).filter(Boolean)
+      if (ids.length === 0) return
+      if (addMode === "centers") {
+        addByCentersMutation.mutate(ids.map(Number))
+      } else {
+        addByDeptsMutation.mutate(ids.map(Number))
+      }
     } else if (addMode === "users") {
-      addByUsersMutation.mutate(ids)
+      if (selectedUsers.length === 0) return
+      addByUsersMutation.mutate(selectedUsers.map(u => u.userid))
     }
   }
 
   const isMutating = addByCentersMutation.isPending || addByDeptsMutation.isPending || addByUsersMutation.isPending
+  const isDraft = exam.status === "DRAFT"
 
   return (
     <div className="flex flex-col gap-4">
       {/* Add participants */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">添加学员</CardTitle>
-          <CardDescription>
-            按中心、部门或特定人员添加。输入 ID 用逗号分隔。
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <div className="flex gap-2">
-            <Button variant={addMode === "centers" ? "default" : "outline"} size="sm" onClick={() => setAddMode("centers")}>
-              按中心
-            </Button>
-            <Button variant={addMode === "departments" ? "default" : "outline"} size="sm" onClick={() => setAddMode("departments")}>
-              按部门
-            </Button>
-            <Button variant={addMode === "users" ? "default" : "outline"} size="sm" onClick={() => setAddMode("users")}>
-              按人员
-            </Button>
-          </div>
-          {addMode && (
+      {isDraft && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">添加学员</CardTitle>
+            <CardDescription>
+              按中心、部门或搜索选择人员添加。
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
             <div className="flex gap-2">
-              <Input
-                placeholder={
-                  addMode === "users"
-                    ? "输入 userid，逗号分隔"
-                    : `输入${addMode === "centers" ? "中心" : "部门"} ID，逗号分隔`
-                }
-                value={addInput}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddInput(e.target.value)}
-              />
-              <Button onClick={handleAdd} disabled={isMutating}>
-                {isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                添加
+              <Button variant={addMode === "centers" ? "default" : "outline"} size="sm" onClick={() => setAddMode("centers")}>
+                按中心
+              </Button>
+              <Button variant={addMode === "departments" ? "default" : "outline"} size="sm" onClick={() => setAddMode("departments")}>
+                按部门
+              </Button>
+              <Button variant={addMode === "users" ? "default" : "outline"} size="sm" onClick={() => setAddMode("users")}>
+                按人员
               </Button>
             </div>
-          )}
-          {addByCentersMutation.isSuccess && <p className="text-sm text-green-600">已添加 {addByCentersMutation.data.added} 人</p>}
-          {addByDeptsMutation.isSuccess && <p className="text-sm text-green-600">已添加 {addByDeptsMutation.data.added} 人</p>}
-          {addByUsersMutation.isSuccess && <p className="text-sm text-green-600">已添加 {addByUsersMutation.data.added} 人</p>}
-        </CardContent>
-      </Card>
+            {addMode && addMode !== "users" && (
+              <div className="flex gap-2">
+                <Input
+                  placeholder={`输入${addMode === "centers" ? "中心" : "部门"} ID，逗号分隔`}
+                  value={addInput}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddInput(e.target.value)}
+                />
+                <Button onClick={handleAdd} disabled={isMutating}>
+                  {isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  添加
+                </Button>
+              </div>
+            )}
+            {addMode === "users" && (
+              <div className="flex flex-col gap-3">
+                <UserSearchSelect
+                  selectedUsers={selectedUsers}
+                  onSelectionChange={setSelectedUsers}
+                  disabled={isMutating}
+                />
+                {selectedUsers.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Button onClick={handleAdd} disabled={isMutating}>
+                      {isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      添加 {selectedUsers.length} 人
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      已选择 {selectedUsers.length} 人
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+            {addByCentersMutation.isSuccess && <p className="text-sm text-green-600">已添加 {addByCentersMutation.data.added} 人</p>}
+            {addByDeptsMutation.isSuccess && <p className="text-sm text-green-600">已添加 {addByDeptsMutation.data.added} 人</p>}
+            {addByUsersMutation.isSuccess && <p className="text-sm text-green-600">已添加 {addByUsersMutation.data.added} 人</p>}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Search */}
       <div className="relative max-w-sm">
@@ -676,7 +849,7 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
                 <TableCell className="text-sm">{p.department_snapshot ?? "—"}</TableCell>
                 <TableCell className="text-sm">{fmtDate(p.created_at)}</TableCell>
                 <TableCell>
-                  {exam.status === "DRAFT" && (
+                  {isDraft && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -708,10 +881,9 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
 // ─── Main Detail Page ───────────────────────────────────────────────────────
 
 export function ExamDetailPage() {
-  const match = useMatch({ from: "/_layout/exams/$examId" })
-  const examId = match.params.examId
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const examId = window.location.pathname.split("/").filter(Boolean).pop() ?? ""
 
   const examQuery = useQuery({
     queryKey: ["exam", examId],
@@ -723,6 +895,10 @@ export function ExamDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["exam", examId] })
       queryClient.invalidateQueries({ queryKey: ["exams"] })
+      toast.success("考试发布成功")
+    },
+    onError: (error: Error) => {
+      toast.error(error.message)
     },
   })
 
@@ -731,6 +907,10 @@ export function ExamDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["exam", examId] })
       queryClient.invalidateQueries({ queryKey: ["exams"] })
+      toast.success("考试已归档")
+    },
+    onError: (error: Error) => {
+      toast.error(error.message)
     },
   })
 
@@ -778,14 +958,6 @@ export function ExamDetailPage() {
           )}
         </div>
       </div>
-
-      {publishMutation.isError && (
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="pt-4 text-sm text-red-700">
-            {(publishMutation.error as Error).message}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Tabs */}
       <Tabs defaultValue="settings">

@@ -29,6 +29,8 @@ export interface SyncTasksResponse {
 export interface SyncStatusResponse {
   latest: SyncTask | null
   is_running: boolean
+  next_incremental_sync: string | null
+  next_full_sync: string | null
 }
 
 export interface TriggerRequest {

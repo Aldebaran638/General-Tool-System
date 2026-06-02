@@ -133,3 +133,52 @@ export function addParticipantsByUsers(
 export function removeParticipant(examId: string, userid: string): Promise<void> {
   return apiFetch(`${BASE}/${examId}/participants/${userid}`, { method: "DELETE" })
 }
+
+// ─── User Search ─────────────────────────────────────────────────────────────
+
+export interface WecomUser {
+  userid: string
+  name: string
+  is_active: boolean
+  created_at: string | null
+}
+
+export interface WecomUsersResponse {
+  data: WecomUser[]
+  count: number
+}
+
+export async function searchUsers(params: {
+  q?: string
+  page?: number
+  limit?: number
+}): Promise<WecomUsersResponse> {
+  const p = new URLSearchParams()
+  if (params.q) p.set("q", params.q)
+  if (params.page) p.set("skip", String((params.page - 1) * (params.limit ?? 20)))
+  if (params.limit) p.set("limit", String(params.limit))
+
+  const res = await apiFetch<{
+    data: Array<{
+      id: string
+      email: string
+      is_active: boolean
+      is_superuser: boolean
+      full_name: string | null
+      wecom_userid: string | null
+      created_at: string | null
+    }>
+    count: number
+  }>(`/api/v1/users/?${p}`)
+
+  // Transform UserPublic response to WecomUser format for compatibility
+  return {
+    data: res.data.map((u) => ({
+      userid: u.wecom_userid || u.id,
+      name: u.full_name || u.email,
+      is_active: u.is_active,
+      created_at: u.created_at,
+    })),
+    count: res.count,
+  }
+}
