@@ -80,3 +80,20 @@ def stop_scheduler() -> None:
         _scheduler.shutdown(wait=False)
         logger.info("[data-sync] scheduler stopped")
     _scheduler = None
+
+
+def get_next_sync_times() -> dict:
+    """Get the next scheduled sync times."""
+    if _scheduler is None or not _scheduler.running:
+        return {
+            "next_incremental_sync": None,
+            "next_full_sync": None,
+        }
+
+    incremental_job = _scheduler.get_job("data_sync_incremental")
+    full_job = _scheduler.get_job("data_sync_full")
+
+    return {
+        "next_incremental_sync": incremental_job.next_run_time if incremental_job else None,
+        "next_full_sync": full_job.next_run_time if full_job else None,
+    }

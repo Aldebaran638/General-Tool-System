@@ -40,6 +40,8 @@ class SyncStatusPublic(SQLModel):
     """Latest task status + whether a task is currently running."""
     latest: SyncTaskPublic | None = None
     is_running: bool = False
+    next_incremental_sync: datetime | None = None
+    next_full_sync: datetime | None = None
 
 
 class WecomDepartmentPublic(SQLModel):

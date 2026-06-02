@@ -38,6 +38,7 @@ from app.modules.data_sync.schemas import (
     WecomMembersPublic,
 )
 from app.modules.data_sync.service import sync_departments, sync_members
+from app.modules.data_sync.scheduler import get_next_sync_times
 
 RequireSuperuser = Annotated[User, Depends(get_current_active_superuser)]
 
@@ -132,9 +133,12 @@ def department_sync_status(
 ) -> SyncStatusPublic:
     task = _latest_task(session, "wecom_department")
     is_running = task is not None and task.status == "running"
+    next_sync_times = get_next_sync_times()
     return SyncStatusPublic(
         latest=_to_public(task) if task else None,
         is_running=is_running,
+        next_incremental_sync=next_sync_times["next_incremental_sync"],
+        next_full_sync=next_sync_times["next_full_sync"],
     )
 
 
@@ -196,9 +200,12 @@ def member_sync_status(
 ) -> SyncStatusPublic:
     task = _latest_task(session, "wecom_member")
     is_running = task is not None and task.status == "running"
+    next_sync_times = get_next_sync_times()
     return SyncStatusPublic(
         latest=_to_public(task) if task else None,
         is_running=is_running,
+        next_incremental_sync=next_sync_times["next_incremental_sync"],
+        next_full_sync=next_sync_times["next_full_sync"],
     )
 
 
