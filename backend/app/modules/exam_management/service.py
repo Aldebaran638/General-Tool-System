@@ -17,21 +17,92 @@ from app.modules.exam_management.models import (
     Exam,
     ExamAnswer,
     ExamAttempt,
+    ExamCategory,
+    ExamPaper,
     ExamPaperSnapshot,
     ExamParticipant,
     Question,
     QuestionOption,
 )
 from app.modules.exam_management.schemas import (
+    ExamCategoryCreate,
+    ExamCategoryUpdate,
     ExamCreate,
+    ExamStatistics,
     ExamUpdate,
     PaperSaveRequest,
     PublishValidation,
+    QuestionTypeCount,
+    ScoreDistribution,
+    SystemDashboardStats,
 )
 
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+# ─── Exam Category CRUD ─────────────────────────────────────────────────────
+
+def list_categories(session: Session) -> tuple[list[ExamCategory], int]:
+    """Return all categories ordered by sort_order."""
+    rows = session.exec(
+        select(ExamCategory).order_by(ExamCategory.sort_order, ExamCategory.id)
+    ).all()
+    return list(rows), len(rows)
+
+
+def create_category(session: Session, data: ExamCategoryCreate) -> ExamCategory:
+    """Create a new category; raises ValueError if name already exists."""
+    existing = session.exec(
+        select(ExamCategory).where(ExamCategory.name == data.name)
+    ).first()
+    if existing:
+        raise ValueError("分类名称已存在")
+    category = ExamCategory(**data.model_dump())
+    session.add(category)
+    session.commit()
+    session.refresh(category)
+    return category
+
+
+def get_category(session: Session, category_id: int) -> ExamCategory | None:
+    return session.get(ExamCategory, category_id)
+
+
+def update_category(
+    session: Session,
+    category: ExamCategory,
+    data: ExamCategoryUpdate,
+) -> ExamCategory:
+    """Update category fields; raises ValueError if new name conflicts."""
+    update_data = data.model_dump(exclude_unset=True)
+    if "name" in update_data and update_data["name"] is not None:
+        dup = session.exec(
+            select(ExamCategory).where(
+                ExamCategory.name == update_data["name"],
+                ExamCategory.id != category.id,
+            )
+        ).first()
+        if dup:
+            raise ValueError("分类名称已存在")
+    for field, value in update_data.items():
+        setattr(category, field, value)
+    session.add(category)
+    session.commit()
+    session.refresh(category)
+    return category
+
+
+def delete_category(session: Session, category: ExamCategory) -> None:
+    """Delete a category; raises ValueError if exams reference it."""
+    exam_count = session.exec(
+        select(func.count()).select_from(Exam).where(Exam.category_id == category.id)
+    ).one()
+    if exam_count > 0:
+        raise ValueError(f"该分类下有 {exam_count} 个考试，无法删除")
+    session.delete(category)
+    session.commit()
 
 
 # ─── Exam CRUD ───────────────────────────────────────────────────────────────
@@ -58,6 +129,7 @@ def list_exams(
     page: int = 1,
     limit: int = 20,
     status: str | None = None,
+    category_id: int | None = None,
     q: str | None = None,
 ) -> tuple[list[Exam], int]:
     base = select(Exam)
@@ -66,6 +138,9 @@ def list_exams(
     if status:
         base = base.where(Exam.status == status)
         count_base = count_base.where(Exam.status == status)
+    if category_id is not None:
+        base = base.where(Exam.category_id == category_id)
+        count_base = count_base.where(Exam.category_id == category_id)
     if q:
         like = f"%{q}%"
         base = base.where(Exam.name.ilike(like))
@@ -137,6 +212,11 @@ def delete_exam(session: Session, exam: Exam) -> None:
         # Batch delete paper snapshots
         session.exec(
             sql_delete(ExamPaperSnapshot).where(ExamPaperSnapshot.exam_id == exam.id)
+        )
+
+        # Batch delete exam papers (docx tracking)
+        session.exec(
+            sql_delete(ExamPaper).where(ExamPaper.exam_id == exam.id)
         )
 
         session.delete(exam)
@@ -586,6 +666,117 @@ def list_participants(
     return list(rows), count
 
 
+# ─── Exam Statistics ─────────────────────────────────────────────────────────
+
+def get_exam_statistics(session: Session, exam_id: uuid.UUID) -> ExamStatistics:
+    """Get statistics for a single exam."""
+    participants = session.exec(
+        select(ExamParticipant).where(ExamParticipant.exam_id == exam_id)
+    ).all()
+
+    total = len(participants)
+    completed = [p for p in participants if p.completion_status == "COMPLETED"]
+    passed = [p for p in completed if p.final_passed]
+    failed = [p for p in completed if not p.final_passed]
+    not_started = [p for p in participants if p.completion_status == "NOT_STARTED"]
+    in_progress = [p for p in participants if p.completion_status == "IN_PROGRESS"]
+
+    # Pass rate (percentage)
+    pass_rate = (len(passed) / len(completed) * 100) if completed else 0.0
+
+    # Score statistics (only from completed participants)
+    scores = [p.final_score for p in completed if p.final_score is not None]
+    avg_score = sum(scores) / len(scores) if scores else None
+    max_score = max(scores) if scores else None
+    min_score = min(scores) if scores else None
+
+    distribution = _calculate_score_distribution(scores)
+
+    return ExamStatistics(
+        total_participants=total,
+        completed_count=len(completed),
+        passed_count=len(passed),
+        failed_count=len(failed),
+        not_started_count=len(not_started),
+        in_progress_count=len(in_progress),
+        pass_rate=round(pass_rate, 1),
+        avg_score=round(avg_score, 1) if avg_score is not None else None,
+        max_score=max_score,
+        min_score=min_score,
+        score_distribution=distribution,
+    )
+
+
+def _calculate_score_distribution(scores: list[float]) -> list[ScoreDistribution]:
+    """Calculate score distribution across fixed ranges."""
+    ranges = [
+        ("0-59", 0, 59),
+        ("60-69", 60, 69),
+        ("70-79", 70, 79),
+        ("80-89", 80, 89),
+        ("90-100", 90, 100),
+    ]
+    distribution = []
+    for label, low, high in ranges:
+        count = sum(1 for s in scores if low <= s <= high)
+        distribution.append(ScoreDistribution(range_label=label, count=count))
+    return distribution
+
+
+# ─── System Dashboard ───────────────────────────────────────────────────────
+
+def get_system_stats(session: Session) -> SystemDashboardStats:
+    """Get system-level dashboard statistics for admins."""
+
+    # Exam count
+    exam_count = session.exec(select(func.count()).select_from(Exam)).one()
+
+    # Total participation count
+    total_participation = session.exec(
+        select(func.count()).select_from(ExamParticipant)
+    ).one()
+
+    # Pass rate — based on completed participants only
+    completed_count = session.exec(
+        select(func.count()).select_from(ExamParticipant)
+        .where(ExamParticipant.completion_status == "COMPLETED")
+    ).one()
+    passed_count = session.exec(
+        select(func.count()).select_from(ExamParticipant)
+        .where(
+            ExamParticipant.completion_status == "COMPLETED",
+            ExamParticipant.final_passed == True,  # noqa: E712
+        )
+    ).one()
+    pass_rate = (passed_count / completed_count * 100) if completed_count else 0.0
+
+    # Question count
+    question_count = session.exec(select(func.count()).select_from(Question)).one()
+
+    # Paper snapshot count
+    paper_count = session.exec(
+        select(func.count()).select_from(ExamPaperSnapshot)
+    ).one()
+
+    # Question type distribution
+    type_rows = session.exec(
+        select(Question.question_type, func.count())
+        .group_by(Question.question_type)
+    ).all()
+    type_distribution = [
+        QuestionTypeCount(question_type=qt, count=c) for qt, c in type_rows
+    ]
+
+    return SystemDashboardStats(
+        exam_count=exam_count,
+        total_participation=total_participation,
+        overall_pass_rate=round(pass_rate, 1),
+        question_count=question_count,
+        paper_count=paper_count,
+        question_type_distribution=type_distribution,
+    )
+
+
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
 def _collect_child_departments(
@@ -600,3 +791,162 @@ def _collect_child_departments(
     for child_id in children:
         result.add(child_id)
         _collect_child_departments(session, child_id, result)
+
+
+# ─── Question Bank ──────────────────────────────────────────────────────────
+
+def list_question_bank(
+    session: Session,
+    *,
+    page: int = 1,
+    limit: int = 20,
+    category_id: int | None = None,
+) -> tuple[list[dict], int]:
+    """List exams that have generated papers (question bank)."""
+    from app.modules.exam_management.schemas import QuestionBankItem
+
+    base = (
+        select(
+            Exam,
+            ExamPaper.status.label("paper_status"),
+            ExamPaper.generated_at.label("paper_generated_at"),
+        )
+        .join(ExamPaper, ExamPaper.exam_id == Exam.id)
+        .where(Exam.status.in_(["PUBLISHED", "ARCHIVED"]))
+    )
+    count_base = (
+        select(func.count())
+        .select_from(Exam)
+        .join(ExamPaper, ExamPaper.exam_id == Exam.id)
+        .where(Exam.status.in_(["PUBLISHED", "ARCHIVED"]))
+    )
+
+    if category_id is not None:
+        base = base.where(Exam.category_id == category_id)
+        count_base = count_base.where(Exam.category_id == category_id)
+
+    count = session.exec(count_base).one()
+    offset = (page - 1) * limit
+    rows = session.exec(
+        base.order_by(ExamPaper.created_at.desc()).offset(offset).limit(limit)
+    ).all()
+
+    # Batch-load category names
+    cat_ids = {row[0].category_id for row in rows if row[0].category_id is not None}
+    cat_map: dict[int, str] = {}
+    if cat_ids:
+        categories = session.exec(
+            select(ExamCategory).where(ExamCategory.id.in_(cat_ids))
+        ).all()
+        cat_map = {c.id: c.name for c in categories}
+
+    # Batch-load question counts and total scores
+    exam_ids = [row[0].id for row in rows]
+    question_stats: dict[uuid.UUID, tuple[int, float]] = {}
+    if exam_ids:
+        q_rows = session.exec(
+            select(
+                Question.exam_id,
+                func.count().label("cnt"),
+                func.coalesce(func.sum(Question.score), 0).label("total"),
+            )
+            .where(Question.exam_id.in_(exam_ids))
+            .group_by(Question.exam_id)
+        ).all()
+        question_stats = {r.exam_id: (r.cnt, float(r.total)) for r in q_rows}
+
+    result = []
+    for exam, paper_status, paper_generated_at in rows:
+        q_count, q_total = question_stats.get(exam.id, (0, 0.0))
+        result.append(
+            QuestionBankItem(
+                exam_id=exam.id,
+                exam_name=exam.name,
+                category_id=exam.category_id,
+                category_name=cat_map.get(exam.category_id),
+                status=paper_status,
+                generated_at=paper_generated_at,
+                question_count=q_count,
+                total_score=q_total,
+            )
+        )
+
+    return result, count
+
+
+def get_question_bank_detail(
+    session: Session,
+    exam_id: uuid.UUID,
+) -> dict | None:
+    """Get exam paper detail for question bank preview."""
+    exam = session.get(Exam, exam_id)
+    if not exam:
+        return None
+
+    # Check if paper has been generated
+    paper = session.exec(
+        select(ExamPaper).where(ExamPaper.exam_id == exam_id)
+    ).first()
+    if not paper:
+        return None
+
+    # Reuse existing get_paper function
+    paper_data = get_paper(session, exam_id)
+    return {
+        "exam_id": exam.id,
+        "exam_name": exam.name,
+        "questions": paper_data["questions"],
+        "total_score": paper_data["total_score"],
+        "question_count": paper_data["question_count"],
+    }
+
+
+# ─── Docx Generation Scheduler ─────────────────────────────────────────────
+
+def check_and_generate_expired_exam_papers(session: Session) -> None:
+    """Check for expired exams and generate docx papers.
+
+    This function is called by the scheduler to automatically generate
+    exam papers for exams that have ended but don't have papers yet.
+    """
+    now = datetime.now(timezone.utc)
+
+    # Find published exams that have ended
+    expired_exams = session.exec(
+        select(Exam)
+        .where(Exam.end_at <= now)
+        .where(Exam.status == "PUBLISHED")
+    ).all()
+
+    for exam in expired_exams:
+        # Check if paper already exists
+        existing = session.exec(
+            select(ExamPaper).where(ExamPaper.exam_id == exam.id)
+        ).first()
+
+        if existing:
+            continue
+
+        try:
+            from app.modules.exam_management.docx_generator import (
+                generate_exam_paper_docx,
+            )
+
+            docx_path = generate_exam_paper_docx(exam.id, session)
+
+            paper = ExamPaper(
+                exam_id=exam.id,
+                docx_path=docx_path,
+                status="GENERATED",
+                generated_at=now,
+            )
+            session.add(paper)
+            session.commit()
+        except Exception:
+            # Record failure
+            paper = ExamPaper(
+                exam_id=exam.id,
+                status="FAILED",
+            )
+            session.add(paper)
+            session.commit()

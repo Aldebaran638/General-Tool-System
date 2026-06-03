@@ -62,9 +62,12 @@ import {
   removeParticipant,
   searchUsers,
   searchDepartments,
+  getExamStatistics,
 } from "../api"
 import type { WecomUser, WecomDepartment } from "../api"
 import type { Exam, ExamUpdate, QuestionCreate } from "../types"
+import { TrainerSearchSelect } from "./TrainerSearchSelect"
+import { listExamCategories } from "../../category_management/api"
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -85,7 +88,8 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
   const queryClient = useQueryClient()
   const [form, setForm] = useState<ExamUpdate>({
     name: exam.name,
-    description: exam.description ?? "",
+    trainer_ids: exam.trainer_ids ?? [],
+    category_id: exam.category_id ?? null,
     start_at: toLocalDatetime(exam.start_at),
     end_at: toLocalDatetime(exam.end_at),
     duration_minutes: exam.duration_minutes,
@@ -97,6 +101,13 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
     random_question_order: exam.random_question_order,
     random_option_order: exam.random_option_order,
   })
+
+  const categoriesQuery = useQuery({
+    queryKey: ["examCategories"],
+    queryFn: listExamCategories,
+  })
+
+  const categories = categoriesQuery.data?.data ?? []
 
   const updateMutation = useMutation({
     mutationFn: (data: ExamUpdate) => updateExam(exam.id, data),
@@ -133,15 +144,34 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
             />
           </div>
           <div className="grid gap-2">
-            <Label>考试说明</Label>
-            <textarea
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              value={form.description ?? ""}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setForm({ ...form, description: e.target.value })
+            <Label>试卷分类</Label>
+            <Select
+              value={form.category_id?.toString() ?? ""}
+              onValueChange={(v: string) =>
+                setForm({ ...form, category_id: v ? Number(v) : null })
               }
               disabled={!isDraft}
-              placeholder="给学员看的考试说明（可选）"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="选择分类（可选）" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">无分类</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id.toString()}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label>培训讲师（可选）</Label>
+            <TrainerSearchSelect
+              selectedTrainerIds={form.trainer_ids ?? []}
+              selectedTrainers={exam.trainers ?? []}
+              onSelectionChange={(ids) => setForm({ ...form, trainer_ids: ids })}
+              disabled={!isDraft}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -1349,6 +1379,131 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
   )
 }
 
+// ─── Exam Statistics Tab ────────────────────────────────────────────────────
+
+function ExamStatisticsTab({ exam }: { exam: Exam }) {
+  const statsQuery = useQuery({
+    queryKey: ["examStatistics", exam.id],
+    queryFn: () => getExamStatistics(exam.id),
+  })
+
+  const stats = statsQuery.data
+
+  if (statsQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (!stats) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        暂无统计数据
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* 数据卡片 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>参考人数</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total_participants}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>及格率</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{stats.pass_rate}%</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>平均分</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.avg_score ?? "—"}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>及格/不及格</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              <span className="text-green-600">{stats.passed_count}</span>
+              <span className="text-muted-foreground mx-1">/</span>
+              <span className="text-red-600">{stats.failed_count}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 分数分布 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">分数分布</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {stats.score_distribution.map((item) => (
+              <div key={item.range_label} className="flex items-center gap-3">
+                <div className="w-16 text-sm text-muted-foreground">{item.range_label}</div>
+                <div className="flex-1 bg-muted rounded-full h-6 overflow-hidden">
+                  <div
+                    className="bg-primary h-full rounded-full transition-all"
+                    style={{
+                      width: `${stats.total_participants > 0 ? (item.count / stats.total_participants) * 100 : 0}%`,
+                    }}
+                  />
+                </div>
+                <div className="w-12 text-sm text-right">{item.count}人</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 状态统计 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">完成状态</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <div className="text-muted-foreground">已完成</div>
+              <div className="text-lg font-medium">{stats.completed_count}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">进行中</div>
+              <div className="text-lg font-medium">{stats.in_progress_count}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">未开始</div>
+              <div className="text-lg font-medium">{stats.not_started_count}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">最高/最低分</div>
+              <div className="text-lg font-medium">
+                {stats.max_score ?? "—"} / {stats.min_score ?? "—"}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 // ─── Main Detail Page ───────────────────────────────────────────────────────
 
 export function ExamDetailPage() {
@@ -1431,6 +1586,16 @@ export function ExamDetailPage() {
                   : "已归档"}
               {exam.published_at && ` · 发布于 ${fmtDate(exam.published_at)}`}
             </p>
+            {exam.trainers && exam.trainers.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                <span className="text-sm text-muted-foreground">讲师：</span>
+                {exam.trainers.map((t) => (
+                  <Badge key={t.id} variant="secondary" className="text-xs">
+                    {t.name}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <div className="flex gap-2">
@@ -1470,6 +1635,7 @@ export function ExamDetailPage() {
           <TabsTrigger value="settings">考试设置</TabsTrigger>
           <TabsTrigger value="paper">试卷编辑</TabsTrigger>
           <TabsTrigger value="participants">人员管理</TabsTrigger>
+          <TabsTrigger value="statistics">考试统计</TabsTrigger>
         </TabsList>
 
         <TabsContent value="settings" className="mt-4">
@@ -1482,6 +1648,10 @@ export function ExamDetailPage() {
 
         <TabsContent value="participants" className="mt-4">
           <ParticipantsTab exam={exam} />
+        </TabsContent>
+
+        <TabsContent value="statistics" className="mt-4">
+          <ExamStatisticsTab exam={exam} />
         </TabsContent>
       </Tabs>
     </div>

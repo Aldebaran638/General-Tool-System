@@ -14,7 +14,10 @@ import "@/tools/data_sync/wecom_department_sync"
 import "@/tools/data_sync/wecom_member_sync"
 import "@/tools/exam/exam_management"
 import "@/tools/exam/exam_participation"
+import "@/tools/exam/category_management"
+import "@/tools/exam/question_bank"
 import "@/tools/workbench/project_management"
+import "@/tools/workbench/system_dashboard"
 
 /**
  * Platform-level navigation entries.

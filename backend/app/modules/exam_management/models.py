@@ -3,6 +3,7 @@ Exam Management Module — DB Models
 
 Tables:
   exam                  — a single exam instance
+  exam_category         — exam category / classification
   question              — a question belonging to an exam
   question_option       — an option belonging to a question
   exam_participant      — a user enrolled in an exam (with snapshots)
@@ -26,6 +27,21 @@ def _utcnow() -> datetime:
 
 
 # =============================================================================
+# Exam Category
+# =============================================================================
+
+class ExamCategory(SQLModel, table=True):
+    __tablename__ = "exam_category"
+
+    id: int = Field(primary_key=True)
+    name: str = Field(max_length=128, unique=True)
+    sort_order: int = Field(default=0)
+    created_at: datetime = Field(
+        default_factory=_utcnow, sa_type=DateTime(timezone=True)  # type: ignore[call-arg]
+    )
+
+
+# =============================================================================
 # Exam
 # =============================================================================
 
@@ -35,9 +51,12 @@ class Exam(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
 
     name: str = Field(max_length=255)
-    description: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
+    trainer_ids: list[str] | None = Field(default=None, sa_column=Column(JSON, nullable=True))
     status: str = Field(default="DRAFT", max_length=16, index=True)
     # DRAFT / PUBLISHED / ARCHIVED
+
+    # Category
+    category_id: int | None = Field(default=None, foreign_key="exam_category.id", index=True)
 
     # Schedule
     start_at: datetime = Field(sa_type=DateTime(timezone=True))      # type: ignore[call-arg]
@@ -231,6 +250,28 @@ class ExamPaperSnapshot(SQLModel, table=True):
     total_score: float
     question_count: int
 
+    created_at: datetime = Field(
+        default_factory=_utcnow, sa_type=DateTime(timezone=True)  # type: ignore[call-arg]
+    )
+
+
+# =============================================================================
+# Exam Paper (Docx generation tracking)
+# =============================================================================
+
+class ExamPaper(SQLModel, table=True):
+    __tablename__ = "exam_paper"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    exam_id: uuid.UUID = Field(foreign_key="exam.id", index=True, unique=True)
+
+    docx_path: str | None = Field(default=None, max_length=512)
+    status: str = Field(default="PENDING", max_length=20)
+    # PENDING / GENERATED / FAILED
+
+    generated_at: datetime | None = Field(
+        default=None, sa_type=DateTime(timezone=True)  # type: ignore[call-arg]
+    )
     created_at: datetime = Field(
         default_factory=_utcnow, sa_type=DateTime(timezone=True)  # type: ignore[call-arg]
     )

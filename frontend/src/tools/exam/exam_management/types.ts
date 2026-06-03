@@ -1,9 +1,17 @@
 /** Types for exam management module */
 
+export interface TrainerInfo {
+  id: string
+  name: string
+}
+
 export interface Exam {
   id: string
   name: string
-  description: string | null
+  trainer_ids: string[] | null
+  trainers: TrainerInfo[] | null
+  category_id: number | null
+  category_name: string | null
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
   start_at: string
   end_at: string
@@ -28,7 +36,8 @@ export interface ExamsResponse {
 
 export interface ExamCreate {
   name: string
-  description?: string
+  trainer_ids?: string[]
+  category_id?: number | null
   start_at: string
   end_at: string
   duration_minutes: number
@@ -43,7 +52,8 @@ export interface ExamCreate {
 
 export interface ExamUpdate {
   name?: string
-  description?: string
+  trainer_ids?: string[]
+  category_id?: number | null
   start_at?: string
   end_at?: string
   duration_minutes?: number

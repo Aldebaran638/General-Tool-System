@@ -32,16 +32,22 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, HTTPException, Query, status
+from sqlmodel import select
 
 from app.api.deps import SessionDep
 from app.modules.wecom_gateway.deps import RequireExamAdmin
-from app.modules.exam_management.models import Exam
+from app.modules.exam_management.models import Exam, ExamCategory, ExamPaper
 from app.modules.exam_management.schemas import (
     AddByCentersRequest,
     AddByDepartmentsRequest,
     AddByUsersRequest,
+    ExamCategoriesPublic,
+    ExamCategoryCreate,
+    ExamCategoryPublic,
+    ExamCategoryUpdate,
     ExamCreate,
     ExamPublic,
+    ExamStatistics,
     ExamUpdate,
     ExamsPublic,
     PaperPublic,
@@ -49,21 +55,34 @@ from app.modules.exam_management.schemas import (
     ParticipantPublic,
     ParticipantsPublic,
     PublishValidation,
+    QuestionBankDetail,
+    QuestionBankPublic,
+    SystemDashboardStats,
+    TrainerInfo,
 )
 from app.modules.exam_management.service import (
     add_participants_by_centers,
     add_participants_by_departments,
     add_participants_by_users,
     archive_exam,
+    create_category,
     create_exam,
+    delete_category,
     delete_exam,
+    get_category,
     get_exam,
+    get_exam_statistics,
     get_paper,
+    get_question_bank_detail,
+    get_system_stats,
+    list_categories,
     list_exams,
     list_participants,
+    list_question_bank,
     publish_exam,
     remove_participant,
     save_paper,
+    update_category,
     update_exam,
     validate_publish,
 )
@@ -73,12 +92,29 @@ router = APIRouter(prefix="/exams", tags=["exams"])
 
 # ─── helpers ─────────────────────────────────────────────────────────────────
 
-def _to_public(exam: Exam) -> ExamPublic:
+def _to_public(
+    exam: Exam,
+    category_name: str | None = None,
+    session: SessionDep | None = None,
+) -> ExamPublic:
+    trainers: list[TrainerInfo] = []
+    if exam.trainer_ids and session:
+        from app.models import User
+        for uid in exam.trainer_ids:
+            try:
+                user = session.get(User, uuid.UUID(uid))
+                if user:
+                    trainers.append(TrainerInfo(id=uid, name=user.full_name or user.email))
+            except (ValueError, AttributeError):
+                pass
     return ExamPublic(
         id=exam.id,
         name=exam.name,
-        description=exam.description,
+        trainer_ids=exam.trainer_ids,
+        trainers=trainers,
         status=exam.status,
+        category_id=exam.category_id,
+        category_name=category_name,
         start_at=exam.start_at,
         end_at=exam.end_at,
         duration_minutes=exam.duration_minutes,
@@ -103,7 +139,192 @@ def _get_exam_or_404(session: SessionDep, exam_id: uuid.UUID) -> Exam:
     return exam
 
 
+# ─── Exam Category ───────────────────────────────────────────────────────────
+# NOTE: Category routes MUST be defined before /{exam_id} to avoid route conflicts.
+
+@router.get("/categories", response_model=ExamCategoriesPublic, summary="分类列表")
+def list_categories_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+) -> ExamCategoriesPublic:
+    categories, count = list_categories(session)
+    return ExamCategoriesPublic(
+        data=[
+            ExamCategoryPublic(
+                id=c.id,
+                name=c.name,
+                sort_order=c.sort_order,
+                created_at=c.created_at,
+            )
+            for c in categories
+        ],
+        count=count,
+    )
+
+
+@router.post(
+    "/categories",
+    response_model=ExamCategoryPublic,
+    status_code=201,
+    summary="创建分类",
+)
+def create_category_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+    body: ExamCategoryCreate,
+) -> ExamCategoryPublic:
+    try:
+        category = create_category(session, body)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return ExamCategoryPublic(
+        id=category.id,
+        name=category.name,
+        sort_order=category.sort_order,
+        created_at=category.created_at,
+    )
+
+
+@router.put(
+    "/categories/{category_id}",
+    response_model=ExamCategoryPublic,
+    summary="更新分类",
+)
+def update_category_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+    category_id: int,
+    body: ExamCategoryUpdate,
+) -> ExamCategoryPublic:
+    category = get_category(session, category_id)
+    if not category:
+        raise HTTPException(status_code=404, detail="分类不存在")
+    try:
+        updated = update_category(session, category, body)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return ExamCategoryPublic(
+        id=updated.id,
+        name=updated.name,
+        sort_order=updated.sort_order,
+        created_at=updated.created_at,
+    )
+
+
+@router.delete("/categories/{category_id}", status_code=204, summary="删除分类")
+def delete_category_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+    category_id: int,
+):
+    category = get_category(session, category_id)
+    if not category:
+        raise HTTPException(status_code=404, detail="分类不存在")
+    try:
+        delete_category(session, category)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# ─── System Dashboard ───────────────────────────────────────────────────────
+# NOTE: This route MUST be defined before /{exam_id} to avoid route conflicts.
+
+@router.get(
+    "/admin/dashboard/stats",
+    response_model=SystemDashboardStats,
+    summary="系统总览看板数据",
+)
+def get_system_dashboard_stats(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+) -> SystemDashboardStats:
+    return get_system_stats(session)
+
+
+# ─── Question Bank ───────────────────────────────────────────────────────────
+# NOTE: Question bank routes MUST be defined before /{exam_id} to avoid route conflicts.
+
+@router.get(
+    "/question-bank",
+    response_model=QuestionBankPublic,
+    summary="试题库列表",
+)
+def list_question_bank_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100),
+    category_id: int | None = Query(default=None),
+) -> QuestionBankPublic:
+    data, count = list_question_bank(
+        session, page=page, limit=limit, category_id=category_id
+    )
+    return QuestionBankPublic(data=data, count=count)
+
+
+@router.get(
+    "/question-bank/{exam_id}",
+    response_model=QuestionBankDetail,
+    summary="试卷详情（在线预览）",
+)
+def get_question_bank_detail_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+    exam_id: uuid.UUID,
+) -> QuestionBankDetail:
+    detail = get_question_bank_detail(session, exam_id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="试卷不存在或未生成")
+    return QuestionBankDetail(**detail)
+
+
+@router.get(
+    "/question-bank/{exam_id}/download",
+    summary="下载试卷docx",
+)
+def download_question_bank_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+    exam_id: uuid.UUID,
+):
+    from fastapi.responses import FileResponse
+
+    paper = session.exec(
+        select(ExamPaper).where(ExamPaper.exam_id == exam_id)
+    ).first()
+    if not paper or paper.status != "GENERATED" or not paper.docx_path:
+        raise HTTPException(status_code=404, detail="试卷文件未生成")
+
+    from pathlib import Path
+    from app.core.config import settings
+
+    upload_dir = Path(settings.UPLOAD_DIR)
+    if not upload_dir.is_absolute():
+        project_root = Path(__file__).resolve().parents[3]
+        upload_dir = (project_root / upload_dir).resolve()
+
+    file_path = upload_dir / paper.docx_path
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="试卷文件不存在")
+
+    exam = session.get(Exam, exam_id)
+    filename = f"{exam.name}.docx" if exam else "exam_paper.docx"
+    return FileResponse(
+        path=str(file_path),
+        filename=filename,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+
+
 # ─── Exam CRUD ───────────────────────────────────────────────────────────────
+
+def _resolve_category_name(session: SessionDep, category_id: int | None) -> str | None:
+    """Look up category name by id; returns None if not set or not found."""
+    if category_id is None:
+        return None
+    cat = get_category(session, category_id)
+    return cat.name if cat else None
+
 
 @router.get("", response_model=ExamsPublic, summary="考试列表")
 def list_exams_endpoint(
@@ -112,10 +333,29 @@ def list_exams_endpoint(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
     status_filter: str | None = Query(default=None, alias="status"),
+    category_id: int | None = Query(default=None, description="按分类筛选"),
     q: str | None = Query(default=None, description="按考试名称搜索"),
 ) -> ExamsPublic:
-    exams, count = list_exams(session, page=page, limit=limit, status=status_filter, q=q)
-    return ExamsPublic(data=[_to_public(e) for e in exams], count=count)
+    exams, count = list_exams(
+        session, page=page, limit=limit, status=status_filter,
+        category_id=category_id, q=q,
+    )
+    # Batch-load category names to avoid N+1
+    cat_ids = {e.category_id for e in exams if e.category_id is not None}
+    cat_map: dict[int, str] = {}
+    if cat_ids:
+        categories = session.exec(
+            select(ExamCategory).where(ExamCategory.id.in_(cat_ids))
+        ).all()
+        cat_map = {c.id: c.name for c in categories}
+
+    return ExamsPublic(
+        data=[
+            _to_public(e, category_name=cat_map.get(e.category_id), session=session)
+            for e in exams
+        ],
+        count=count,
+    )
 
 
 @router.post("", response_model=ExamPublic, status_code=201, summary="创建考试")
@@ -125,7 +365,8 @@ def create_exam_endpoint(
     body: ExamCreate,
 ) -> ExamPublic:
     exam = create_exam(session, body, created_by=current_user.id)
-    return _to_public(exam)
+    cat_name = _resolve_category_name(session, exam.category_id)
+    return _to_public(exam, category_name=cat_name, session=session)
 
 
 @router.get("/{exam_id}", response_model=ExamPublic, summary="考试详情")
@@ -135,7 +376,8 @@ def get_exam_endpoint(
     exam_id: uuid.UUID,
 ) -> ExamPublic:
     exam = _get_exam_or_404(session, exam_id)
-    return _to_public(exam)
+    cat_name = _resolve_category_name(session, exam.category_id)
+    return _to_public(exam, category_name=cat_name, session=session)
 
 
 @router.put("/{exam_id}", response_model=ExamPublic, summary="编辑考试")
@@ -150,7 +392,8 @@ def update_exam_endpoint(
         updated = update_exam(session, exam, body)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return _to_public(updated)
+    cat_name = _resolve_category_name(session, updated.category_id)
+    return _to_public(updated, category_name=cat_name, session=session)
 
 
 @router.delete("/{exam_id}", status_code=204, summary="删除考试")
@@ -168,6 +411,20 @@ def delete_exam_endpoint(
 
 # ─── Lifecycle ───────────────────────────────────────────────────────────────
 
+@router.get(
+    "/{exam_id}/statistics",
+    response_model=ExamStatistics,
+    summary="考试统计",
+)
+def get_exam_statistics_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+    exam_id: uuid.UUID,
+) -> ExamStatistics:
+    exam = _get_exam_or_404(session, exam_id)
+    return get_exam_statistics(session, exam.id)
+
+
 @router.post("/{exam_id}/publish", response_model=ExamPublic, summary="发布考试")
 def publish_exam_endpoint(
     session: SessionDep,
@@ -179,7 +436,8 @@ def publish_exam_endpoint(
         published = publish_exam(session, exam)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return _to_public(published)
+    cat_name = _resolve_category_name(session, published.category_id)
+    return _to_public(published, category_name=cat_name, session=session)
 
 
 @router.post(
@@ -207,7 +465,8 @@ def archive_exam_endpoint(
         archived = archive_exam(session, exam)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return _to_public(archived)
+    cat_name = _resolve_category_name(session, archived.category_id)
+    return _to_public(archived, category_name=cat_name, session=session)
 
 
 # ─── Paper ───────────────────────────────────────────────────────────────────
