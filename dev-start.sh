@@ -83,18 +83,17 @@ if [ "$PORT_CONFLICT" -eq 1 ]; then
 fi
 success "端口检查通过"
 
-# ── 启动 Docker Compose ───────────────────────────────────────────────────────
-header "启动 Docker Compose 服务"
+# ── 启动基础设施（db + adminer + mailcatcher）────────────────────────────────
+header "启动基础设施"
 
-BACKEND_RUNNING=$(docker ps --filter "name=course-training-assessment-backend" --filter "status=running" -q)
 DB_RUNNING=$(docker ps --filter "name=course-training-assessment-db" --filter "status=running" -q)
 
-if [ -n "$BACKEND_RUNNING" ]; then
-    success "后端容器已在运行，跳过启动"
+if [ -n "$DB_RUNNING" ]; then
+    success "数据库容器已在运行，跳过启动"
 else
-    info "正在启动所有开发服务（db, backend, frontend, adminer, mailcatcher）..."
-    docker compose up -d --force-recreate
-    success "docker compose 已启动"
+    info "启动数据库和辅助服务..."
+    docker compose up -d --force-recreate db adminer mailcatcher
+    success "基础设施已启动"
 fi
 
 # 确保 db 容器健康
@@ -112,41 +111,10 @@ if [ -z "$DB_RUNNING" ]; then
     echo ""
 fi
 
-# ── 等待服务就绪 ──────────────────────────────────────────────────────────────
-header "等待服务就绪"
+# ── 启动 Cloudflare 隧道（在前端之前，获取 URL）──────────────────────────────
+header "启动 Cloudflare 临时隧道"
 
-wait_for_port() {
-    local port=$1
-    local name=$2
-    local max=60
-    for i in $(seq 1 $max); do
-        if curl -s --max-time 2 "http://localhost:${port}" > /dev/null 2>&1; then
-            success "${name} (localhost:${port}) 已就绪"
-            return 0
-        fi
-        echo -ne "  等待 ${name} (localhost:${port}) ... ${i}/${max}\r"
-        sleep 2
-    done
-    echo ""
-    warn "${name} 在 $((max * 2)) 秒内未响应，继续执行..."
-}
-
-wait_for_port 8000 "前端(Vite)"
-wait_for_port 8001 "后端(FastAPI)"
-
-# 后端健康检查（带 /api/v1 前缀）
-for i in {1..30}; do
-    HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/api/v1/utils/health-check/ 2>/dev/null || echo "000")
-    if [ "$HEALTH" = "200" ]; then
-        success "后端 /health-check 返回 200"
-        break
-    fi
-    echo -ne "  等待后端健康检查... ${i}/30\r"
-    sleep 2
-done
-echo ""
-
-# ── 清理旧 cloudflared 配置 ───────────────────────────────────────────────────
+# 清理旧 cloudflared 配置
 CLOUDFLARE_DIR="$HOME/.cloudflared"
 if [ -f "$CLOUDFLARE_DIR/config.yml" ]; then
     mv "$CLOUDFLARE_DIR/config.yml" "$CLOUDFLARE_DIR/config.yml.backup.$(date +%s)"
@@ -158,10 +126,7 @@ for f in "$CLOUDFLARE_DIR"/*.json; do
     info "已备份旧凭证文件: $(basename "$f")"
 done
 
-# ── 启动 Cloudflare 隧道 ──────────────────────────────────────────────────────
-header "启动 Cloudflare 临时隧道"
-
-# 隧道指向前端(Vite)，Vite proxy 负责转发 /api/* 到后端容器
+# 隧道先指向前端端口（稍后前端启动后就能连上）
 TUNNEL_PORT=8000
 info "隧道目标: http://localhost:${TUNNEL_PORT} (Vite dev server)"
 
@@ -203,7 +168,7 @@ fi
 HOST="${URL#https://}"
 success "隧道已建立: $URL"
 
-# ── 更新配置文件 ──────────────────────────────────────────────────────────────
+# ── 更新配置文件（在启动应用容器之前）────────────────────────────────────────
 header "更新本地配置"
 
 # 替换或追加 .env 中的某个 KEY
@@ -238,23 +203,106 @@ info "  FRONTEND_HOST=$URL"
 info "  BACKEND_CORS_ORIGINS=$CORS_VALUE"
 info "  VITE_API_URL=$URL"
 
-# ── 重建后端使新配置生效 ──────────────────────────────────────────────────────
-header "重建后端（使新配置生效）"
+# ── 启动应用容器（.env 已就绪，Vite 不会触发 .env 变更重启）──────────────────
+header "启动应用容器"
 
-# 必须 --force-recreate，restart 不会重新读取 .env 文件
-docker compose up -d --force-recreate backend
-info "等待后端重建..."
-sleep 8
+info "启动后端和前端（配置已写入，无需二次重启）..."
+docker compose up -d --force-recreate backend frontend
+success "应用容器已启动"
 
-# 验证后端已恢复
-for i in {1..20}; do
+# ── 检查前端依赖完整性（volume 缓存可能导致 node_modules 过期）────────────────
+header "检查前端依赖"
+
+check_frontend_deps() {
+    # 获取容器内 package.json 的依赖数量
+    local container_deps
+    container_deps=$(docker exec course-training-assessment-frontend-1 sh -c \
+        'cat /app/frontend/package.json' 2>/dev/null | grep -c '"' || echo "0")
+
+    # 检查几个关键依赖是否存在
+    local missing=()
+    local critical_deps=(
+        "@radix-ui/react-alert-dialog"
+        "@radix-ui/react-dialog"
+        "@radix-ui/react-dropdown-menu"
+        "@tanstack/react-router"
+    )
+    for dep in "${critical_deps[@]}"; do
+        if ! docker exec course-training-assessment-frontend-1 sh -c \
+            "test -d /app/frontend/node_modules/${dep}" 2>/dev/null; then
+            missing+=("$dep")
+        fi
+    done
+
+    if [ ${#missing[@]} -gt 0 ]; then
+        warn "前端缺少 ${#missing[@]} 个依赖: ${missing[*]}"
+        info "正在安装缺失依赖..."
+        docker exec course-training-assessment-frontend-1 sh -c \
+            'cd /app/frontend && bun install --no-verify' 2>&1 | tail -3
+        success "前端依赖已补全"
+
+        # 依赖变化后需要重启 Vite，但这次 .env 没变，重启是安全的
+        info "重启前端容器使依赖生效..."
+        docker compose restart frontend
+        sleep 3
+        success "前端已重启"
+    else
+        success "前端依赖完整"
+    fi
+}
+
+check_frontend_deps
+
+# ── 等待服务就绪 ──────────────────────────────────────────────────────────────
+header "等待服务就绪"
+
+wait_for_port() {
+    local port=$1
+    local name=$2
+    local max=60
+    for i in $(seq 1 $max); do
+        if curl -s --max-time 2 "http://localhost:${port}" > /dev/null 2>&1; then
+            success "${name} (localhost:${port}) 已就绪"
+            return 0
+        fi
+        echo -ne "  等待 ${name} (localhost:${port}) ... ${i}/${max}\r"
+        sleep 2
+    done
+    echo ""
+    warn "${name} 在 $((max * 2)) 秒内未响应，继续执行..."
+}
+
+wait_for_port 8000 "前端(Vite)"
+wait_for_port 8001 "后端(FastAPI)"
+
+# 后端健康检查（带 /api/v1 前缀）
+for i in {1..30}; do
     HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/api/v1/utils/health-check/ 2>/dev/null || echo "000")
     if [ "$HEALTH" = "200" ]; then
-        success "后端重建完成"
+        success "后端 /health-check 返回 200"
         break
     fi
+    echo -ne "  等待后端健康检查... ${i}/30\r"
     sleep 2
 done
+echo ""
+
+# ── 最终验证：前端页面可访问 ───────────────────────────────────────────────────
+info "验证前端页面..."
+FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "http://localhost:8000" 2>/dev/null || echo "000")
+if [ "$FRONTEND_STATUS" = "200" ]; then
+    success "前端页面可访问 (HTTP 200)"
+else
+    warn "前端返回 HTTP $FRONTEND_STATUS，尝试重启前端..."
+    docker compose restart frontend
+    sleep 5
+    FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "http://localhost:8000" 2>/dev/null || echo "000")
+    if [ "$FRONTEND_STATUS" = "200" ]; then
+        success "前端重启后可访问"
+    else
+        error "前端仍无法访问 (HTTP $FRONTEND_STATUS)，请检查日志: docker logs course-training-assessment-frontend-1"
+    fi
+fi
 
 # ── 验证公网可达性 ─────────────────────────────────────────────────────────────
 header "验证公网可达性"
