@@ -46,10 +46,9 @@ function ExamStatusBadge({ exam }: { exam: MyExam }) {
   const start = new Date(exam.start_at)
   const end = new Date(exam.end_at)
 
-  // Use completion_status from API
   if (exam.completion_status === "COMPLETED") {
     return (
-      <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+      <Badge variant="success">
         <Trophy className="mr-1 h-3 w-3" />
         已完成
       </Badge>
@@ -58,7 +57,7 @@ function ExamStatusBadge({ exam }: { exam: MyExam }) {
 
   if (exam.completion_status === "NOT_COMPLETED" && exam.attempt_count > 0) {
     return (
-      <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-300">
+      <Badge variant="warning">
         <XCircle className="mr-1 h-3 w-3" />
         未完成
       </Badge>
@@ -67,7 +66,7 @@ function ExamStatusBadge({ exam }: { exam: MyExam }) {
 
   if (now < start) {
     return (
-      <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+      <Badge variant="info">
         <Timer className="mr-1 h-3 w-3" />
         未开始
       </Badge>
@@ -75,13 +74,13 @@ function ExamStatusBadge({ exam }: { exam: MyExam }) {
   }
   if (now > end) {
     return (
-      <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
+      <Badge variant="outline" className="text-muted-foreground">
         已结束
       </Badge>
     )
   }
   return (
-    <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+    <Badge variant="success">
       <CheckCircle2 className="mr-1 h-3 w-3" />
       进行中
     </Badge>
@@ -117,15 +116,15 @@ function ExamCard({
   const timeInfo = getTimeInfo()
 
   return (
-    <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
+    <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
       {/* Status indicator bar */}
       <div
         className={`absolute top-0 left-0 right-0 h-1 ${
           canStart
-            ? "bg-gradient-to-r from-emerald-500 to-teal-500"
+            ? "bg-gradient-to-r from-success to-primary"
             : now < start
-            ? "bg-gradient-to-r from-amber-400 to-orange-400"
-            : "bg-gradient-to-r from-gray-300 to-gray-400"
+            ? "bg-gradient-to-r from-info to-primary"
+            : "bg-gradient-to-r from-muted to-muted-foreground/30"
         }`}
       />
 
@@ -136,10 +135,10 @@ function ExamCard({
               <div
                 className={`rounded-lg p-1.5 ${
                   canStart
-                    ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400"
+                    ? "bg-success/10 text-success"
                     : now < start
-                    ? "bg-amber-100 text-amber-600 dark:bg-amber-900/50 dark:text-amber-400"
-                    : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                    ? "bg-info/10 text-info"
+                    : "bg-muted text-muted-foreground"
                 }`}
               >
                 <BookOpen className="h-4 w-4" />
@@ -201,7 +200,7 @@ function ExamCard({
         </div>
 
         {timeInfo && canStart && (
-          <div className="mb-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+          <div className="mb-4 flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2 text-sm text-success">
             <AlertCircle className="h-4 w-4" />
             <span>{timeInfo}</span>
           </div>
@@ -212,7 +211,7 @@ function ExamCard({
           disabled={!canStart || !exam.can_attempt}
           className={`w-full transition-all duration-200 ${
             canStart && exam.can_attempt
-              ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md hover:shadow-lg"
+              ? "bg-gradient-to-r from-primary to-success shadow-md hover:shadow-lg"
               : ""
           }`}
           variant={canStart && exam.can_attempt ? "default" : "outline"}
@@ -350,13 +349,18 @@ export function ExamParticipationPage() {
       {/* Empty state */}
       {!examsQuery.isLoading && exams.length === 0 && (
         <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="rounded-full bg-muted p-4 mb-4">
-              <BookOpen className="h-12 w-12 text-muted-foreground" />
+          <CardContent className="flex flex-col items-center justify-center py-20">
+            <div className="relative mb-6">
+              <div className="rounded-full bg-primary/10 p-5">
+                <BookOpen className="h-14 w-14 text-primary" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 rounded-full bg-success p-1.5">
+                <CheckCircle2 className="h-4 w-4 text-white" />
+              </div>
             </div>
-            <h3 className="text-lg font-semibold mb-1">暂无考试</h3>
-            <p className="text-muted-foreground text-center max-w-sm">
-              您还没有被分配任何考试，请联系管理员或等待考试发布
+            <h3 className="text-lg font-semibold mb-2">暂无考试</h3>
+            <p className="text-muted-foreground text-center max-w-sm leading-relaxed">
+              您还没有被分配任何考试，请联系管理员或等待考试发布后刷新页面
             </p>
           </CardContent>
         </Card>
@@ -365,12 +369,17 @@ export function ExamParticipationPage() {
       {/* Exam cards grid */}
       {!examsQuery.isLoading && exams.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {exams.map((exam) => (
-            <ExamCard
+          {exams.map((exam, index) => (
+            <div
               key={exam.id}
-              exam={exam}
-              onStart={handleStartExam}
-            />
+              className="animate-fade-in-up"
+              style={{ animationDelay: `${index * 60}ms` }}
+            >
+              <ExamCard
+                exam={exam}
+                onStart={handleStartExam}
+              />
+            </div>
           ))}
         </div>
       )}

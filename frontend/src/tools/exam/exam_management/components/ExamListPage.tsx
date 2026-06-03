@@ -61,12 +61,12 @@ function ExamStatusBadge({ exam }: { exam: Exam }) {
   if (exam.status === "DRAFT")
     return <Badge variant="secondary">未发布</Badge>
   if (exam.status === "ARCHIVED")
-    return <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100">已归档</Badge>
+    return <Badge variant="outline" className="text-muted-foreground">已归档</Badge>
   if (now < start)
-    return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">未开始</Badge>
+    return <Badge variant="info">未开始</Badge>
   if (now > end)
-    return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">已结束</Badge>
-  return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">进行中</Badge>
+    return <Badge variant="warning">已结束</Badge>
+  return <Badge variant="success">进行中</Badge>
 }
 
 export function ExamListPage() {
@@ -171,16 +171,24 @@ export function ExamListPage() {
             )}
             {!examsQuery.isLoading && exams.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
-                  暂无考试，点击"新建考试"创建
+                <TableCell colSpan={7} className="text-center py-12">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="rounded-full bg-muted p-4">
+                      <FileText className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">暂无考试</p>
+                      <p className="text-sm text-muted-foreground mt-1">点击"新建考试"创建第一场考试</p>
+                    </div>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
             {exams.map((exam) => (
-              <TableRow key={exam.id}>
+              <TableRow key={exam.id} className="group transition-colors hover:bg-muted/50">
                 <TableCell className="font-medium">
                   <button
-                    className="hover:underline text-left"
+                    className="hover:underline text-left group-hover:text-primary transition-colors"
                     onClick={() => navigate({ to: `/exams/${exam.id}` })}
                   >
                     {exam.name}

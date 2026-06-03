@@ -3,8 +3,9 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useNavigate, useParams } from "@tanstack/react-router"
+import { toast } from "sonner"
 import {
   Clock,
   CheckCircle2,
@@ -408,6 +409,20 @@ export function ExamTakingPage() {
     queryFn: () => fetchExamPaper(examId),
   })
 
+  const queryClient = useQueryClient()
+
+  // Protect against accidental page refresh/close
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!submitted && attemptId) {
+        e.preventDefault()
+        e.returnValue = ""
+      }
+    }
+    window.addEventListener("beforeunload", handler)
+    return () => window.removeEventListener("beforeunload", handler)
+  }, [submitted, attemptId])
+
   // Start exam on mount
   const startMutation = useMutation({
     mutationFn: () => startExam(examId),
@@ -415,15 +430,15 @@ export function ExamTakingPage() {
       setAttemptId(data.attempt_id)
     },
     onError: (error: Error) => {
-      alert(`开始考试失败: ${error.message}`)
+      toast.error(`开始考试失败: ${error.message}`)
     },
   })
 
   useEffect(() => {
-    startMutation.mutate()
+    if (!attemptId) {
+      startMutation.mutate()
+    }
   }, [])
-
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const submitMutation = useMutation({
     mutationFn: (answers: SubmitAnswer[]) => {
@@ -433,11 +448,11 @@ export function ExamTakingPage() {
     onSuccess: (data) => {
       setResult(data)
       setSubmitted(true)
-      setIsSubmitting(false)
+      // Invalidate my-exams cache to refresh status
+      queryClient.invalidateQueries({ queryKey: ["my-exams"] })
     },
     onError: (error: Error) => {
-      alert(`提交失败: ${error.message}`)
-      setIsSubmitting(false)
+      toast.error(`提交失败: ${error.message}`)
     },
   })
 
@@ -453,9 +468,8 @@ export function ExamTakingPage() {
   )
 
   const handleSubmit = useCallback(() => {
-    if (!paper || isSubmitting) return
+    if (!paper || submitMutation.isPending) return
 
-    setIsSubmitting(true)
     const submitAnswers: SubmitAnswer[] = questions.map((q) => ({
       question_id: q.id,
       selected_option_ids: answers[q.id] || [],
@@ -463,7 +477,7 @@ export function ExamTakingPage() {
 
     submitMutation.mutate(submitAnswers)
     setShowSubmitDialog(false)
-  }, [paper, questions, answers, submitMutation, isSubmitting])
+  }, [paper, questions, answers, submitMutation])
 
   const handleTimeUp = useCallback(() => {
     handleSubmit()

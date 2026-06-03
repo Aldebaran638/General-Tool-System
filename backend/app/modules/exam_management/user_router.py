@@ -21,6 +21,7 @@ from app.modules.exam_management.models import (
     Exam,
     ExamAnswer,
     ExamAttempt,
+    ExamPaperSnapshot,
     ExamParticipant,
     Question,
     QuestionOption,
@@ -502,13 +503,14 @@ def submit_exam(
     if not exam or exam.status != "PUBLISHED":
         raise HTTPException(status_code=404, detail="考试不存在或未发布")
 
-    # Get the existing IN_PROGRESS attempt
+    # Get the existing IN_PROGRESS attempt with row lock to prevent concurrent submission
     attempt = session.exec(
         select(ExamAttempt)
         .where(ExamAttempt.id == body.attempt_id)
         .where(ExamAttempt.exam_id == exam_id)
         .where(ExamAttempt.userid == participant.userid)
         .where(ExamAttempt.status == "IN_PROGRESS")
+        .with_for_update()
     ).first()
 
     if not attempt:
@@ -529,42 +531,65 @@ def submit_exam(
     if now > end_at:
         raise HTTPException(status_code=400, detail="考试已结束")
 
-    # Batch load all questions for this exam
-    all_questions = session.exec(
-        select(Question).where(Question.exam_id == exam_id)
-    ).all()
-    questions_map = {q.id: q for q in all_questions}
+    # Use paper snapshot for scoring (frozen at publish time)
+    snapshot = session.exec(
+        select(ExamPaperSnapshot).where(ExamPaperSnapshot.exam_id == exam_id)
+    ).first()
 
-    # Calculate max_score from all questions (not just answered ones)
-    max_score = sum(q.score for q in all_questions)
+    if snapshot:
+        # Use snapshot data
+        snapshot_data = snapshot.snapshot_json
+        questions_data = snapshot_data.get("questions", [])
+        max_score = snapshot.total_score
+        total_count = snapshot.question_count
 
-    # Batch load all options for validation
-    all_options = session.exec(
-        select(QuestionOption)
-        .where(QuestionOption.question_id.in_(list(questions_map.keys())))
-    ).all()
-    options_by_question: dict[uuid.UUID, set[uuid.UUID]] = {}
-    for opt in all_options:
-        options_by_question.setdefault(opt.question_id, set()).add(opt.id)
+        # Build maps from snapshot
+        questions_map: dict[uuid.UUID, dict] = {}
+        options_by_question: dict[uuid.UUID, set[uuid.UUID]] = {}
+        correct_options_map: dict[uuid.UUID, set[uuid.UUID]] = {}
 
-    # Batch load correct options
-    correct_options_map: dict[uuid.UUID, set[uuid.UUID]] = {}
-    for qid, opts in options_by_question.items():
-        correct_options = session.exec(
-            select(QuestionOption.id)
-            .where(QuestionOption.question_id == qid)
+        for q_data in questions_data:
+            q_id = uuid.UUID(q_data["id"])
+            questions_map[q_id] = q_data
+            for opt in q_data.get("options", []):
+                opt_id = uuid.UUID(opt["id"])
+                options_by_question.setdefault(q_id, set()).add(opt_id)
+                if opt.get("is_correct"):
+                    correct_options_map.setdefault(q_id, set()).add(opt_id)
+    else:
+        # Fallback to live data if no snapshot
+        all_questions = session.exec(
+            select(Question).where(Question.exam_id == exam_id)
+        ).all()
+        questions_map = {q.id: {"id": q.id, "score": q.score} for q in all_questions}
+        max_score = sum(q.score for q in all_questions)
+        total_count = len(all_questions)
+
+        all_options = session.exec(
+            select(QuestionOption)
+            .where(QuestionOption.question_id.in_(list(questions_map.keys())))
+        ).all()
+        options_by_question = {}
+        for opt in all_options:
+            options_by_question.setdefault(opt.question_id, set()).add(opt.id)
+
+        # Batch load all correct options in one query
+        all_correct_opts = session.exec(
+            select(QuestionOption.id, QuestionOption.question_id)
+            .where(QuestionOption.question_id.in_(list(questions_map.keys())))
             .where(QuestionOption.is_correct.is_(True))
         ).all()
-        correct_options_map[qid] = set(correct_options)
+        correct_options_map: dict[uuid.UUID, set[uuid.UUID]] = {}
+        for opt_id, q_id in all_correct_opts:
+            correct_options_map.setdefault(q_id, set()).add(opt_id)
 
     # Validate submit_rule: ALL_REQUIRED requires all questions answered
-    if exam.submit_rule == "ALL_REQUIRED" and len(body.answers) != len(all_questions):
-        raise HTTPException(status_code=400, detail=f"必须回答所有 {len(all_questions)} 道题目")
+    if exam.submit_rule == "ALL_REQUIRED" and len(body.answers) != total_count:
+        raise HTTPException(status_code=400, detail=f"必须回答所有 {total_count} 道题目")
 
     # Validate and score answers
     total_score = 0.0
     correct_count = 0
-    total_count = len(all_questions)
     answered_question_ids = set()
 
     for answer in body.answers:
@@ -574,8 +599,8 @@ def submit_exam(
         answered_question_ids.add(answer.question_id)
 
         # Validate question belongs to exam
-        question = questions_map.get(answer.question_id)
-        if not question:
+        question_data = questions_map.get(answer.question_id)
+        if not question_data:
             raise HTTPException(status_code=400, detail="答案中包含不属于此考试的题目")
 
         # Validate selected options belong to this question
@@ -589,7 +614,7 @@ def submit_exam(
 
         # Check if answer is correct
         if correct_set == selected_set:
-            total_score += question.score
+            total_score += question_data.get("score", 0)
             correct_count += 1
 
     passed = total_score >= exam.pass_score
@@ -614,7 +639,7 @@ def submit_exam(
         correct_set = correct_options_map.get(answer.question_id, set())
         selected_set = set(answer.selected_option_ids)
         is_correct = correct_set == selected_set
-        score_awarded = question.score if is_correct else 0
+        score_awarded = question.get("score", 0) if is_correct else 0
 
         exam_answer = ExamAnswer(
             attempt_id=attempt.id,

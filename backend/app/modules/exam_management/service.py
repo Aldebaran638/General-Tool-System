@@ -7,13 +7,17 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import func
+from sqlalchemy import delete as sql_delete, func
+from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, select
 
 from app.models import User
 from app.modules.data_sync.models import WecomDepartment
 from app.modules.exam_management.models import (
     Exam,
+    ExamAnswer,
+    ExamAttempt,
+    ExamPaperSnapshot,
     ExamParticipant,
     Question,
     QuestionOption,
@@ -95,54 +99,51 @@ def delete_exam(session: Session, exam: Exam) -> None:
     if exam.status == "PUBLISHED":
         raise ValueError("已发布的考试不能删除，请先归档")
 
-    from app.modules.exam_management.models import (
-        ExamAnswer,
-        ExamAttempt,
-        ExamPaperSnapshot,
-    )
-
-    # Cascade: answers, attempts, questions, options, participants, snapshots
-
-    # Delete exam answers
-    attempts = session.exec(
-        select(ExamAttempt).where(ExamAttempt.exam_id == exam.id)
-    ).all()
-    for a in attempts:
-        answers = session.exec(
-            select(ExamAnswer).where(ExamAnswer.attempt_id == a.id)
+    # All deletes in a single transaction — commit at the end, rollback on any failure
+    try:
+        # Batch delete exam answers (via subquery on attempt_ids)
+        attempt_ids = session.exec(
+            select(ExamAttempt.id).where(ExamAttempt.exam_id == exam.id)
         ).all()
-        for ans in answers:
-            session.delete(ans)
-        session.delete(a)
+        if attempt_ids:
+            session.exec(
+                sql_delete(ExamAnswer).where(ExamAnswer.attempt_id.in_(attempt_ids))
+            )
 
-    # Delete questions and options
-    questions = session.exec(
-        select(Question).where(Question.exam_id == exam.id)
-    ).all()
-    for q in questions:
-        opts = session.exec(
-            select(QuestionOption).where(QuestionOption.question_id == q.id)
+        # Batch delete attempts
+        session.exec(
+            sql_delete(ExamAttempt).where(ExamAttempt.exam_id == exam.id)
+        )
+
+        # Batch delete options (via subquery on question_ids)
+        question_ids = session.exec(
+            select(Question.id).where(Question.exam_id == exam.id)
         ).all()
-        for o in opts:
-            session.delete(o)
-        session.delete(q)
+        if question_ids:
+            session.exec(
+                sql_delete(QuestionOption).where(QuestionOption.question_id.in_(question_ids))
+            )
 
-    # Delete participants
-    participants = session.exec(
-        select(ExamParticipant).where(ExamParticipant.exam_id == exam.id)
-    ).all()
-    for p in participants:
-        session.delete(p)
+        # Batch delete questions
+        session.exec(
+            sql_delete(Question).where(Question.exam_id == exam.id)
+        )
 
-    # Delete paper snapshots
-    snapshots = session.exec(
-        select(ExamPaperSnapshot).where(ExamPaperSnapshot.exam_id == exam.id)
-    ).all()
-    for s in snapshots:
-        session.delete(s)
+        # Batch delete participants
+        session.exec(
+            sql_delete(ExamParticipant).where(ExamParticipant.exam_id == exam.id)
+        )
 
-    session.delete(exam)
-    session.commit()
+        # Batch delete paper snapshots
+        session.exec(
+            sql_delete(ExamPaperSnapshot).where(ExamPaperSnapshot.exam_id == exam.id)
+        )
+
+        session.delete(exam)
+        session.commit()
+    except SQLAlchemyError:
+        session.rollback()
+        raise
 
 
 # ─── Paper (Questions + Options) ─────────────────────────────────────────────
@@ -156,17 +157,17 @@ def save_paper(
     if exam.status != "DRAFT":
         raise ValueError("只能编辑未发布考试的试卷")
 
-    # Delete existing
-    old_questions = session.exec(
-        select(Question).where(Question.exam_id == exam.id)
+    # Batch delete existing options and questions
+    old_question_ids = session.exec(
+        select(Question.id).where(Question.exam_id == exam.id)
     ).all()
-    for q in old_questions:
-        old_opts = session.exec(
-            select(QuestionOption).where(QuestionOption.question_id == q.id)
-        ).all()
-        for o in old_opts:
-            session.delete(o)
-        session.delete(q)
+    if old_question_ids:
+        session.exec(
+            sql_delete(QuestionOption).where(QuestionOption.question_id.in_(old_question_ids))
+        )
+    session.exec(
+        sql_delete(Question).where(Question.exam_id == exam.id)
+    )
 
     # Insert new
     for qdata in data.questions:
@@ -204,15 +205,25 @@ def get_paper(session: Session, exam_id: uuid.UUID) -> dict:
         .order_by(Question.sort_no)
     ).all()
 
+    if not questions:
+        return {"questions": [], "total_score": 0.0, "question_count": 0}
+
+    # Batch load all options to avoid N+1 query
+    question_ids = [q.id for q in questions]
+    all_options = session.exec(
+        select(QuestionOption)
+        .where(QuestionOption.question_id.in_(question_ids))
+        .order_by(QuestionOption.sort_no)
+    ).all()
+    options_by_question: dict[uuid.UUID, list[QuestionOption]] = {}
+    for opt in all_options:
+        options_by_question.setdefault(opt.question_id, []).append(opt)
+
     result = []
     total_score = 0.0
     for q in questions:
         total_score += q.score
-        options = session.exec(
-            select(QuestionOption)
-            .where(QuestionOption.question_id == q.id)
-            .order_by(QuestionOption.sort_no)
-        ).all()
+        options = options_by_question.get(q.id, [])
         result.append({
             "id": q.id,
             "exam_id": q.exam_id,
@@ -266,15 +277,22 @@ def validate_publish(session: Session, exam: Exam) -> PublishValidation:
     if not questions:
         errors.append("试卷至少需要 1 道题")
     else:
+        # Batch load all options to avoid N+1 query
+        question_ids = [q.id for q in questions]
+        all_options = session.exec(
+            select(QuestionOption).where(QuestionOption.question_id.in_(question_ids))
+        ).all()
+        options_by_question: dict[uuid.UUID, list[QuestionOption]] = {}
+        for opt in all_options:
+            options_by_question.setdefault(opt.question_id, []).append(opt)
+
         for q in questions:
             if not q.stem or not q.stem.strip():
                 errors.append(f"题号 {q.sort_no} 缺少题干")
             if q.score <= 0:
                 errors.append(f"题号 {q.sort_no} 分数必须大于 0")
 
-            options = session.exec(
-                select(QuestionOption).where(QuestionOption.question_id == q.id)
-            ).all()
+            options = options_by_question.get(q.id, [])
             correct_count = sum(1 for o in options if o.is_correct)
 
             if q.question_type == "SINGLE_CHOICE":
@@ -390,6 +408,9 @@ def _add_participants(
     users: list[User],
 ) -> int:
     """Add users as participants, skip duplicates. Returns count added."""
+    # Pre-check pattern: load existing userids first, skip in Python.
+    # Using IntegrityError + session.rollback() is unsafe here because
+    # rollback() would discard all previously-flushed inserts in the batch.
     existing = session.exec(
         select(ExamParticipant.userid).where(ExamParticipant.exam_id == exam_id)
     ).all()
@@ -407,10 +428,9 @@ def _add_participants(
             exam_id=exam_id,
             userid=userid,
             name_snapshot=user.full_name,
-            # Note: center_snapshot, department_snapshot, position_snapshot, wecom_status_snapshot
-            # would need to be populated from wecom_member data if available
         )
         session.add(participant)
+        existing_set.add(userid)  # prevent duplicate adds within same batch
         added += 1
 
     session.commit()

@@ -30,7 +30,7 @@ function Layout() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="min-h-svh">
+      <SidebarInset className="min-h-svh bg-gradient-to-b from-background to-muted/30">
         <header className="bg-background/95 supports-[backdrop-filter]:bg-background/85 sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
           <SidebarTrigger className="-ml-1 text-muted-foreground" />
         </header>
