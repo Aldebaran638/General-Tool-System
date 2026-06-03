@@ -18,12 +18,15 @@ import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as AuthWecomCallbackRouteImport } from './routes/auth/wecom-callback'
 import { Route as LayoutWecomMemberSyncRouteImport } from './routes/_layout/wecom-member-sync'
 import { Route as LayoutWecomDepartmentSyncRouteImport } from './routes/_layout/wecom-department-sync'
+import { Route as LayoutSystemDashboardRouteImport } from './routes/_layout/system-dashboard'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutQuestionBankRouteImport } from './routes/_layout/question-bank'
 import { Route as LayoutMyExamsRouteImport } from './routes/_layout/my-exams'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutExamsRouteImport } from './routes/_layout/exams'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutExamsIndexRouteImport } from './routes/_layout/exams/index'
+import { Route as LayoutQuestionBankExamIdRouteImport } from './routes/_layout/question-bank.$examId'
 import { Route as LayoutMyExamsExamIdRouteImport } from './routes/_layout/my-exams/$examId'
 import { Route as LayoutExamsNewRouteImport } from './routes/_layout/exams/new'
 import { Route as LayoutExamsExamIdRouteImport } from './routes/_layout/exams/$examId'
@@ -73,9 +76,19 @@ const LayoutWecomDepartmentSyncRoute =
     path: '/wecom-department-sync',
     getParentRoute: () => LayoutRoute,
   } as any)
+const LayoutSystemDashboardRoute = LayoutSystemDashboardRouteImport.update({
+  id: '/system-dashboard',
+  path: '/system-dashboard',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutQuestionBankRoute = LayoutQuestionBankRouteImport.update({
+  id: '/question-bank',
+  path: '/question-bank',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutMyExamsRoute = LayoutMyExamsRouteImport.update({
@@ -103,6 +116,12 @@ const LayoutExamsIndexRoute = LayoutExamsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LayoutExamsRoute,
 } as any)
+const LayoutQuestionBankExamIdRoute =
+  LayoutQuestionBankExamIdRouteImport.update({
+    id: '/$examId',
+    path: '/$examId',
+    getParentRoute: () => LayoutQuestionBankRoute,
+  } as any)
 const LayoutMyExamsExamIdRoute = LayoutMyExamsExamIdRouteImport.update({
   id: '/$examId',
   path: '/$examId',
@@ -129,13 +148,16 @@ export interface FileRoutesByFullPath {
   '/exams': typeof LayoutExamsRouteWithChildren
   '/items': typeof LayoutItemsRoute
   '/my-exams': typeof LayoutMyExamsRouteWithChildren
+  '/question-bank': typeof LayoutQuestionBankRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
+  '/system-dashboard': typeof LayoutSystemDashboardRoute
   '/wecom-department-sync': typeof LayoutWecomDepartmentSyncRoute
   '/wecom-member-sync': typeof LayoutWecomMemberSyncRoute
   '/auth/wecom-callback': typeof AuthWecomCallbackRoute
   '/exams/$examId': typeof LayoutExamsExamIdRoute
   '/exams/new': typeof LayoutExamsNewRoute
   '/my-exams/$examId': typeof LayoutMyExamsExamIdRoute
+  '/question-bank/$examId': typeof LayoutQuestionBankExamIdRoute
   '/exams/': typeof LayoutExamsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -146,7 +168,9 @@ export interface FileRoutesByTo {
   '/admin': typeof LayoutAdminRoute
   '/items': typeof LayoutItemsRoute
   '/my-exams': typeof LayoutMyExamsRouteWithChildren
+  '/question-bank': typeof LayoutQuestionBankRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
+  '/system-dashboard': typeof LayoutSystemDashboardRoute
   '/wecom-department-sync': typeof LayoutWecomDepartmentSyncRoute
   '/wecom-member-sync': typeof LayoutWecomMemberSyncRoute
   '/auth/wecom-callback': typeof AuthWecomCallbackRoute
@@ -154,6 +178,7 @@ export interface FileRoutesByTo {
   '/exams/$examId': typeof LayoutExamsExamIdRoute
   '/exams/new': typeof LayoutExamsNewRoute
   '/my-exams/$examId': typeof LayoutMyExamsExamIdRoute
+  '/question-bank/$examId': typeof LayoutQuestionBankExamIdRoute
   '/exams': typeof LayoutExamsIndexRoute
 }
 export interface FileRoutesById {
@@ -167,7 +192,9 @@ export interface FileRoutesById {
   '/_layout/exams': typeof LayoutExamsRouteWithChildren
   '/_layout/items': typeof LayoutItemsRoute
   '/_layout/my-exams': typeof LayoutMyExamsRouteWithChildren
+  '/_layout/question-bank': typeof LayoutQuestionBankRouteWithChildren
   '/_layout/settings': typeof LayoutSettingsRoute
+  '/_layout/system-dashboard': typeof LayoutSystemDashboardRoute
   '/_layout/wecom-department-sync': typeof LayoutWecomDepartmentSyncRoute
   '/_layout/wecom-member-sync': typeof LayoutWecomMemberSyncRoute
   '/auth/wecom-callback': typeof AuthWecomCallbackRoute
@@ -175,6 +202,7 @@ export interface FileRoutesById {
   '/_layout/exams/$examId': typeof LayoutExamsExamIdRoute
   '/_layout/exams/new': typeof LayoutExamsNewRoute
   '/_layout/my-exams/$examId': typeof LayoutMyExamsExamIdRoute
+  '/_layout/question-bank/$examId': typeof LayoutQuestionBankExamIdRoute
   '/_layout/exams/': typeof LayoutExamsIndexRoute
 }
 export interface FileRouteTypes {
@@ -189,13 +217,16 @@ export interface FileRouteTypes {
     | '/exams'
     | '/items'
     | '/my-exams'
+    | '/question-bank'
     | '/settings'
+    | '/system-dashboard'
     | '/wecom-department-sync'
     | '/wecom-member-sync'
     | '/auth/wecom-callback'
     | '/exams/$examId'
     | '/exams/new'
     | '/my-exams/$examId'
+    | '/question-bank/$examId'
     | '/exams/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -206,7 +237,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/items'
     | '/my-exams'
+    | '/question-bank'
     | '/settings'
+    | '/system-dashboard'
     | '/wecom-department-sync'
     | '/wecom-member-sync'
     | '/auth/wecom-callback'
@@ -214,6 +247,7 @@ export interface FileRouteTypes {
     | '/exams/$examId'
     | '/exams/new'
     | '/my-exams/$examId'
+    | '/question-bank/$examId'
     | '/exams'
   id:
     | '__root__'
@@ -226,7 +260,9 @@ export interface FileRouteTypes {
     | '/_layout/exams'
     | '/_layout/items'
     | '/_layout/my-exams'
+    | '/_layout/question-bank'
     | '/_layout/settings'
+    | '/_layout/system-dashboard'
     | '/_layout/wecom-department-sync'
     | '/_layout/wecom-member-sync'
     | '/auth/wecom-callback'
@@ -234,6 +270,7 @@ export interface FileRouteTypes {
     | '/_layout/exams/$examId'
     | '/_layout/exams/new'
     | '/_layout/my-exams/$examId'
+    | '/_layout/question-bank/$examId'
     | '/_layout/exams/'
   fileRoutesById: FileRoutesById
 }
@@ -311,11 +348,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutWecomDepartmentSyncRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/system-dashboard': {
+      id: '/_layout/system-dashboard'
+      path: '/system-dashboard'
+      fullPath: '/system-dashboard'
+      preLoaderRoute: typeof LayoutSystemDashboardRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/settings': {
       id: '/_layout/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof LayoutSettingsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/question-bank': {
+      id: '/_layout/question-bank'
+      path: '/question-bank'
+      fullPath: '/question-bank'
+      preLoaderRoute: typeof LayoutQuestionBankRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/my-exams': {
@@ -352,6 +403,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/exams/'
       preLoaderRoute: typeof LayoutExamsIndexRouteImport
       parentRoute: typeof LayoutExamsRoute
+    }
+    '/_layout/question-bank/$examId': {
+      id: '/_layout/question-bank/$examId'
+      path: '/$examId'
+      fullPath: '/question-bank/$examId'
+      preLoaderRoute: typeof LayoutQuestionBankExamIdRouteImport
+      parentRoute: typeof LayoutQuestionBankRoute
     }
     '/_layout/my-exams/$examId': {
       id: '/_layout/my-exams/$examId'
@@ -405,12 +463,25 @@ const LayoutMyExamsRouteWithChildren = LayoutMyExamsRoute._addFileChildren(
   LayoutMyExamsRouteChildren,
 )
 
+interface LayoutQuestionBankRouteChildren {
+  LayoutQuestionBankExamIdRoute: typeof LayoutQuestionBankExamIdRoute
+}
+
+const LayoutQuestionBankRouteChildren: LayoutQuestionBankRouteChildren = {
+  LayoutQuestionBankExamIdRoute: LayoutQuestionBankExamIdRoute,
+}
+
+const LayoutQuestionBankRouteWithChildren =
+  LayoutQuestionBankRoute._addFileChildren(LayoutQuestionBankRouteChildren)
+
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutExamsRoute: typeof LayoutExamsRouteWithChildren
   LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutMyExamsRoute: typeof LayoutMyExamsRouteWithChildren
+  LayoutQuestionBankRoute: typeof LayoutQuestionBankRouteWithChildren
   LayoutSettingsRoute: typeof LayoutSettingsRoute
+  LayoutSystemDashboardRoute: typeof LayoutSystemDashboardRoute
   LayoutWecomDepartmentSyncRoute: typeof LayoutWecomDepartmentSyncRoute
   LayoutWecomMemberSyncRoute: typeof LayoutWecomMemberSyncRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
@@ -421,7 +492,9 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutExamsRoute: LayoutExamsRouteWithChildren,
   LayoutItemsRoute: LayoutItemsRoute,
   LayoutMyExamsRoute: LayoutMyExamsRouteWithChildren,
+  LayoutQuestionBankRoute: LayoutQuestionBankRouteWithChildren,
   LayoutSettingsRoute: LayoutSettingsRoute,
+  LayoutSystemDashboardRoute: LayoutSystemDashboardRoute,
   LayoutWecomDepartmentSyncRoute: LayoutWecomDepartmentSyncRoute,
   LayoutWecomMemberSyncRoute: LayoutWecomMemberSyncRoute,
   LayoutIndexRoute: LayoutIndexRoute,
