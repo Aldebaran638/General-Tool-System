@@ -5,7 +5,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { type UserCreate, UsersService } from "@/client"
+import type { UserCreate } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -52,6 +52,54 @@ const formSchema = z
 
 type FormData = z.infer<typeof formSchema>
 
+async function createUser(requestBody: UserCreate) {
+  const token = localStorage.getItem("access_token")
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), 3000)
+
+  try {
+    const response = await fetch("/api/v1/users/", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+    })
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      throw new Error(body?.detail ?? `HTTP ${response.status}`)
+    }
+
+    return response.json()
+  } catch (error) {
+    const createdUser = await findUserByEmail(requestBody.email, headers)
+    if (createdUser) {
+      return createdUser
+    }
+    throw error
+  } finally {
+    window.clearTimeout(timeout)
+  }
+}
+
+async function findUserByEmail(email: string, headers: Record<string, string>) {
+  const response = await fetch(
+    `/api/v1/users/?q=${encodeURIComponent(email)}&limit=20`,
+    { headers },
+  )
+
+  if (!response.ok) {
+    return null
+  }
+
+  const body = await response.json()
+  return body.data?.find((user: { email: string }) => user.email === email)
+}
+
 const AddUser = () => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
@@ -67,13 +115,12 @@ const AddUser = () => {
       password: "",
       confirm_password: "",
       is_superuser: false,
-      is_active: false,
+      is_active: true,
     },
   })
 
   const mutation = useMutation({
-    mutationFn: (data: UserCreate) =>
-      UsersService.createUser({ requestBody: data }),
+    mutationFn: createUser,
     onSuccess: () => {
       showSuccessToast("User created successfully")
       form.reset()
@@ -86,8 +133,10 @@ const AddUser = () => {
   })
 
   const onSubmit = (data: FormData) => {
-    mutation.mutate(data)
+    const { confirm_password: _confirm_password, ...submitData } = data
+    mutation.mutate(submitData)
   }
+  const submitUser = form.handleSubmit(onSubmit)
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -105,7 +154,7 @@ const AddUser = () => {
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={submitUser} noValidate>
             <div className="grid gap-4 py-4">
               <FormField
                 control={form.control}
@@ -224,7 +273,11 @@ const AddUser = () => {
                   Cancel
                 </Button>
               </DialogClose>
-              <LoadingButton type="submit" loading={mutation.isPending}>
+              <LoadingButton
+                type="button"
+                loading={mutation.isPending}
+                onClick={submitUser}
+              >
                 Save
               </LoadingButton>
             </DialogFooter>

@@ -6,12 +6,7 @@ import { ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Select,
   SelectContent,
@@ -32,7 +27,7 @@ export function NewExamPage() {
     end_at: "",
     duration_minutes: 60,
     attempt_limit_type: "UNLIMITED",
-    pass_score: 60,
+    pass_score: 30,
     submit_rule: "ALL_REQUIRED",
     show_answer: false,
     random_question_order: false,
@@ -42,8 +37,10 @@ export function NewExamPage() {
   const createMutation = useMutation({
     mutationFn: (data: ExamCreate) => {
       const payload = { ...data }
-      if (payload.start_at && !payload.start_at.endsWith("Z")) payload.start_at = payload.start_at + ":00Z"
-      if (payload.end_at && !payload.end_at.endsWith("Z")) payload.end_at = payload.end_at + ":00Z"
+      if (payload.start_at && !payload.start_at.endsWith("Z"))
+        payload.start_at = payload.start_at + ":00Z"
+      if (payload.end_at && !payload.end_at.endsWith("Z"))
+        payload.end_at = payload.end_at + ":00Z"
       return createExam(payload)
     },
     onSuccess: (exam) => navigate({ to: `/exams/${exam.id}` }),
@@ -58,7 +55,11 @@ export function NewExamPage() {
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/exams" })}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate({ to: "/exams" })}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
@@ -77,7 +78,9 @@ export function NewExamPage() {
             <Input
               placeholder="例如：化妆品出口欧美合规培训"
               value={form.name}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, name: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setForm({ ...form, name: e.target.value })
+              }
             />
           </div>
           <div className="grid gap-2">
@@ -86,7 +89,9 @@ export function NewExamPage() {
               className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="给学员看的考试说明（可选）"
               value={form.description ?? ""}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, description: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setForm({ ...form, description: e.target.value })
+              }
               rows={3}
             />
           </div>
@@ -96,7 +101,9 @@ export function NewExamPage() {
               <Input
                 type="datetime-local"
                 value={form.start_at}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, start_at: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setForm({ ...form, start_at: e.target.value })
+                }
               />
             </div>
             <div className="grid gap-2">
@@ -104,7 +111,9 @@ export function NewExamPage() {
               <Input
                 type="datetime-local"
                 value={form.end_at}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, end_at: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setForm({ ...form, end_at: e.target.value })
+                }
               />
             </div>
           </div>
@@ -114,7 +123,9 @@ export function NewExamPage() {
               <Input
                 type="number"
                 value={form.duration_minutes}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, duration_minutes: Number(e.target.value) })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setForm({ ...form, duration_minutes: Number(e.target.value) })
+                }
               />
             </div>
             <div className="grid gap-2">
@@ -122,7 +133,9 @@ export function NewExamPage() {
               <Input
                 type="number"
                 value={form.pass_score}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, pass_score: Number(e.target.value) })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setForm({ ...form, pass_score: Number(e.target.value) })
+                }
               />
             </div>
           </div>
@@ -139,9 +152,16 @@ export function NewExamPage() {
               <Label>考试次数</Label>
               <Select
                 value={form.attempt_limit_type}
-                onValueChange={(v) => setForm({ ...form, attempt_limit_type: v as "UNLIMITED" | "LIMITED" })}
+                onValueChange={(v) =>
+                  setForm({
+                    ...form,
+                    attempt_limit_type: v as "UNLIMITED" | "LIMITED",
+                  })
+                }
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="UNLIMITED">不限制</SelectItem>
                   <SelectItem value="LIMITED">限制次数</SelectItem>
@@ -154,7 +174,12 @@ export function NewExamPage() {
                 <Input
                   type="number"
                   value={form.attempt_limit_count ?? ""}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, attempt_limit_count: Number(e.target.value) })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setForm({
+                      ...form,
+                      attempt_limit_count: Number(e.target.value),
+                    })
+                  }
                 />
               </div>
             )}
@@ -163,9 +188,13 @@ export function NewExamPage() {
             <Label>交卷要求</Label>
             <Select
               value={form.submit_rule}
-              onValueChange={(v) => setForm({ ...form, submit_rule: v as "ALL_REQUIRED" | "ANY" })}
+              onValueChange={(v) =>
+                setForm({ ...form, submit_rule: v as "ALL_REQUIRED" | "ANY" })
+              }
             >
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL_REQUIRED">全部题目必须作答</SelectItem>
                 <SelectItem value="ANY">不限制</SelectItem>
@@ -176,12 +205,19 @@ export function NewExamPage() {
       </Card>
 
       {createMutation.isError && (
-        <p className="text-sm text-red-600">{(createMutation.error as Error).message}</p>
+        <p className="text-sm text-red-600">
+          {(createMutation.error as Error).message}
+        </p>
       )}
 
       <div className="flex gap-3">
-        <Button onClick={handleCreate} disabled={createMutation.isPending || !form.name.trim()}>
-          {createMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+        <Button
+          onClick={handleCreate}
+          disabled={createMutation.isPending || !form.name.trim()}
+        >
+          {createMutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : null}
           创建考试
         </Button>
         <Button variant="outline" onClick={() => navigate({ to: "/exams" })}>

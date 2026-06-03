@@ -20,6 +20,7 @@ import { Route as LayoutWecomMemberSyncRouteImport } from './routes/_layout/weco
 import { Route as LayoutWecomDepartmentSyncRouteImport } from './routes/_layout/wecom-department-sync'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutMyExamsRouteImport } from './routes/_layout/my-exams'
+import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutExamsRouteImport } from './routes/_layout/exams'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutExamsIndexRouteImport } from './routes/_layout/exams/index'
@@ -82,6 +83,11 @@ const LayoutMyExamsRoute = LayoutMyExamsRouteImport.update({
   path: '/my-exams',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutItemsRoute = LayoutItemsRouteImport.update({
+  id: '/items',
+  path: '/items',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutExamsRoute = LayoutExamsRouteImport.update({
   id: '/exams',
   path: '/exams',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/exams': typeof LayoutExamsRouteWithChildren
+  '/items': typeof LayoutItemsRoute
   '/my-exams': typeof LayoutMyExamsRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
   '/wecom-department-sync': typeof LayoutWecomDepartmentSyncRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
+  '/items': typeof LayoutItemsRoute
   '/my-exams': typeof LayoutMyExamsRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
   '/wecom-department-sync': typeof LayoutWecomDepartmentSyncRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/exams': typeof LayoutExamsRouteWithChildren
+  '/_layout/items': typeof LayoutItemsRoute
   '/_layout/my-exams': typeof LayoutMyExamsRouteWithChildren
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/wecom-department-sync': typeof LayoutWecomDepartmentSyncRoute
@@ -178,6 +187,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/exams'
+    | '/items'
     | '/my-exams'
     | '/settings'
     | '/wecom-department-sync'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
+    | '/items'
     | '/my-exams'
     | '/settings'
     | '/wecom-department-sync'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_layout/admin'
     | '/_layout/exams'
+    | '/_layout/items'
     | '/_layout/my-exams'
     | '/_layout/settings'
     | '/_layout/wecom-department-sync'
@@ -313,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutMyExamsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/items': {
+      id: '/_layout/items'
+      path: '/items'
+      fullPath: '/items'
+      preLoaderRoute: typeof LayoutItemsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/exams': {
       id: '/_layout/exams'
       path: '/exams'
@@ -389,6 +408,7 @@ const LayoutMyExamsRouteWithChildren = LayoutMyExamsRoute._addFileChildren(
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutExamsRoute: typeof LayoutExamsRouteWithChildren
+  LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutMyExamsRoute: typeof LayoutMyExamsRouteWithChildren
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutWecomDepartmentSyncRoute: typeof LayoutWecomDepartmentSyncRoute
@@ -399,6 +419,7 @@ interface LayoutRouteChildren {
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutExamsRoute: LayoutExamsRouteWithChildren,
+  LayoutItemsRoute: LayoutItemsRoute,
   LayoutMyExamsRoute: LayoutMyExamsRouteWithChildren,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutWecomDepartmentSyncRoute: LayoutWecomDepartmentSyncRoute,

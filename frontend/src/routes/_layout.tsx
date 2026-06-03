@@ -7,7 +7,11 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { isLoggedIn, isWecomBrowser, redirectToWecomOAuth } from "@/hooks/useAuth"
+import {
+  isLoggedIn,
+  isWecomBrowser,
+  redirectToWecomOAuth,
+} from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/_layout")({
   component: Layout,
@@ -44,5 +48,3 @@ function Layout() {
     </SidebarProvider>
   )
 }
-
-export default Layout

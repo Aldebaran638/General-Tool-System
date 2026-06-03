@@ -51,6 +51,7 @@ import {
   getExam,
   updateExam,
   publishExam,
+  validateExam,
   archiveExam,
   getPaper,
   savePaper,
@@ -62,11 +63,7 @@ import {
   searchUsers,
 } from "../api"
 import type { WecomUser } from "../api"
-import type {
-  Exam,
-  ExamUpdate,
-  QuestionCreate,
-} from "../types"
+import type { Exam, ExamUpdate, QuestionCreate } from "../types"
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -102,15 +99,18 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
 
   const updateMutation = useMutation({
     mutationFn: (data: ExamUpdate) => updateExam(exam.id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["exam", exam.id] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["exam", exam.id] }),
   })
 
   const isDraft = exam.status === "DRAFT"
 
   function handleSave() {
     const data: ExamUpdate = { ...form }
-    if (data.start_at && !data.start_at.endsWith("Z")) data.start_at = data.start_at + ":00Z"
-    if (data.end_at && !data.end_at.endsWith("Z")) data.end_at = data.end_at + ":00Z"
+    if (data.start_at && !data.start_at.endsWith("Z"))
+      data.start_at = data.start_at + ":00Z"
+    if (data.end_at && !data.end_at.endsWith("Z"))
+      data.end_at = data.end_at + ":00Z"
     updateMutation.mutate(data)
   }
 
@@ -125,7 +125,9 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
             <Label>考试名称</Label>
             <Input
               value={form.name ?? ""}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, name: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setForm({ ...form, name: e.target.value })
+              }
               disabled={!isDraft}
             />
           </div>
@@ -134,7 +136,9 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
             <textarea
               className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               value={form.description ?? ""}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, description: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setForm({ ...form, description: e.target.value })
+              }
               disabled={!isDraft}
               placeholder="给学员看的考试说明（可选）"
             />
@@ -145,7 +149,9 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
               <Input
                 type="datetime-local"
                 value={form.start_at ?? ""}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, start_at: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setForm({ ...form, start_at: e.target.value })
+                }
                 disabled={!isDraft}
               />
             </div>
@@ -154,7 +160,9 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
               <Input
                 type="datetime-local"
                 value={form.end_at ?? ""}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, end_at: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setForm({ ...form, end_at: e.target.value })
+                }
                 disabled={!isDraft}
               />
             </div>
@@ -165,7 +173,9 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
               <Input
                 type="number"
                 value={form.duration_minutes ?? ""}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, duration_minutes: Number(e.target.value) })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setForm({ ...form, duration_minutes: Number(e.target.value) })
+                }
                 disabled={!isDraft}
               />
             </div>
@@ -174,7 +184,9 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
               <Input
                 type="number"
                 value={form.pass_score ?? ""}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, pass_score: Number(e.target.value) })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setForm({ ...form, pass_score: Number(e.target.value) })
+                }
                 disabled={!isDraft}
               />
             </div>
@@ -192,10 +204,17 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
               <Label>考试次数</Label>
               <Select
                 value={form.attempt_limit_type ?? "UNLIMITED"}
-                onValueChange={(v: string) => setForm({ ...form, attempt_limit_type: v as "UNLIMITED" | "LIMITED" })}
+                onValueChange={(v: string) =>
+                  setForm({
+                    ...form,
+                    attempt_limit_type: v as "UNLIMITED" | "LIMITED",
+                  })
+                }
                 disabled={!isDraft}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="UNLIMITED">不限制</SelectItem>
                   <SelectItem value="LIMITED">限制次数</SelectItem>
@@ -208,7 +227,12 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
                 <Input
                   type="number"
                   value={form.attempt_limit_count ?? ""}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, attempt_limit_count: Number(e.target.value) })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setForm({
+                      ...form,
+                      attempt_limit_count: Number(e.target.value),
+                    })
+                  }
                   disabled={!isDraft}
                 />
               </div>
@@ -218,10 +242,14 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
             <Label>交卷要求</Label>
             <Select
               value={form.submit_rule ?? "ALL_REQUIRED"}
-              onValueChange={(v: string) => setForm({ ...form, submit_rule: v as "ALL_REQUIRED" | "ANY" })}
+              onValueChange={(v: string) =>
+                setForm({ ...form, submit_rule: v as "ALL_REQUIRED" | "ANY" })
+              }
               disabled={!isDraft}
             >
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL_REQUIRED">全部题目必须作答</SelectItem>
                 <SelectItem value="ANY">不限制</SelectItem>
@@ -231,33 +259,45 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
           <div className="flex items-center justify-between">
             <div>
               <Label>提交后展示正确答案</Label>
-              <p className="text-sm text-muted-foreground">学员提交试卷后是否可以查看正确答案</p>
+              <p className="text-sm text-muted-foreground">
+                学员提交试卷后是否可以查看正确答案
+              </p>
             </div>
             <Checkbox
               checked={form.show_answer ?? false}
-              onCheckedChange={(v: boolean) => setForm({ ...form, show_answer: v })}
+              onCheckedChange={(v: boolean) =>
+                setForm({ ...form, show_answer: v })
+              }
               disabled={!isDraft}
             />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <Label>随机题目顺序</Label>
-              <p className="text-sm text-muted-foreground">每位学员看到的题目顺序不同</p>
+              <p className="text-sm text-muted-foreground">
+                每位学员看到的题目顺序不同
+              </p>
             </div>
             <Checkbox
               checked={form.random_question_order ?? false}
-              onCheckedChange={(v: boolean) => setForm({ ...form, random_question_order: v })}
+              onCheckedChange={(v: boolean) =>
+                setForm({ ...form, random_question_order: v })
+              }
               disabled={!isDraft}
             />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <Label>随机选项顺序</Label>
-              <p className="text-sm text-muted-foreground">每道题的选项顺序随机打乱</p>
+              <p className="text-sm text-muted-foreground">
+                每道题的选项顺序随机打乱
+              </p>
             </div>
             <Checkbox
               checked={form.random_option_order ?? false}
-              onCheckedChange={(v: boolean) => setForm({ ...form, random_option_order: v })}
+              onCheckedChange={(v: boolean) =>
+                setForm({ ...form, random_option_order: v })
+              }
               disabled={!isDraft}
             />
           </div>
@@ -267,10 +307,16 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
       {isDraft && (
         <div className="flex gap-3">
           <Button onClick={handleSave} disabled={updateMutation.isPending}>
-            {updateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {updateMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
             保存
           </Button>
-          {updateMutation.isSuccess && <span className="text-sm text-green-600 self-center">已保存</span>}
+          {updateMutation.isSuccess && (
+            <span className="text-sm text-green-600 self-center">已保存</span>
+          )}
         </div>
       )}
     </div>
@@ -305,7 +351,7 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
           is_correct: o.is_correct,
           sort_no: o.sort_no,
         })),
-      }))
+      })),
     )
     setLoaded(true)
   }
@@ -326,16 +372,57 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
     const defaultOptions =
       type === "TRUE_FALSE"
         ? [
-            { option_key: "A", option_text: "正确", is_correct: true, sort_no: 1 },
-            { option_key: "B", option_text: "错误", is_correct: false, sort_no: 2 },
+            {
+              option_key: "A",
+              option_text: "正确",
+              is_correct: true,
+              sort_no: 1,
+            },
+            {
+              option_key: "B",
+              option_text: "错误",
+              is_correct: false,
+              sort_no: 2,
+            },
           ]
-        : [
-            { option_key: "A", option_text: "", is_correct: true, sort_no: 1 },
-            { option_key: "B", option_text: "", is_correct: false, sort_no: 2 },
-          ]
+        : type === "MULTIPLE_CHOICE"
+          ? [
+              {
+                option_key: "A",
+                option_text: "",
+                is_correct: true,
+                sort_no: 1,
+              },
+              {
+                option_key: "B",
+                option_text: "",
+                is_correct: true,
+                sort_no: 2,
+              },
+            ]
+          : [
+              {
+                option_key: "A",
+                option_text: "",
+                is_correct: true,
+                sort_no: 1,
+              },
+              {
+                option_key: "B",
+                option_text: "",
+                is_correct: false,
+                sort_no: 2,
+              },
+            ]
     setQuestions([
       ...questions,
-      { question_type: type, stem: "", score: 10, sort_no: sortNo, options: defaultOptions },
+      {
+        question_type: type,
+        stem: "",
+        score: 10,
+        sort_no: sortNo,
+        options: defaultOptions,
+      },
     ])
   }
 
@@ -344,7 +431,11 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
   }
 
   function deleteQuestion(idx: number) {
-    setQuestions(questions.filter((_, i) => i !== idx).map((q, i) => ({ ...q, sort_no: i + 1 })))
+    setQuestions(
+      questions
+        .filter((_, i) => i !== idx)
+        .map((q, i) => ({ ...q, sort_no: i + 1 })),
+    )
   }
 
   function moveQuestion(idx: number, dir: -1 | 1) {
@@ -355,9 +446,15 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
     setQuestions(arr.map((q, i) => ({ ...q, sort_no: i + 1 })))
   }
 
-  function updateOption(qIdx: number, oIdx: number, patch: Partial<{ option_text: string; is_correct: boolean }>) {
+  function updateOption(
+    qIdx: number,
+    oIdx: number,
+    patch: Partial<{ option_text: string; is_correct: boolean }>,
+  ) {
     updateQuestion(qIdx, {
-      options: questions[qIdx].options.map((o, i) => (i === oIdx ? { ...o, ...patch } : o)),
+      options: questions[qIdx].options.map((o, i) =>
+        i === oIdx ? { ...o, ...patch } : o,
+      ),
     })
   }
 
@@ -365,20 +462,35 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
     const opts = questions[qIdx].options
     const key = String.fromCharCode(65 + opts.length)
     updateQuestion(qIdx, {
-      options: [...opts, { option_key: key, option_text: "", is_correct: false, sort_no: opts.length + 1 }],
+      options: [
+        ...opts,
+        {
+          option_key: key,
+          option_text: "",
+          is_correct: false,
+          sort_no: opts.length + 1,
+        },
+      ],
     })
   }
 
   function removeOption(qIdx: number, oIdx: number) {
     const opts = questions[qIdx].options.filter((_, i) => i !== oIdx)
     updateQuestion(qIdx, {
-      options: opts.map((o, i) => ({ ...o, option_key: String.fromCharCode(65 + i), sort_no: i + 1 })),
+      options: opts.map((o, i) => ({
+        ...o,
+        option_key: String.fromCharCode(65 + i),
+        sort_no: i + 1,
+      })),
     })
   }
 
   function setCorrectOption(qIdx: number, oIdx: number) {
     const q = questions[qIdx]
-    if (q.question_type === "SINGLE_CHOICE" || q.question_type === "TRUE_FALSE") {
+    if (
+      q.question_type === "SINGLE_CHOICE" ||
+      q.question_type === "TRUE_FALSE"
+    ) {
       updateQuestion(qIdx, {
         options: q.options.map((o, i) => ({ ...o, is_correct: i === oIdx })),
       })
@@ -392,22 +504,48 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => addQuestion("SINGLE_CHOICE")} disabled={!isDraft}>
-            <Plus className="mr-1 h-3 w-3" />单选题
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => addQuestion("SINGLE_CHOICE")}
+            disabled={!isDraft}
+          >
+            <Plus className="mr-1 h-3 w-3" />
+            单选题
           </Button>
-          <Button variant="outline" size="sm" onClick={() => addQuestion("MULTIPLE_CHOICE")} disabled={!isDraft}>
-            <Plus className="mr-1 h-3 w-3" />多选题
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => addQuestion("MULTIPLE_CHOICE")}
+            disabled={!isDraft}
+          >
+            <Plus className="mr-1 h-3 w-3" />
+            多选题
           </Button>
-          <Button variant="outline" size="sm" onClick={() => addQuestion("TRUE_FALSE")} disabled={!isDraft}>
-            <Plus className="mr-1 h-3 w-3" />判断题
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => addQuestion("TRUE_FALSE")}
+            disabled={!isDraft}
+          >
+            <Plus className="mr-1 h-3 w-3" />
+            判断题
           </Button>
         </div>
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span>共 {questions.length} 题</span>
           <span>总分 {totalScore}</span>
           {isDraft && (
-            <Button size="sm" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            <Button
+              size="sm"
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending}
+            >
+              {saveMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
               保存试卷
             </Button>
           )}
@@ -418,7 +556,9 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
         <p className="text-sm text-green-600">试卷已保存</p>
       )}
       {saveMutation.isError && (
-        <p className="text-sm text-red-600">{(saveMutation.error as Error).message}</p>
+        <p className="text-sm text-red-600">
+          {(saveMutation.error as Error).message}
+        </p>
       )}
 
       {/* Questions */}
@@ -436,19 +576,37 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
             <div className="flex items-center gap-3">
               {isDraft && (
                 <div className="flex flex-col gap-1">
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveQuestion(qIdx, -1)} disabled={qIdx === 0}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => moveQuestion(qIdx, -1)}
+                    disabled={qIdx === 0}
+                  >
                     <GripVertical className="h-3 w-3 rotate-180" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveQuestion(qIdx, 1)} disabled={qIdx === questions.length - 1}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => moveQuestion(qIdx, 1)}
+                    disabled={qIdx === questions.length - 1}
+                  >
                     <GripVertical className="h-3 w-3" />
                   </Button>
                 </div>
               )}
               <div>
                 <Badge variant="outline" className="mr-2">
-                  {q.question_type === "SINGLE_CHOICE" ? "单选" : q.question_type === "MULTIPLE_CHOICE" ? "多选" : "判断"}
+                  {q.question_type === "SINGLE_CHOICE"
+                    ? "单选"
+                    : q.question_type === "MULTIPLE_CHOICE"
+                      ? "多选"
+                      : "判断"}
                 </Badge>
-                <span className="text-sm text-muted-foreground">第 {q.sort_no} 题</span>
+                <span className="text-sm text-muted-foreground">
+                  第 {q.sort_no} 题
+                </span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -458,12 +616,19 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
                   type="number"
                   className="w-16 h-7 text-sm"
                   value={q.score}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateQuestion(qIdx, { score: Number(e.target.value) })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    updateQuestion(qIdx, { score: Number(e.target.value) })
+                  }
                   disabled={!isDraft}
                 />
               </div>
               {isDraft && (
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => deleteQuestion(qIdx)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-red-500"
+                  onClick={() => deleteQuestion(qIdx)}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               )}
@@ -475,7 +640,9 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
               <textarea
                 className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 value={q.stem}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateQuestion(qIdx, { stem: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  updateQuestion(qIdx, { stem: e.target.value })
+                }
                 disabled={!isDraft}
                 placeholder="请输入题目内容"
               />
@@ -491,27 +658,52 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
                     onClick={() => setCorrectOption(qIdx, oIdx)}
                     disabled={!isDraft}
                   >
-                    {opt.is_correct ? <CheckCircle2 className="h-4 w-4" /> : opt.option_key}
+                    {opt.is_correct ? (
+                      <CheckCircle2 className="h-4 w-4" />
+                    ) : (
+                      opt.option_key
+                    )}
                   </Button>
                   <Input
                     value={opt.option_text}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateOption(qIdx, oIdx, { option_text: e.target.value })}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      updateOption(qIdx, oIdx, { option_text: e.target.value })
+                    }
                     disabled={!isDraft || q.question_type === "TRUE_FALSE"}
-                    placeholder={q.question_type === "TRUE_FALSE" ? opt.option_text : `选项 ${opt.option_key}`}
+                    placeholder={
+                      q.question_type === "TRUE_FALSE"
+                        ? opt.option_text
+                        : `选项 ${opt.option_key}`
+                    }
                     className="flex-1"
                   />
-                  {isDraft && q.question_type !== "TRUE_FALSE" && q.options.length > 2 && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400" onClick={() => removeOption(qIdx, oIdx)}>
-                      <XCircle className="h-4 w-4" />
-                    </Button>
-                  )}
+                  {isDraft &&
+                    q.question_type !== "TRUE_FALSE" &&
+                    q.options.length > 2 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-400"
+                        onClick={() => removeOption(qIdx, oIdx)}
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    )}
                 </div>
               ))}
-              {isDraft && q.question_type !== "TRUE_FALSE" && q.options.length < 10 && (
-                <Button variant="outline" size="sm" className="w-fit" onClick={() => addOption(qIdx)}>
-                  <Plus className="mr-1 h-3 w-3" />添加选项
-                </Button>
-              )}
+              {isDraft &&
+                q.question_type !== "TRUE_FALSE" &&
+                q.options.length < 10 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-fit"
+                    onClick={() => addOption(qIdx)}
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    添加选项
+                  </Button>
+                )}
             </div>
             {isDraft && (
               <div className="grid gap-2">
@@ -519,7 +711,9 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
                 <textarea
                   className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={q.analysis ?? ""}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateQuestion(qIdx, { analysis: e.target.value })}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    updateQuestion(qIdx, { analysis: e.target.value })
+                  }
                   placeholder="提交后展示给学员的解析"
                 />
               </div>
@@ -539,7 +733,11 @@ interface UserSearchSelectProps {
   disabled?: boolean
 }
 
-function UserSearchSelect({ selectedUsers, onSelectionChange, disabled }: UserSearchSelectProps) {
+function UserSearchSelect({
+  selectedUsers,
+  onSelectionChange,
+  disabled,
+}: UserSearchSelectProps) {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const containerRef = useRef<HTMLDivElement>(null)
@@ -555,13 +753,16 @@ function UserSearchSelect({ selectedUsers, onSelectionChange, disabled }: UserSe
   const isLoading = searchQuery_?.isLoading ?? false
 
   // Filter out already selected users from search results
-  const selectedUserids = new Set(selectedUsers.map(u => u.userid))
-  const availableUsers = users.filter(u => !selectedUserids.has(u.userid))
+  const selectedUserids = new Set(selectedUsers.map((u) => u.userid))
+  const availableUsers = users.filter((u) => !selectedUserids.has(u.userid))
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setOpen(false)
       }
     }
@@ -576,7 +777,7 @@ function UserSearchSelect({ selectedUsers, onSelectionChange, disabled }: UserSe
   }
 
   function handleRemove(userid: string) {
-    onSelectionChange(selectedUsers.filter(u => u.userid !== userid))
+    onSelectionChange(selectedUsers.filter((u) => u.userid !== userid))
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -590,10 +791,12 @@ function UserSearchSelect({ selectedUsers, onSelectionChange, disabled }: UserSe
       {/* Selected users tags */}
       {selectedUsers.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {selectedUsers.map(user => (
+          {selectedUsers.map((user) => (
             <Badge key={user.userid} variant="secondary" className="pr-1">
               <span className="mr-1">{user.name}</span>
-              <span className="text-xs text-muted-foreground">({user.userid})</span>
+              <span className="text-xs text-muted-foreground">
+                ({user.userid})
+              </span>
               {!disabled && (
                 <Button
                   variant="ghost"
@@ -656,19 +859,22 @@ function UserSearchSelect({ selectedUsers, onSelectionChange, disabled }: UserSe
                   {searchQuery ? "未找到匹配的用户" : "请输入关键词搜索"}
                 </div>
               )}
-              {!isLoading && availableUsers.map(user => (
-                <div
-                  key={user.userid}
-                  className="flex cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                  onClick={() => handleSelect(user)}
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium">{user.name}</span>
-                    <span className="text-xs text-muted-foreground">{user.userid}</span>
+              {!isLoading &&
+                availableUsers.map((user) => (
+                  <div
+                    key={user.userid}
+                    className="flex cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                    onClick={() => handleSelect(user)}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{user.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {user.userid}
+                      </span>
+                    </div>
+                    <Check className="h-4 w-4 opacity-0" />
                   </div>
-                  <Check className="h-4 w-4 opacity-0" />
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         )}
@@ -683,7 +889,9 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
-  const [addMode, setAddMode] = useState<"centers" | "departments" | "users" | null>(null)
+  const [addMode, setAddMode] = useState<
+    "centers" | "departments" | "users" | null
+  >(null)
   const [addInput, setAddInput] = useState("")
   const [selectedUsers, setSelectedUsers] = useState<WecomUser[]>([])
 
@@ -721,7 +929,8 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
 
   const removeMutation = useMutation({
     mutationFn: (userid: string) => removeParticipant(exam.id, userid),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["participants", exam.id] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["participants", exam.id] }),
   })
 
   const participants = participantsQuery.data?.data ?? []
@@ -731,7 +940,10 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
 
   function handleAdd() {
     if (addMode === "centers" || addMode === "departments") {
-      const ids = addInput.split(",").map((s) => s.trim()).filter(Boolean)
+      const ids = addInput
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
       if (ids.length === 0) return
       if (addMode === "centers") {
         addByCentersMutation.mutate(ids.map(Number))
@@ -740,11 +952,14 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
       }
     } else if (addMode === "users") {
       if (selectedUsers.length === 0) return
-      addByUsersMutation.mutate(selectedUsers.map(u => u.userid))
+      addByUsersMutation.mutate(selectedUsers.map((u) => u.userid))
     }
   }
 
-  const isMutating = addByCentersMutation.isPending || addByDeptsMutation.isPending || addByUsersMutation.isPending
+  const isMutating =
+    addByCentersMutation.isPending ||
+    addByDeptsMutation.isPending ||
+    addByUsersMutation.isPending
   const isDraft = exam.status === "DRAFT"
 
   return (
@@ -754,19 +969,29 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">添加学员</CardTitle>
-            <CardDescription>
-              按中心、部门或搜索选择人员添加。
-            </CardDescription>
+            <CardDescription>按中心、部门或搜索选择人员添加。</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <div className="flex gap-2">
-              <Button variant={addMode === "centers" ? "default" : "outline"} size="sm" onClick={() => setAddMode("centers")}>
+              <Button
+                variant={addMode === "centers" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setAddMode("centers")}
+              >
                 按中心
               </Button>
-              <Button variant={addMode === "departments" ? "default" : "outline"} size="sm" onClick={() => setAddMode("departments")}>
+              <Button
+                variant={addMode === "departments" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setAddMode("departments")}
+              >
                 按部门
               </Button>
-              <Button variant={addMode === "users" ? "default" : "outline"} size="sm" onClick={() => setAddMode("users")}>
+              <Button
+                variant={addMode === "users" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setAddMode("users")}
+              >
                 按人员
               </Button>
             </div>
@@ -775,10 +1000,14 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
                 <Input
                   placeholder={`输入${addMode === "centers" ? "中心" : "部门"} ID，逗号分隔`}
                   value={addInput}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddInput(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setAddInput(e.target.value)
+                  }
                 />
                 <Button onClick={handleAdd} disabled={isMutating}>
-                  {isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {isMutating ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
                   添加
                 </Button>
               </div>
@@ -793,7 +1022,9 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
                 {selectedUsers.length > 0 && (
                   <div className="flex items-center gap-2">
                     <Button onClick={handleAdd} disabled={isMutating}>
-                      {isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      {isMutating ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : null}
                       添加 {selectedUsers.length} 人
                     </Button>
                     <span className="text-sm text-muted-foreground">
@@ -803,9 +1034,21 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
                 )}
               </div>
             )}
-            {addByCentersMutation.isSuccess && <p className="text-sm text-green-600">已添加 {addByCentersMutation.data.added} 人</p>}
-            {addByDeptsMutation.isSuccess && <p className="text-sm text-green-600">已添加 {addByDeptsMutation.data.added} 人</p>}
-            {addByUsersMutation.isSuccess && <p className="text-sm text-green-600">已添加 {addByUsersMutation.data.added} 人</p>}
+            {addByCentersMutation.isSuccess && (
+              <p className="text-sm text-green-600">
+                已添加 {addByCentersMutation.data.added} 人
+              </p>
+            )}
+            {addByDeptsMutation.isSuccess && (
+              <p className="text-sm text-green-600">
+                已添加 {addByDeptsMutation.data.added} 人
+              </p>
+            )}
+            {addByUsersMutation.isSuccess && (
+              <p className="text-sm text-green-600">
+                已添加 {addByUsersMutation.data.added} 人
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
@@ -816,7 +1059,10 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
         <Input
           placeholder="搜索姓名或 userid…"
           value={search}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setSearch(e.target.value); setPage(1) }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            setSearch(e.target.value)
+            setPage(1)
+          }}
           className="pl-8"
         />
       </div>
@@ -836,18 +1082,40 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
           </TableHeader>
           <TableBody>
             {participantsQuery.isLoading && (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">加载中…</TableCell></TableRow>
+              <TableRow>
+                <TableCell
+                  colSpan={6}
+                  className="text-center text-muted-foreground"
+                >
+                  加载中…
+                </TableCell>
+              </TableRow>
             )}
             {!participantsQuery.isLoading && participants.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">暂无学员</TableCell></TableRow>
+              <TableRow>
+                <TableCell
+                  colSpan={6}
+                  className="text-center text-muted-foreground"
+                >
+                  暂无学员
+                </TableCell>
+              </TableRow>
             )}
             {participants.map((p) => (
               <TableRow key={p.id}>
                 <TableCell className="font-mono text-sm">{p.userid}</TableCell>
-                <TableCell className="font-medium">{p.name_snapshot ?? "—"}</TableCell>
-                <TableCell className="text-sm">{p.center_snapshot ?? "—"}</TableCell>
-                <TableCell className="text-sm">{p.department_snapshot ?? "—"}</TableCell>
-                <TableCell className="text-sm">{fmtDate(p.created_at)}</TableCell>
+                <TableCell className="font-medium">
+                  {p.name_snapshot ?? "—"}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {p.center_snapshot ?? "—"}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {p.department_snapshot ?? "—"}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {fmtDate(p.created_at)}
+                </TableCell>
                 <TableCell>
                   {isDraft && (
                     <Button
@@ -869,9 +1137,25 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-end gap-2 text-sm">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>上一页</Button>
-          <span className="text-muted-foreground">第 {page} / {totalPages} 页，共 {total} 条</span>
-          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>下一页</Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage(page - 1)}
+          >
+            上一页
+          </Button>
+          <span className="text-muted-foreground">
+            第 {page} / {totalPages} 页，共 {total} 条
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            下一页
+          </Button>
         </div>
       )}
     </div>
@@ -891,14 +1175,22 @@ export function ExamDetailPage() {
   })
 
   const publishMutation = useMutation({
-    mutationFn: () => publishExam(examId),
+    mutationFn: async () => {
+      const validation = await validateExam(examId)
+      if (!validation.valid) {
+        throw new Error(validation.errors.join("\n"))
+      }
+      return publishExam(examId)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["exam", examId] })
       queryClient.invalidateQueries({ queryKey: ["exams"] })
       toast.success("考试发布成功")
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error("考试无法发布", {
+        description: error.message,
+      })
     },
   })
 
@@ -917,11 +1209,17 @@ export function ExamDetailPage() {
   const exam = examQuery.data
 
   if (examQuery.isLoading) {
-    return <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
   if (!exam) {
-    return <div className="text-center py-12 text-muted-foreground">考试不存在</div>
+    return (
+      <div className="text-center py-12 text-muted-foreground">考试不存在</div>
+    )
   }
 
   return (
@@ -929,13 +1227,21 @@ export function ExamDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/exams" })}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate({ to: "/exams" })}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{exam.name}</h1>
             <p className="text-muted-foreground">
-              {exam.status === "DRAFT" ? "未发布" : exam.status === "PUBLISHED" ? "已发布" : "已归档"}
+              {exam.status === "DRAFT"
+                ? "未发布"
+                : exam.status === "PUBLISHED"
+                  ? "已发布"
+                  : "已归档"}
               {exam.published_at && ` · 发布于 ${fmtDate(exam.published_at)}`}
             </p>
           </div>
@@ -946,13 +1252,25 @@ export function ExamDetailPage() {
               onClick={() => publishMutation.mutate()}
               disabled={publishMutation.isPending}
             >
-              {publishMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+              {publishMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="mr-2 h-4 w-4" />
+              )}
               发布考试
             </Button>
           )}
           {exam.status === "PUBLISHED" && (
-            <Button variant="outline" onClick={() => archiveMutation.mutate()} disabled={archiveMutation.isPending}>
-              {archiveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Archive className="mr-2 h-4 w-4" />}
+            <Button
+              variant="outline"
+              onClick={() => archiveMutation.mutate()}
+              disabled={archiveMutation.isPending}
+            >
+              {archiveMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Archive className="mr-2 h-4 w-4" />
+              )}
               归档
             </Button>
           )}

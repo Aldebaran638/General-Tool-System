@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useEffect } from "react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -43,6 +44,13 @@ const UserInformation = () => {
       email: currentUser?.email,
     },
   })
+
+  useEffect(() => {
+    form.reset({
+      full_name: currentUser?.full_name ?? "",
+      email: currentUser?.email ?? "",
+    })
+  }, [currentUser?.email, currentUser?.full_name, form])
 
   const toggleEditMode = () => {
     setEditMode(!editMode)

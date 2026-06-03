@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { toast } from "sonner"
 import {
   Plus,
   Search,
@@ -45,7 +46,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-import { listExams, deleteExam, publishExam, archiveExam } from "../api"
+import {
+  listExams,
+  deleteExam,
+  publishExam,
+  archiveExam,
+  validateExam,
+} from "../api"
 import type { Exam } from "../types"
 
 function fmtDate(s: string | null): string {
@@ -58,14 +65,15 @@ function ExamStatusBadge({ exam }: { exam: Exam }) {
   const start = new Date(exam.start_at)
   const end = new Date(exam.end_at)
 
-  if (exam.status === "DRAFT")
-    return <Badge variant="secondary">未发布</Badge>
+  if (exam.status === "DRAFT") return <Badge variant="secondary">未发布</Badge>
   if (exam.status === "ARCHIVED")
-    return <Badge variant="outline" className="text-muted-foreground">已归档</Badge>
-  if (now < start)
-    return <Badge variant="info">未开始</Badge>
-  if (now > end)
-    return <Badge variant="warning">已结束</Badge>
+    return (
+      <Badge variant="outline" className="text-muted-foreground">
+        已归档
+      </Badge>
+    )
+  if (now < start) return <Badge variant="info">未开始</Badge>
+  if (now > end) return <Badge variant="warning">已结束</Badge>
   return <Badge variant="success">进行中</Badge>
 }
 
@@ -96,8 +104,22 @@ export function ExamListPage() {
   })
 
   const publishMutation = useMutation({
-    mutationFn: (id: string) => publishExam(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["exams"] }),
+    mutationFn: async (id: string) => {
+      const validation = await validateExam(id)
+      if (!validation.valid) {
+        throw new Error(validation.errors.join("\n"))
+      }
+      return publishExam(id)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["exams"] })
+      toast.success("考试发布成功")
+    },
+    onError: (error: Error) => {
+      toast.error("考试无法发布", {
+        description: error.message,
+      })
+    },
   })
 
   const archiveMutation = useMutation({
@@ -115,7 +137,9 @@ export function ExamListPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">考试管理</h1>
-          <p className="text-muted-foreground">创建和管理考试、编辑试卷、分配学员</p>
+          <p className="text-muted-foreground">
+            创建和管理考试、编辑试卷、分配学员
+          </p>
         </div>
         <Button onClick={() => navigate({ to: "/exams/new" })}>
           <Plus className="mr-2 h-4 w-4" />
@@ -130,11 +154,20 @@ export function ExamListPage() {
           <Input
             placeholder="搜索考试名称…"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
             className="pl-8"
           />
         </div>
-        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1) }}>
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => {
+            setStatusFilter(v)
+            setPage(1)
+          }}
+        >
           <SelectTrigger className="w-36">
             <SelectValue placeholder="考试状态" />
           </SelectTrigger>
@@ -164,8 +197,12 @@ export function ExamListPage() {
           <TableBody>
             {examsQuery.isLoading && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
-                  <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />加载中…
+                <TableCell
+                  colSpan={7}
+                  className="text-center text-muted-foreground"
+                >
+                  <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+                  加载中…
                 </TableCell>
               </TableRow>
             )}
@@ -178,14 +215,19 @@ export function ExamListPage() {
                     </div>
                     <div>
                       <p className="font-medium text-foreground">暂无考试</p>
-                      <p className="text-sm text-muted-foreground mt-1">点击"新建考试"创建第一场考试</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        点击"新建考试"创建第一场考试
+                      </p>
                     </div>
                   </div>
                 </TableCell>
               </TableRow>
             )}
             {exams.map((exam) => (
-              <TableRow key={exam.id} className="group transition-colors hover:bg-muted/50">
+              <TableRow
+                key={exam.id}
+                className="group transition-colors hover:bg-muted/50"
+              >
                 <TableCell className="font-medium">
                   <button
                     className="hover:underline text-left group-hover:text-primary transition-colors"
@@ -200,11 +242,17 @@ export function ExamListPage() {
                 <TableCell className="text-sm whitespace-nowrap">
                   {fmtDate(exam.start_at)}
                   <br />
-                  <span className="text-muted-foreground">~ {fmtDate(exam.end_at)}</span>
+                  <span className="text-muted-foreground">
+                    ~ {fmtDate(exam.end_at)}
+                  </span>
                 </TableCell>
-                <TableCell className="text-right">{exam.duration_minutes}</TableCell>
+                <TableCell className="text-right">
+                  {exam.duration_minutes}
+                </TableCell>
                 <TableCell className="text-right">{exam.pass_score}</TableCell>
-                <TableCell className="text-sm">{fmtDate(exam.created_at)}</TableCell>
+                <TableCell className="text-sm">
+                  {fmtDate(exam.created_at)}
+                </TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -216,14 +264,16 @@ export function ExamListPage() {
                       <DropdownMenuItem
                         onClick={() => navigate({ to: `/exams/${exam.id}` })}
                       >
-                        <FileText className="mr-2 h-4 w-4" />编辑
+                        <FileText className="mr-2 h-4 w-4" />
+                        编辑
                       </DropdownMenuItem>
                       {exam.status === "DRAFT" && (
                         <DropdownMenuItem
                           onClick={() => publishMutation.mutate(exam.id)}
                           disabled={publishMutation.isPending}
                         >
-                          <Send className="mr-2 h-4 w-4" />发布
+                          <Send className="mr-2 h-4 w-4" />
+                          发布
                         </DropdownMenuItem>
                       )}
                       {exam.status === "PUBLISHED" && (
@@ -231,7 +281,8 @@ export function ExamListPage() {
                           onClick={() => archiveMutation.mutate(exam.id)}
                           disabled={archiveMutation.isPending}
                         >
-                          <Archive className="mr-2 h-4 w-4" />归档
+                          <Archive className="mr-2 h-4 w-4" />
+                          归档
                         </DropdownMenuItem>
                       )}
                       {exam.status === "DRAFT" && (
@@ -239,7 +290,8 @@ export function ExamListPage() {
                           className="text-red-600"
                           onClick={() => setDeleteTarget(exam)}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />删除
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          删除
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
@@ -254,13 +306,23 @@ export function ExamListPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-end gap-2 text-sm">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage(page - 1)}
+          >
             上一页
           </Button>
           <span className="text-muted-foreground">
             第 {page} / {totalPages} 页，共 {total} 条
           </span>
-          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => setPage(page + 1)}
+          >
             下一页
           </Button>
         </div>
@@ -276,13 +338,19 @@ export function ExamListPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>取消</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+              取消
+            </Button>
             <Button
               variant="destructive"
-              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+              onClick={() =>
+                deleteTarget && deleteMutation.mutate(deleteTarget.id)
+              }
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {deleteMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               删除
             </Button>
           </DialogFooter>
