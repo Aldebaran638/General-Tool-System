@@ -182,3 +182,30 @@ export async function searchUsers(params: {
     count: res.count,
   }
 }
+
+// ─── Department Search ───────────────────────────────────────────────────────
+
+export interface WecomDepartment {
+  id: number
+  name: string
+  name_en: string | null
+  parentid: number | null
+  order: number
+}
+
+export interface WecomDepartmentsResponse {
+  data: WecomDepartment[]
+  count: number
+}
+
+export async function searchDepartments(params: {
+  q?: string
+  page?: number
+  limit?: number
+}): Promise<WecomDepartmentsResponse> {
+  const p = new URLSearchParams()
+  if (params.q) p.set("q", params.q)
+  if (params.page) p.set("page", String(params.page))
+  if (params.limit) p.set("limit", String(params.limit))
+  return apiFetch<WecomDepartmentsResponse>(`/api/v1/data-sync/wecom-departments?${p}`)
+}
