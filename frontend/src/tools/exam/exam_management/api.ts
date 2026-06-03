@@ -87,6 +87,31 @@ export function savePaper(examId: string, data: PaperSaveRequest): Promise<void>
   return apiFetch(`${BASE}/${examId}/paper`, { method: "PUT", body: JSON.stringify(data) })
 }
 
+// ─── Statistics ─────────────────────────────────────────────────────────────
+
+export interface ScoreDistribution {
+  range_label: string
+  count: number
+}
+
+export interface ExamStatistics {
+  total_participants: number
+  completed_count: number
+  passed_count: number
+  failed_count: number
+  not_started_count: number
+  in_progress_count: number
+  pass_rate: number
+  avg_score: number | null
+  max_score: number | null
+  min_score: number | null
+  score_distribution: ScoreDistribution[]
+}
+
+export function getExamStatistics(examId: string): Promise<ExamStatistics> {
+  return apiFetch(`${BASE}/${examId}/statistics`)
+}
+
 // ─── Participants ───────────────────────────────────────────────────────────
 
 export function listParticipants(
