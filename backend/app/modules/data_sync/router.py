@@ -221,12 +221,18 @@ def list_departments(
     current_user: RequireSuperuser,
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
+    q: str | None = Query(default=None, description="按部门名称搜索"),
 ) -> WecomDepartmentsPublic:
     offset = (page - 1) * limit
-    count = session.exec(select(func.count()).select_from(WecomDepartment)).one()
+    base = select(WecomDepartment)
+    count_base = select(func.count()).select_from(WecomDepartment)
+    if q:
+        like = f"%{q}%"
+        base = base.where(WecomDepartment.name.ilike(like))  # type: ignore[union-attr]
+        count_base = count_base.where(WecomDepartment.name.ilike(like))  # type: ignore[union-attr]
+    count = session.exec(count_base).one()
     rows = session.exec(
-        select(WecomDepartment)
-        .order_by(WecomDepartment.synced_at.desc())  # type: ignore[arg-type]
+        base.order_by(WecomDepartment.synced_at.desc())  # type: ignore[arg-type]
         .offset(offset)
         .limit(limit)
     ).all()
