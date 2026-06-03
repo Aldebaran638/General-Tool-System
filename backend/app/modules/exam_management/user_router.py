@@ -54,7 +54,7 @@ class MyExamPublic(BaseModel):
     """Exam info for regular users."""
     id: uuid.UUID
     name: str
-    description: str | None
+    trainer_ids: list[str] | None = None
     status: str
     start_at: datetime
     end_at: datetime
@@ -71,6 +71,7 @@ class MyExamPublic(BaseModel):
     passed: bool = False
     completion_status: str = "NOT_STARTED"  # NOT_STARTED / IN_PROGRESS / COMPLETED / NOT_COMPLETED
     can_attempt: bool = True
+    is_ended: bool = False
 
 
 class MyExamsPublic(BaseModel):
@@ -181,6 +182,7 @@ def list_my_exams(
     participant_map = {p.exam_id: p for p in participants}
 
     # Build exam list with attempt stats
+    now = datetime.now(timezone.utc)
     exam_data = []
     for e in exams:
         stats = stats_map.get(e.id)
@@ -199,10 +201,14 @@ def list_my_exams(
         if e.attempt_limit_type == "LIMITED" and e.attempt_limit_count is not None:
             can_attempt = attempt_count < e.attempt_limit_count
 
+        # Check if exam has ended
+        end_at = e.end_at if e.end_at.tzinfo else e.end_at.replace(tzinfo=timezone.utc)
+        is_ended = now > end_at
+
         exam_data.append(MyExamPublic(
             id=e.id,
             name=e.name,
-            description=e.description,
+            trainer_ids=e.trainer_ids,
             status=e.status,
             start_at=e.start_at,
             end_at=e.end_at,
@@ -218,6 +224,7 @@ def list_my_exams(
             passed=passed,
             completion_status=completion_status,
             can_attempt=can_attempt,
+            is_ended=is_ended,
         ))
 
     return MyExamsPublic(data=exam_data, count=count)
@@ -243,10 +250,14 @@ def get_my_exam(
     if not exam:
         raise HTTPException(status_code=404, detail="考试不存在或未参与")
 
+    now = datetime.now(timezone.utc)
+    end_at = exam.end_at if exam.end_at.tzinfo else exam.end_at.replace(tzinfo=timezone.utc)
+    is_ended = now > end_at
+
     return MyExamPublic(
         id=exam.id,
         name=exam.name,
-        description=exam.description,
+        trainer_ids=exam.trainer_ids,
         status=exam.status,
         start_at=exam.start_at,
         end_at=exam.end_at,
@@ -256,6 +267,7 @@ def get_my_exam(
         pass_score=exam.pass_score,
         show_answer=exam.show_answer,
         created_at=exam.created_at,
+        is_ended=is_ended,
     )
 
 

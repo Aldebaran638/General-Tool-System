@@ -17,12 +17,13 @@ import {
 
 import { createExam } from "../api"
 import type { ExamCreate } from "../types"
+import { TrainerSearchSelect } from "./TrainerSearchSelect"
 
 export function NewExamPage() {
   const navigate = useNavigate()
   const [form, setForm] = useState<ExamCreate>({
     name: "",
-    description: "",
+    trainer_ids: [],
     start_at: "",
     end_at: "",
     duration_minutes: 60,
@@ -84,15 +85,11 @@ export function NewExamPage() {
             />
           </div>
           <div className="grid gap-2">
-            <Label>考试说明</Label>
-            <textarea
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="给学员看的考试说明（可选）"
-              value={form.description ?? ""}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setForm({ ...form, description: e.target.value })
-              }
-              rows={3}
+            <Label>培训讲师（可选）</Label>
+            <TrainerSearchSelect
+              selectedTrainerIds={form.trainer_ids ?? []}
+              selectedTrainers={[]}
+              onSelectionChange={(ids) => setForm({ ...form, trainer_ids: ids })}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
