@@ -146,9 +146,9 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
           <div className="grid gap-2">
             <Label>试卷分类</Label>
             <Select
-              value={form.category_id?.toString() ?? ""}
+              value={form.category_id?.toString() ?? "none"}
               onValueChange={(v: string) =>
-                setForm({ ...form, category_id: v ? Number(v) : null })
+                setForm({ ...form, category_id: v === "none" ? null : Number(v) })
               }
               disabled={!isDraft}
             >
@@ -156,7 +156,7 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
                 <SelectValue placeholder="选择分类（可选）" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">无分类</SelectItem>
+                <SelectItem value="none">无分类</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id.toString()}>
                     {cat.name}
