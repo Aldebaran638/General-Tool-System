@@ -12,7 +12,11 @@ function authHeaders(): Record<string, string> {
 async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...init,
-    headers: { "Content-Type": "application/json", ...authHeaders(), ...init?.headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+      ...init?.headers,
+    },
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
@@ -29,6 +33,8 @@ export interface MyExam {
   start_at: string
   end_at: string
   duration_minutes: number
+  attempt_limit_type: "UNLIMITED" | "LIMITED"
+  attempt_limit_count: number | null
   pass_score: number
   show_answer: boolean
   created_at: string
@@ -37,7 +43,7 @@ export interface MyExam {
   best_score: number | null
   last_score: number | null
   passed: boolean
-  completion_status: string  // NOT_STARTED / IN_PROGRESS / COMPLETED / NOT_COMPLETED
+  completion_status: string // NOT_STARTED / IN_PROGRESS / COMPLETED / NOT_COMPLETED
   can_attempt: boolean
 }
 
@@ -89,7 +95,10 @@ export interface StartExamResult {
   duration_minutes: number
 }
 
-export async function fetchMyExams(page: number = 1, limit: number = 20): Promise<MyExamsResponse> {
+export async function fetchMyExams(
+  page: number = 1,
+  limit: number = 20,
+): Promise<MyExamsResponse> {
   return apiFetch(`${API_BASE}?page=${page}&limit=${limit}`)
 }
 
@@ -110,7 +119,7 @@ export async function startExam(examId: string): Promise<StartExamResult> {
 export async function submitExamAnswers(
   examId: string,
   attemptId: string,
-  answers: SubmitAnswer[]
+  answers: SubmitAnswer[],
 ): Promise<SubmitResult> {
   return apiFetch(`${API_BASE}/${examId}/submit`, {
     method: "POST",

@@ -4,7 +4,7 @@
 
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
+import { Link as RouterLink } from "@tanstack/react-router"
 import {
   FileText,
   Clock,
@@ -31,11 +31,7 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
-import {
-  fetchMyExams,
-  type MyExam,
-  type MyExamsResponse,
-} from "../api"
+import { fetchMyExams, type MyExam, type MyExamsResponse } from "../api"
 
 function formatDate(s: string): string {
   return new Date(s).toLocaleString("zh-CN", { hour12: false })
@@ -87,13 +83,7 @@ function ExamStatusBadge({ exam }: { exam: MyExam }) {
   )
 }
 
-function ExamCard({
-  exam,
-  onStart,
-}: {
-  exam: MyExam
-  onStart: (examId: string) => void
-}) {
+function ExamCard({ exam }: { exam: MyExam }) {
   const now = new Date()
   const start = new Date(exam.start_at)
   const end = new Date(exam.end_at)
@@ -102,29 +92,74 @@ function ExamCard({
   // Calculate time remaining or until start
   const getTimeInfo = () => {
     if (now < start) {
-      const days = Math.ceil((start.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      const days = Math.ceil(
+        (start.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      )
       if (days > 0) return `${days} 天后开始`
-      const hours = Math.ceil((start.getTime() - now.getTime()) / (1000 * 60 * 60))
+      const hours = Math.ceil(
+        (start.getTime() - now.getTime()) / (1000 * 60 * 60),
+      )
       return `${hours} 小时后开始`
     }
     if (now > end) return null
-    const hoursLeft = Math.floor((end.getTime() - now.getTime()) / (1000 * 60 * 60))
+    const hoursLeft = Math.floor(
+      (end.getTime() - now.getTime()) / (1000 * 60 * 60),
+    )
     if (hoursLeft > 24) return `${Math.floor(hoursLeft / 24)} 天剩余`
     return `${hoursLeft} 小时剩余`
   }
 
   const timeInfo = getTimeInfo()
+  const isAttemptLimited =
+    exam.attempt_limit_type === "LIMITED" && exam.attempt_limit_count !== null
+  const remainingAttempts = isAttemptLimited
+    ? Math.max((exam.attempt_limit_count ?? 0) - exam.attempt_count, 0)
+    : null
+  const attemptText = isAttemptLimited
+    ? `已考 ${exam.attempt_count} 次 · 剩余 ${remainingAttempts} 次 · 上限 ${exam.attempt_limit_count} 次`
+    : `已考 ${exam.attempt_count} 次 · 剩余不限`
+
+  const canNavigateToExam = canStart && exam.can_attempt
+  const actionContent = !exam.can_attempt ? (
+    <>
+      <Lock className="mr-2 h-4 w-4" />
+      已达考试次数上限
+    </>
+  ) : exam.passed ? (
+    <>
+      <RotateCcw className="mr-2 h-4 w-4" />
+      重新考试
+    </>
+  ) : exam.attempt_count > 0 ? (
+    <>
+      <RotateCcw className="mr-2 h-4 w-4" />
+      再次考试
+      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+    </>
+  ) : canStart ? (
+    <>
+      开始考试
+      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+    </>
+  ) : now < start ? (
+    <>
+      <Timer className="mr-2 h-4 w-4" />
+      考试尚未开始
+    </>
+  ) : (
+    "考试已结束"
+  )
 
   return (
-    <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+    <Card className="group relative flex h-full min-h-[430px] flex-col overflow-hidden transition-shadow duration-300 hover:shadow-xl">
       {/* Status indicator bar */}
       <div
         className={`absolute top-0 left-0 right-0 h-1 ${
           canStart
             ? "bg-gradient-to-r from-success to-primary"
             : now < start
-            ? "bg-gradient-to-r from-info to-primary"
-            : "bg-gradient-to-r from-muted to-muted-foreground/30"
+              ? "bg-gradient-to-r from-info to-primary"
+              : "bg-gradient-to-r from-muted to-muted-foreground/30"
         }`}
       />
 
@@ -137,8 +172,8 @@ function ExamCard({
                   canStart
                     ? "bg-success/10 text-success"
                     : now < start
-                    ? "bg-info/10 text-info"
-                    : "bg-muted text-muted-foreground"
+                      ? "bg-info/10 text-info"
+                      : "bg-muted text-muted-foreground"
                 }`}
               >
                 <BookOpen className="h-4 w-4" />
@@ -148,17 +183,15 @@ function ExamCard({
             <CardTitle className="text-lg font-semibold line-clamp-1 mt-2">
               {exam.name}
             </CardTitle>
-            {exam.description && (
-              <CardDescription className="mt-1 line-clamp-2">
-                {exam.description}
-              </CardDescription>
-            )}
+            <CardDescription className="mt-1 line-clamp-2 min-h-[2.5rem]">
+              {exam.description || "暂无考试说明"}
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
-        <div className="space-y-3 mb-4">
+      <CardContent className="flex flex-1 flex-col pt-0">
+        <div className="mb-4 space-y-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4 flex-shrink-0" />
             <span className="truncate">开始：{formatDate(exam.start_at)}</span>
@@ -175,16 +208,13 @@ function ExamCard({
             <Trophy className="h-4 w-4 flex-shrink-0" />
             <span>及格分：{exam.pass_score} 分</span>
           </div>
-          {/* Attempt stats */}
-          {exam.attempt_count > 0 && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <RotateCcw className="h-4 w-4 flex-shrink-0" />
-              <span>
-                已考 {exam.attempt_count} 次
-                {exam.best_score !== null && ` · 最高 ${exam.best_score} 分`}
-              </span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <RotateCcw className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">
+              {attemptText}
+              {exam.best_score !== null && ` · 最高 ${exam.best_score} 分`}
+            </span>
+          </div>
           {exam.last_score !== null && (
             <div className="flex items-center gap-2 text-sm">
               {exam.passed ? (
@@ -192,60 +222,50 @@ function ExamCard({
               ) : (
                 <XCircle className="h-4 w-4 flex-shrink-0 text-red-500" />
               )}
-              <span className={exam.passed ? "text-emerald-600" : "text-red-600"}>
-                上次成绩：{exam.last_score} 分 {exam.passed ? "(通过)" : "(未通过)"}
+              <span
+                className={exam.passed ? "text-emerald-600" : "text-red-600"}
+              >
+                上次成绩：{exam.last_score} 分{" "}
+                {exam.passed ? "(通过)" : "(未通过)"}
               </span>
             </div>
           )}
         </div>
 
-        {timeInfo && canStart && (
-          <div className="mb-4 flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2 text-sm text-success">
-            <AlertCircle className="h-4 w-4" />
-            <span>{timeInfo}</span>
-          </div>
-        )}
-
-        <Button
-          onClick={() => onStart(exam.id)}
-          disabled={!canStart || !exam.can_attempt}
-          className={`w-full transition-all duration-200 ${
-            canStart && exam.can_attempt
-              ? "bg-gradient-to-r from-primary to-success shadow-md hover:shadow-lg"
-              : ""
-          }`}
-          variant={canStart && exam.can_attempt ? "default" : "outline"}
-        >
-          {!exam.can_attempt ? (
-            <>
-              <Lock className="mr-2 h-4 w-4" />
-              已达考试次数上限
-            </>
-          ) : exam.passed ? (
-            <>
-              <RotateCcw className="mr-2 h-4 w-4" />
-              重新考试
-            </>
-          ) : exam.attempt_count > 0 ? (
-            <>
-              <RotateCcw className="mr-2 h-4 w-4" />
-              再次考试
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </>
-          ) : canStart ? (
-            <>
-              开始考试
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </>
-          ) : now < start ? (
-            <>
-              <Timer className="mr-2 h-4 w-4" />
-              考试尚未开始
-            </>
+        <div className="mt-auto">
+          {timeInfo && canStart ? (
+            <div className="mb-4 flex min-h-10 items-center gap-2 rounded-lg bg-success/10 px-3 py-2 text-sm text-success">
+              <AlertCircle className="h-4 w-4" />
+              <span>{timeInfo}</span>
+            </div>
           ) : (
-            "考试已结束"
+            <div className="mb-4 min-h-10" aria-hidden="true" />
           )}
-        </Button>
+
+          {canNavigateToExam ? (
+            <Button
+              asChild
+              className="w-full bg-gradient-to-r from-primary to-success shadow-md transition-all duration-200 hover:shadow-lg"
+            >
+              <RouterLink
+                to="/my-exams/$examId"
+                params={{ examId: exam.id }}
+                data-testid={`start-exam-${exam.id}`}
+              >
+                {actionContent}
+              </RouterLink>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              disabled
+              className="w-full transition-all duration-200"
+              variant="outline"
+            >
+              {actionContent}
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   )
@@ -253,7 +273,7 @@ function ExamCard({
 
 function ExamCardSkeleton() {
   return (
-    <Card className="overflow-hidden">
+    <Card className="h-full min-h-[430px] overflow-hidden">
       <div className="h-1 bg-gray-200 dark:bg-gray-700" />
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
@@ -281,7 +301,6 @@ function ExamCardSkeleton() {
 }
 
 export function ExamParticipationPage() {
-  const navigate = useNavigate()
   const [page, setPage] = useState(1)
 
   const examsQuery = useQuery<MyExamsResponse>({
@@ -294,10 +313,6 @@ export function ExamParticipationPage() {
   const pageSize = 20
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
-  const handleStartExam = (examId: string) => {
-    navigate({ to: `/my-exams/$examId`, params: { examId } })
-  }
-
   return (
     <div className="flex flex-col gap-6">
       {/* Page header */}
@@ -308,9 +323,7 @@ export function ExamParticipationPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">我的考试</h1>
-            <p className="text-muted-foreground">
-              查看和参与分配给您的考试
-            </p>
+            <p className="text-muted-foreground">查看和参与分配给您的考试</p>
           </div>
         </div>
       </div>
@@ -372,13 +385,10 @@ export function ExamParticipationPage() {
           {exams.map((exam, index) => (
             <div
               key={exam.id}
-              className="animate-fade-in-up"
+              className="h-full animate-fade-in-up"
               style={{ animationDelay: `${index * 60}ms` }}
             >
-              <ExamCard
-                exam={exam}
-                onStart={handleStartExam}
-              />
+              <ExamCard exam={exam} />
             </div>
           ))}
         </div>

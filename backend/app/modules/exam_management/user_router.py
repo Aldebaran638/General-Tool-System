@@ -59,6 +59,8 @@ class MyExamPublic(BaseModel):
     start_at: datetime
     end_at: datetime
     duration_minutes: int
+    attempt_limit_type: str = "UNLIMITED"
+    attempt_limit_count: int | None = None
     pass_score: float
     show_answer: bool
     created_at: datetime
@@ -205,6 +207,8 @@ def list_my_exams(
             start_at=e.start_at,
             end_at=e.end_at,
             duration_minutes=e.duration_minutes,
+            attempt_limit_type=e.attempt_limit_type,
+            attempt_limit_count=e.attempt_limit_count,
             pass_score=e.pass_score,
             show_answer=e.show_answer,
             created_at=e.created_at,
@@ -247,6 +251,8 @@ def get_my_exam(
         start_at=exam.start_at,
         end_at=exam.end_at,
         duration_minutes=exam.duration_minutes,
+        attempt_limit_type=exam.attempt_limit_type,
+        attempt_limit_count=exam.attempt_limit_count,
         pass_score=exam.pass_score,
         show_answer=exam.show_answer,
         created_at=exam.created_at,
