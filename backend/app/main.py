@@ -13,6 +13,10 @@ from app.api.main import api_router
 from app.api.routes import wecom_auth
 from app.core.config import settings
 from app.modules.data_sync.scheduler import start_scheduler, stop_scheduler
+from app.modules.exam_management.scheduler import (
+    start_paper_scheduler,
+    stop_paper_scheduler,
+)
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -26,7 +30,9 @@ if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     start_scheduler()
+    start_paper_scheduler()
     yield
+    stop_paper_scheduler()
     stop_scheduler()
 
 

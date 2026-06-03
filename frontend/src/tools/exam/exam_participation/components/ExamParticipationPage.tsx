@@ -4,7 +4,7 @@
 
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Link as RouterLink } from "@tanstack/react-router"
+import { Link as RouterLink, useNavigate } from "@tanstack/react-router"
 import {
   FileText,
   Clock,
@@ -18,6 +18,8 @@ import {
   XCircle,
   RotateCcw,
   Lock,
+  Eye,
+  Download,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -32,6 +34,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 
 import { fetchMyExams, type MyExam, type MyExamsResponse } from "../api"
+import { downloadQuestionBank } from "@/tools/exam/question_bank/api"
 
 function formatDate(s: string): string {
   return new Date(s).toLocaleString("zh-CN", { hour12: false })
@@ -84,10 +87,12 @@ function ExamStatusBadge({ exam }: { exam: MyExam }) {
 }
 
 function ExamCard({ exam }: { exam: MyExam }) {
+  const navigate = useNavigate()
   const now = new Date()
   const start = new Date(exam.start_at)
   const end = new Date(exam.end_at)
   const canStart = now >= start && now <= end
+  const isEnded = now > end
 
   // Calculate time remaining or until start
   const getTimeInfo = () => {
@@ -264,6 +269,32 @@ function ExamCard({ exam }: { exam: MyExam }) {
             >
               {actionContent}
             </Button>
+          )}
+
+          {/* Question bank buttons — shown when exam has ended */}
+          {isEnded && exam.attempt_count > 0 && (
+            <div className="mt-3 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() =>
+                  navigate({ to: `/question-bank/${exam.id}` })
+                }
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                浏览试题
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => downloadQuestionBank(exam.id)}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                下载
+              </Button>
+            </div>
           )}
         </div>
       </CardContent>
