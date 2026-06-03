@@ -90,8 +90,8 @@ function Timer({
           isCritical
             ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 animate-pulse"
             : isUrgent
-            ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
-            : "bg-card border text-foreground"
+              ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+              : "bg-card border text-foreground"
         }`}
       >
         <Clock className={`h-5 w-5 ${isUrgent ? "animate-pulse" : ""}`} />
@@ -108,14 +108,16 @@ function Timer({
             isCritical
               ? "bg-red-500"
               : isUrgent
-              ? "bg-amber-500"
-              : "bg-emerald-500"
+                ? "bg-amber-500"
+                : "bg-emerald-500"
           }`}
           style={{ width: `${progressPercent}%` }}
         />
       </div>
       {isUrgent && (
-        <span className={`text-xs font-medium ${isCritical ? "text-red-600" : "text-amber-600"}`}>
+        <span
+          className={`text-xs font-medium ${isCritical ? "text-red-600" : "text-amber-600"}`}
+        >
           {isCritical ? "即将超时！" : "时间不多了"}
         </span>
       )}
@@ -143,10 +145,11 @@ function QuestionCard({
   }
 
   const handleMultipleChange = (optionId: string, checked: boolean) => {
+    const normalizedOptions = selectedOptions.filter((id) => id !== optionId)
     if (checked) {
-      onSelectionChange([...selectedOptions, optionId])
+      onSelectionChange([...normalizedOptions, optionId])
     } else {
-      onSelectionChange(selectedOptions.filter((id) => id !== optionId))
+      onSelectionChange(normalizedOptions)
     }
   }
 
@@ -189,81 +192,108 @@ function QuestionCard({
       <CardContent className="pt-6">
         {(isSingle || isTrueFalse) && (
           <RadioGroup
+            name={`question-${question.id}`}
             value={selectedOptions[0] || ""}
             onValueChange={handleSingleChange}
           >
             <div className="space-y-3">
-              {question.options.map((option) => (
-                <div
-                  key={option.id}
-                  className={`group relative flex items-center space-x-4 rounded-xl border-2 p-4 transition-all duration-200 cursor-pointer ${
-                    selectedOptions[0] === option.id
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-transparent bg-muted/50 hover:bg-muted hover:border-muted-foreground/20"
-                  }`}
-                  onClick={() => handleSingleChange(option.id)}
-                >
-                  <div className={`flex items-center justify-center h-8 w-8 rounded-lg text-sm font-medium transition-colors ${
-                    selectedOptions[0] === option.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-background border-2 border-muted-foreground/20 group-hover:border-primary/50"
-                  }`}>
-                    {option.option_key}
-                  </div>
-                  <RadioGroupItem value={option.id} id={option.id} className="sr-only" />
+              {question.options.map((option) => {
+                const inputId = `${question.id}-${option.id}`
+                const isSelected = selectedOptions[0] === option.id
+
+                return (
                   <Label
-                    htmlFor={option.id}
-                    className="flex-1 cursor-pointer text-sm leading-relaxed"
+                    key={option.id}
+                    htmlFor={inputId}
+                    className={`group relative flex items-center space-x-4 rounded-xl border-2 p-4 transition-all duration-200 cursor-pointer ${
+                      isSelected
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-transparent bg-muted/50 hover:bg-muted hover:border-muted-foreground/20"
+                    }`}
                   >
-                    {option.option_text}
+                    <div
+                      className={`flex items-center justify-center h-8 w-8 rounded-lg text-sm font-medium transition-colors ${
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-background border-2 border-muted-foreground/20 group-hover:border-primary/50"
+                      }`}
+                    >
+                      {option.option_key}
+                    </div>
+                    <RadioGroupItem
+                      value={option.id}
+                      id={inputId}
+                      className="sr-only"
+                    />
+                    <span className="flex-1 cursor-pointer text-sm leading-relaxed">
+                      {option.option_text}
+                    </span>
+                    {isSelected && (
+                      <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
+                    )}
                   </Label>
-                  {selectedOptions[0] === option.id && (
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
-                  )}
-                </div>
-              ))}
+                )
+              })}
             </div>
           </RadioGroup>
         )}
 
         {isMultiple && (
           <div className="space-y-3">
-            {question.options.map((option) => (
-              <div
-                key={option.id}
-                className={`group relative flex items-center space-x-4 rounded-xl border-2 p-4 transition-all duration-200 cursor-pointer ${
-                  selectedOptions.includes(option.id)
-                    ? "border-primary bg-primary/5 shadow-sm"
-                    : "border-transparent bg-muted/50 hover:bg-muted hover:border-muted-foreground/20"
-                }`}
-                onClick={() => handleMultipleChange(option.id, !selectedOptions.includes(option.id))}
-              >
-                <div className={`flex items-center justify-center h-8 w-8 rounded-lg text-sm font-medium transition-colors ${
-                  selectedOptions.includes(option.id)
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background border-2 border-muted-foreground/20 group-hover:border-primary/50"
-                }`}>
-                  {option.option_key}
-                </div>
-                <Checkbox
-                  id={option.id}
-                  checked={selectedOptions.includes(option.id)}
-                  onCheckedChange={(checked) =>
-                    handleMultipleChange(option.id, checked as boolean)
-                  }
-                  className="sr-only"
-                />
-                <Label
-                  htmlFor={option.id}
-                  className="flex-1 cursor-pointer text-sm leading-relaxed"
+            {question.options.map((option) => {
+              const inputId = `${question.id}-${option.id}`
+              const isSelected = selectedOptions.includes(option.id)
+
+              return (
+                <div
+                  key={option.id}
+                  className={`group relative flex items-center space-x-4 rounded-xl border-2 p-4 transition-all duration-200 cursor-pointer ${
+                    isSelected
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-transparent bg-muted/50 hover:bg-muted hover:border-muted-foreground/20"
+                  }`}
+                  onClick={() => handleMultipleChange(option.id, !isSelected)}
+                  role="checkbox"
+                  aria-checked={isSelected}
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === " " || event.key === "Enter") {
+                      event.preventDefault()
+                      handleMultipleChange(option.id, !isSelected)
+                    }
+                  }}
                 >
-                  {option.option_text}
-                </Label>
-                {selectedOptions.includes(option.id) && (
-                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
-                )}
-              </div>
-            ))}
+                  <div
+                    className={`flex items-center justify-center h-8 w-8 rounded-lg text-sm font-medium transition-colors ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-background border-2 border-muted-foreground/20 group-hover:border-primary/50"
+                    }`}
+                  >
+                    {option.option_key}
+                  </div>
+                  <Checkbox
+                    id={inputId}
+                    checked={isSelected}
+                    onCheckedChange={(checked) =>
+                      handleMultipleChange(option.id, checked as boolean)
+                    }
+                    onClick={(event) => event.stopPropagation()}
+                    className="sr-only"
+                  />
+                  <Label
+                    htmlFor={inputId}
+                    onClick={(event) => event.stopPropagation()}
+                    className="flex-1 cursor-pointer text-sm leading-relaxed"
+                  >
+                    {option.option_text}
+                  </Label>
+                  {isSelected && (
+                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </CardContent>
@@ -276,18 +306,22 @@ function ResultCard({ result }: { result: SubmitResult }) {
 
   return (
     <Card className="max-w-lg mx-auto overflow-hidden border-0 shadow-xl">
-      <div className={`h-2 ${result.passed ? "bg-gradient-to-r from-emerald-500 to-teal-500" : "bg-gradient-to-r from-red-500 to-orange-500"}`} />
+      <div
+        className={`h-2 ${result.passed ? "bg-gradient-to-r from-emerald-500 to-teal-500" : "bg-gradient-to-r from-red-500 to-orange-500"}`}
+      />
       <CardHeader className="text-center pb-2">
         <CardTitle className="text-2xl">考试结果</CardTitle>
       </CardHeader>
       <CardContent className="space-y-8">
         {/* Score circle */}
         <div className="flex flex-col items-center">
-          <div className={`relative flex items-center justify-center w-32 h-32 rounded-full ${
-            result.passed
-              ? "bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-950 dark:to-teal-950"
-              : "bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-950 dark:to-orange-950"
-          }`}>
+          <div
+            className={`relative flex items-center justify-center w-32 h-32 rounded-full ${
+              result.passed
+                ? "bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-950 dark:to-teal-950"
+                : "bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-950 dark:to-orange-950"
+            }`}
+          >
             {result.passed ? (
               <CheckCircle2 className="h-16 w-16 text-emerald-500" />
             ) : (
@@ -297,11 +331,12 @@ function ResultCard({ result }: { result: SubmitResult }) {
           <div className="mt-4 text-center">
             <p className="text-4xl font-bold">
               {result.total_score}
-              <span className="text-lg text-muted-foreground font-normal"> / {result.max_score}</span>
+              <span className="text-lg text-muted-foreground font-normal">
+                {" "}
+                / {result.max_score}
+              </span>
             </p>
-            <p className="text-muted-foreground mt-1">
-              正确率：{percentage}%
-            </p>
+            <p className="text-muted-foreground mt-1">正确率：{percentage}%</p>
           </div>
         </div>
 
@@ -402,6 +437,8 @@ export function ExamTakingPage() {
   const [submitted, setSubmitted] = useState(false)
   const [result, setResult] = useState<SubmitResult | null>(null)
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
+  const [unansweredSubmitConfirmed, setUnansweredSubmitConfirmed] =
+    useState(false)
   const [attemptId, setAttemptId] = useState<string | null>(null)
 
   const paperQuery = useQuery<ExamPaper>({
@@ -464,7 +501,7 @@ export function ExamTakingPage() {
     (questionId: string, optionIds: string[]) => {
       setAnswers((prev) => ({ ...prev, [questionId]: optionIds }))
     },
-    []
+    [],
   )
 
   const handleSubmit = useCallback(() => {
@@ -484,10 +521,19 @@ export function ExamTakingPage() {
   }, [handleSubmit])
 
   const answeredCount = Object.keys(answers).filter(
-    (key) => answers[key].length > 0
+    (key) => answers[key].length > 0,
   ).length
 
   const unansweredCount = totalQuestions - answeredCount
+
+  const handleSubmitRequest = useCallback(() => {
+    if (unansweredCount > 0 && !unansweredSubmitConfirmed) {
+      setShowSubmitDialog(true)
+      return
+    }
+
+    handleSubmit()
+  }, [handleSubmit, unansweredCount, unansweredSubmitConfirmed])
 
   if (paperQuery.isLoading) {
     return <LoadingSkeleton />
@@ -501,10 +547,7 @@ export function ExamTakingPage() {
         </div>
         <h3 className="text-lg font-semibold">无法加载试卷</h3>
         <p className="text-muted-foreground">试卷可能不存在或您没有访问权限</p>
-        <Button
-          variant="outline"
-          onClick={() => navigate({ to: "/my-exams" })}
-        >
+        <Button variant="outline" onClick={() => navigate({ to: "/my-exams" })}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           返回考试列表
         </Button>
@@ -544,16 +587,15 @@ export function ExamTakingPage() {
             <ArrowLeft className="mr-1 h-4 w-4" />
             返回
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight">{paper.exam_name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {paper.exam_name}
+          </h1>
           <p className="text-muted-foreground flex items-center gap-2 mt-1">
-            <BookOpen className="h-4 w-4" />
-            共 {totalQuestions} 题，及格分 {paper.pass_score} 分
+            <BookOpen className="h-4 w-4" />共 {totalQuestions} 题，及格分{" "}
+            {paper.pass_score} 分
           </p>
         </div>
-        <Timer
-          totalMinutes={paper.duration_minutes}
-          onTimeUp={handleTimeUp}
-        />
+        <Timer totalMinutes={paper.duration_minutes} onTimeUp={handleTimeUp} />
       </div>
 
       {/* Progress */}
@@ -562,7 +604,11 @@ export function ExamTakingPage() {
           <div className="flex items-center justify-between text-sm mb-3">
             <div className="flex items-center gap-4">
               <span className="text-muted-foreground">
-                已答 <span className="font-semibold text-foreground">{answeredCount}</span> / {totalQuestions} 题
+                已答{" "}
+                <span className="font-semibold text-foreground">
+                  {answeredCount}
+                </span>{" "}
+                / {totalQuestions} 题
               </span>
               {unansweredCount > 0 && (
                 <span className="text-amber-600 dark:text-amber-400">
@@ -616,8 +662,8 @@ export function ExamTakingPage() {
             </Button>
           ) : (
             <Button
-              onClick={() => setShowSubmitDialog(true)}
-              disabled={submitMutation.isPending}
+              onClick={handleSubmitRequest}
+              disabled={submitMutation.isPending || !attemptId}
               className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md transition-all"
             >
               {submitMutation.isPending ? (
@@ -643,8 +689,8 @@ export function ExamTakingPage() {
                   index === currentQuestion
                     ? "bg-primary text-primary-foreground shadow-md scale-110"
                     : answers[q.id]?.length > 0
-                    ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80 hover:scale-105"
+                      ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80 hover:scale-105"
                 }`}
               >
                 {index + 1}
@@ -663,18 +709,21 @@ export function ExamTakingPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>确认提交答卷</AlertDialogTitle>
             <AlertDialogDescription>
-              {unansweredCount > 0 ? (
-                <>
-                  您还有 <span className="font-semibold text-foreground">{unansweredCount}</span> 道题未作答，确定要提交吗？
-                </>
-              ) : (
-                "您已完成所有题目，确定要提交答卷吗？提交后将无法修改。"
-              )}
+              您还有{" "}
+              <span className="font-semibold text-foreground">
+                {unansweredCount}
+              </span>{" "}
+              道题未作答，确定要提交吗？
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>继续答题</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSubmit}>
+            <AlertDialogAction
+              onClick={() => {
+                setUnansweredSubmitConfirmed(true)
+                handleSubmit()
+              }}
+            >
               确认提交
             </AlertDialogAction>
           </AlertDialogFooter>

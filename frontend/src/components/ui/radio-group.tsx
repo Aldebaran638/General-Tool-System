@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 
 interface RadioGroupProps {
   value?: string
+  name?: string
   onValueChange?: (value: string) => void
   className?: string
   children: React.ReactNode
@@ -19,13 +20,14 @@ interface RadioGroupItemProps extends Omit<React.InputHTMLAttributes<HTMLInputEl
 
 const RadioGroupContext = React.createContext<{
   value?: string
+  name?: string
   onValueChange?: (value: string) => void
 }>({})
 
 const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
-  ({ className, value, onValueChange, children, ...props }, ref) => {
+  ({ className, value, name, onValueChange, children, ...props }, ref) => {
     return (
-      <RadioGroupContext.Provider value={{ value, onValueChange }}>
+      <RadioGroupContext.Provider value={{ value, name, onValueChange }}>
         <div ref={ref} className={cn("grid gap-2", className)} role="radiogroup" {...props}>
           {children}
         </div>
@@ -36,7 +38,7 @@ const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
 RadioGroup.displayName = "RadioGroup"
 
 const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
-  ({ className, value, id, ...props }, ref) => {
+  ({ className, value, id, name, onChange, ...props }, ref) => {
     const context = React.useContext(RadioGroupContext)
 
     return (
@@ -44,15 +46,20 @@ const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
         ref={ref}
         type="radio"
         id={id}
-        name={id}
+        name={name ?? context.name ?? id}
         value={value}
-        checked={context.value === value}
-        onChange={() => context.onValueChange?.(value)}
         className={cn(
           "aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
           className
         )}
         {...props}
+        checked={context.value === value}
+        onChange={(event) => {
+          onChange?.(event)
+          if (!event.defaultPrevented) {
+            context.onValueChange?.(value)
+          }
+        }}
       />
     )
   }
