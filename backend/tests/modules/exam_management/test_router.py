@@ -36,7 +36,7 @@ def _exam_payload(**overrides) -> dict:
         "end_at": _future_end(),
         "duration_minutes": 60,
         "attempt_limit_type": "UNLIMITED",
-        "pass_score": 10.0,
+        "pass_score": 60.0,
         "submit_rule": "ALL_REQUIRED",
         "show_answer": False,
         "random_question_order": False,
@@ -53,7 +53,7 @@ def _paper_payload() -> dict:
             {
                 "question_type": "SINGLE_CHOICE",
                 "stem": "What is 1+1?",
-                "score": 10.0,
+                "score": 50.0,
                 "sort_no": 1,
                 "analysis": "Basic arithmetic",
                 "options": [
@@ -65,7 +65,7 @@ def _paper_payload() -> dict:
             {
                 "question_type": "SINGLE_CHOICE",
                 "stem": "What is 2+2?",
-                "score": 10.0,
+                "score": 50.0,
                 "sort_no": 2,
                 "options": [
                     {"option_key": "A", "option_text": "3", "is_correct": False, "sort_no": 1},
@@ -297,7 +297,7 @@ class TestExamPaper:
         data = r.json()
         assert "questions" in data
         assert data["question_count"] == 2
-        assert data["total_score"] == 20.0
+        assert data["total_score"] == 100.0
         assert len(data["questions"]) == 2
         # Verify options are present
         for q in data["questions"]:
@@ -386,6 +386,37 @@ class TestExamLifecycle:
         assert data["valid"] is False
         # Should have error about needing questions and participants
         assert any("题" in e for e in data["errors"])
+
+    def test_validate_exam_requires_total_score_100(
+        self, client: TestClient, superuser_token_headers: dict[str, str]
+    ) -> None:
+        exam = _create_exam(client, superuser_token_headers)
+        exam_id = exam["id"]
+
+        client.put(
+            f"{API}/{exam_id}/paper",
+            headers=superuser_token_headers,
+            json={
+                "questions": [
+                    {
+                        "question_type": "SINGLE_CHOICE",
+                        "stem": "Only fifty points",
+                        "score": 50.0,
+                        "sort_no": 1,
+                        "options": [
+                            {"option_key": "A", "option_text": "Yes", "is_correct": True, "sort_no": 1},
+                            {"option_key": "B", "option_text": "No", "is_correct": False, "sort_no": 2},
+                        ],
+                    }
+                ]
+            },
+        )
+
+        r = client.post(f"{API}/{exam_id}/validate", headers=superuser_token_headers)
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data["valid"] is False
+        assert any("试卷总分必须等于 100 分" in e for e in data["errors"])
 
     def test_publish_exam(
         self, client: TestClient, superuser_token_headers: dict[str, str],

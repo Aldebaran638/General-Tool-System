@@ -38,6 +38,10 @@ from app.modules.exam_management.schemas import (
 )
 
 
+EXAM_TOTAL_SCORE = 100.0
+SCORE_TOLERANCE = 0.001
+
+
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -345,6 +349,8 @@ def validate_publish(session: Session, exam: Exam) -> PublishValidation:
         errors.append("考试时长必须大于 0")
     if exam.pass_score <= 0:
         errors.append("及格线必须大于 0")
+    if exam.pass_score > EXAM_TOTAL_SCORE:
+        errors.append(f"及格线不能超过 {EXAM_TOTAL_SCORE:g} 分")
     if exam.attempt_limit_type == "LIMITED" and (
         exam.attempt_limit_count is None or exam.attempt_limit_count <= 0
     ):
@@ -396,7 +402,10 @@ def validate_publish(session: Session, exam: Exam) -> PublishValidation:
     total_score = sum(q.score for q in questions)
     if total_score <= 0:
         errors.append("试卷总分必须大于 0")
-    if exam.pass_score > total_score:
+    total_score_matches_policy = abs(total_score - EXAM_TOTAL_SCORE) <= SCORE_TOLERANCE
+    if not total_score_matches_policy:
+        errors.append(f"试卷总分必须等于 {EXAM_TOTAL_SCORE:g} 分，当前为 {total_score:g} 分")
+    if total_score_matches_policy and exam.pass_score > total_score:
         errors.append(f"及格线 ({exam.pass_score}) 不能超过试卷总分 ({total_score})")
 
     return PublishValidation(valid=len(errors) == 0, errors=errors)

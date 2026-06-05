@@ -45,7 +45,7 @@ def _exam_payload(**overrides) -> dict:
         "end_at": _now_end(),
         "duration_minutes": 60,
         "attempt_limit_type": "UNLIMITED",
-        "pass_score": 10.0,
+        "pass_score": 60.0,
         "submit_rule": "ALL_REQUIRED",
         "show_answer": True,
         "random_question_order": False,
@@ -61,7 +61,7 @@ def _paper_payload() -> dict:
             {
                 "question_type": "SINGLE_CHOICE",
                 "stem": "What is 1+1?",
-                "score": 10.0,
+                "score": 50.0,
                 "sort_no": 1,
                 "analysis": "Basic arithmetic",
                 "options": [
@@ -73,7 +73,7 @@ def _paper_payload() -> dict:
             {
                 "question_type": "SINGLE_CHOICE",
                 "stem": "What is 2+2?",
-                "score": 10.0,
+                "score": 50.0,
                 "sort_no": 2,
                 "options": [
                     {"option_key": "A", "option_text": "3", "is_correct": False, "sort_no": 1},
@@ -392,8 +392,8 @@ class TestSubmitExam:
         )
         assert r.status_code == 200, r.text
         data = r.json()
-        assert data["total_score"] == 20.0
-        assert data["max_score"] == 20.0
+        assert data["total_score"] == 100.0
+        assert data["max_score"] == 100.0
         assert data["passed"] is True
         assert data["correct_count"] == 2
         assert data["total_count"] == 2
@@ -445,7 +445,7 @@ class TestSubmitExam:
 
         exam, questions, attempt_id = self._start_and_get_paper(
             client, superuser_token_headers, normal_user_token_headers, user_id,
-            pass_score=15.0,
+            pass_score=60.0,
         )
 
         # Answer first correctly, second incorrectly
@@ -466,9 +466,9 @@ class TestSubmitExam:
         )
         assert r.status_code == 200, r.text
         data = r.json()
-        assert data["total_score"] == 10.0
+        assert data["total_score"] == 50.0
         assert data["correct_count"] == 1
-        assert data["passed"] is False  # 10 < 60 pass_score
+        assert data["passed"] is False  # 50 < 60 pass_score
 
     def test_submit_exam_missing_answers(
         self, client: TestClient,
@@ -697,7 +697,7 @@ class TestAttemptAnswers:
         data = r.json()
         assert data["attempt_id"] == attempt_id
         assert data["exam_name"] == exam["name"]
-        assert data["total_score"] == 20.0
+        assert data["total_score"] == 100.0
         assert data["passed"] is True
         assert "answers" in data
         assert len(data["answers"]) == 2
