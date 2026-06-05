@@ -99,6 +99,14 @@ function filenameFromDisposition(disposition: string | null): string {
   return asciiMatch?.[1] ?? "exam_paper.docx"
 }
 
+export function generatePaper(examId: string): Promise<{
+  status: string
+  docx_path: string | null
+  generated_at: string | null
+}> {
+  return apiFetch(`${BASE}/${examId}/generate-paper`, { method: "POST" })
+}
+
 export async function downloadQuestionBank(examId: string): Promise<void> {
   const token = localStorage.getItem("access_token")
   const url = `${BASE}/question-bank/${examId}/download`

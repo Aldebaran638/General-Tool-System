@@ -481,26 +481,40 @@ def publish_exam(session: Session, exam: Exam) -> Exam:
 
 
 def _generate_paper_if_needed(session: Session, exam: Exam) -> None:
-    """Generate docx paper for an exam if one doesn't already exist."""
+    """Generate docx paper for an exam if one doesn't already exist.
+
+    If an existing paper is in FAILED status, retry generation.
+    """
     existing = session.exec(
         select(ExamPaper).where(ExamPaper.exam_id == exam.id)
     ).first()
-    if existing:
+    if existing and existing.status == "GENERATED":
         return
 
     now = _now()
     try:
         from app.modules.exam_management.docx_generator import generate_exam_paper_docx
         docx_path = generate_exam_paper_docx(exam.id, session)
-        paper = ExamPaper(
-            exam_id=exam.id,
-            docx_path=docx_path,
-            status="GENERATED",
-            generated_at=now,
-        )
+        if existing:
+            existing.docx_path = docx_path
+            existing.status = "GENERATED"
+            existing.generated_at = now
+            session.add(existing)
+        else:
+            paper = ExamPaper(
+                exam_id=exam.id,
+                docx_path=docx_path,
+                status="GENERATED",
+                generated_at=now,
+            )
+            session.add(paper)
     except Exception:
-        paper = ExamPaper(exam_id=exam.id, status="FAILED")
-    session.add(paper)
+        if existing:
+            existing.status = "FAILED"
+            session.add(existing)
+        else:
+            paper = ExamPaper(exam_id=exam.id, status="FAILED")
+            session.add(paper)
     session.commit()
 
 

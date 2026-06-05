@@ -2,7 +2,7 @@
  * Question Bank Page — browse and download exam papers
  */
 
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import {
   AlertCircle,
@@ -12,6 +12,7 @@ import {
   Download,
   Eye,
   FileText,
+  RefreshCw,
   Search,
 } from "lucide-react"
 import { useState } from "react"
@@ -21,8 +22,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import useAuth from "@/hooks/useAuth"
 import type { QuestionBankItem } from "../api"
-import { downloadQuestionBank, listQuestionBank } from "../api"
+import { downloadQuestionBank, generatePaper, listQuestionBank } from "../api"
 
 function formatDate(s: string): string {
   return new Date(s).toLocaleString("zh-CN", { hour12: false })
@@ -60,12 +62,19 @@ function QuestionBankCard({
   item,
   onPreview,
   onDownload,
+  onRegenerate,
+  isRegenerating,
+  isAdmin,
 }: {
   item: QuestionBankItem
   onPreview: (examId: string) => void
   onDownload: (examId: string) => void
+  onRegenerate: (examId: string) => void
+  isRegenerating: boolean
+  isAdmin: boolean
 }) {
   const isReady = item.status === "GENERATED"
+  const isFailed = item.status === "FAILED"
 
   return (
     <Card className="group transition-shadow duration-200 hover:shadow-md">
@@ -75,7 +84,9 @@ function QuestionBankCard({
             className={`rounded-lg p-2.5 flex-shrink-0 ${
               isReady
                 ? "bg-primary/10 text-primary"
-                : "bg-muted text-muted-foreground"
+                : isFailed
+                  ? "bg-red-500/10 text-red-600"
+                  : "bg-muted text-muted-foreground"
             }`}
           >
             <FileText className="h-5 w-5" />
@@ -98,6 +109,21 @@ function QuestionBankCard({
           </div>
         </div>
         <div className="flex gap-2 flex-shrink-0">
+          {isFailed && isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onRegenerate(item.exam_id)}
+              disabled={isRegenerating}
+            >
+              {isRegenerating ? (
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
+              重新生成
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -148,12 +174,27 @@ function QuestionBankCardSkeleton() {
 
 export function QuestionBankPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const { user } = useAuth()
+  const isAdmin = user?.is_superuser ?? false
+
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
 
   const bankQuery = useQuery({
     queryKey: ["questionBank", page],
     queryFn: () => listQuestionBank({ page, limit: 20 }),
+  })
+
+  const regenerateMutation = useMutation({
+    mutationFn: (examId: string) => generatePaper(examId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["questionBank"] })
+      toast.success("试题库重新生成成功")
+    },
+    onError: (error: Error) => {
+      toast.error("重新生成失败", { description: error.message })
+    },
   })
 
   const items = bankQuery.data?.data ?? []
@@ -180,6 +221,10 @@ export function QuestionBankPage() {
         description: error instanceof Error ? error.message : "请稍后重试",
       })
     }
+  }
+
+  function handleRegenerate(examId: string) {
+    regenerateMutation.mutate(examId)
   }
 
   return (
@@ -269,6 +314,9 @@ export function QuestionBankPage() {
               item={item}
               onPreview={handlePreview}
               onDownload={handleDownload}
+              onRegenerate={handleRegenerate}
+              isRegenerating={regenerateMutation.isPending && regenerateMutation.variables === item.exam_id}
+              isAdmin={isAdmin}
             />
           ))}
         </div>
