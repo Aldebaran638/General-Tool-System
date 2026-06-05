@@ -17,6 +17,8 @@ import {
   Search,
   X,
   Check,
+  Users,
+  Eye,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -47,6 +49,13 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 import {
   getExam,
@@ -64,7 +73,9 @@ import {
   searchUsers,
   searchDepartments,
   getExamStatistics,
+  getParticipantsByStatus,
 } from "../api"
+import type { ParticipantDetail } from "../api"
 import { apiDatetimeToLocal, datetimeLocalToApi } from "../datetime"
 import type { WecomUser, WecomDepartment } from "../api"
 import type { Exam, ExamUpdate, QuestionCreate } from "../types"
@@ -1389,11 +1400,115 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
 
 // ─── Exam Statistics Tab ────────────────────────────────────────────────────
 
+function ParticipantDetailDialog({
+  examId,
+  status,
+  statusLabel,
+  open,
+  onOpenChange,
+}: {
+  examId: string
+  status: string
+  statusLabel: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const query = useQuery({
+    queryKey: ["participantsByStatus", examId, status],
+    queryFn: () => getParticipantsByStatus(examId, status),
+    enabled: open,
+  })
+
+  const participants = query.data?.data ?? []
+
+  function getStatusBadge(s: string) {
+    switch (s) {
+      case "COMPLETED":
+        return <Badge variant="success">已完成</Badge>
+      case "NOT_COMPLETED":
+        return <Badge variant="warning">未通过</Badge>
+      case "IN_PROGRESS":
+        return <Badge variant="info">进行中</Badge>
+      case "NOT_STARTED":
+        return <Badge variant="secondary">未开始</Badge>
+      default:
+        return <Badge variant="outline">{s}</Badge>
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{statusLabel} — 共 {participants.length} 人</DialogTitle>
+          <DialogDescription>考试 ID: {examId}</DialogDescription>
+        </DialogHeader>
+        {query.isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
+        {query.isError && (
+          <div className="text-center py-8 text-red-500">
+            加载失败: {query.error instanceof Error ? query.error.message : "未知错误"}
+          </div>
+        )}
+        {!query.isLoading && !query.isError && (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>姓名</TableHead>
+                  <TableHead>中心</TableHead>
+                  <TableHead>部门</TableHead>
+                  <TableHead>分数</TableHead>
+                  <TableHead>状态</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {participants.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      暂无人员
+                    </TableCell>
+                  </TableRow>
+                )}
+                {participants.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">
+                      {p.name_snapshot ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-sm">{p.center_snapshot ?? "—"}</TableCell>
+                    <TableCell className="text-sm">{p.department_snapshot ?? "—"}</TableCell>
+                    <TableCell>
+                      {p.final_score !== null ? (
+                        <span className={p.final_passed ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+                          {p.final_score}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(p.completion_status)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function ExamStatisticsTab({ exam }: { exam: Exam }) {
   const statsQuery = useQuery({
     queryKey: ["examStatistics", exam.id],
     queryFn: () => getExamStatistics(exam.id),
   })
+
+  const [dialogStatus, setDialogStatus] = useState<string | null>(null)
+  const [dialogLabel, setDialogLabel] = useState("")
 
   const stats = statsQuery.data
 
@@ -1413,18 +1528,80 @@ function ExamStatisticsTab({ exam }: { exam: Exam }) {
     )
   }
 
+  function openDialog(status: string, label: string) {
+    setDialogStatus(status)
+    setDialogLabel(label)
+  }
+
+  function closeDialog() {
+    setDialogStatus(null)
+    setDialogLabel("")
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      {/* 数据卡片 */}
+      {/* 数据卡片 — 可点击查看人员名单 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
+        <Card
+          className="cursor-pointer hover:shadow-md transition-all hover:bg-accent/30"
+          onClick={() => openDialog("ALL", "参考人员总数")}
+        >
           <CardHeader className="pb-2">
-            <CardDescription>参考人数</CardDescription>
+            <CardDescription className="flex items-center gap-1">
+              <Users className="h-3.5 w-3.5" />
+              参考人员总数
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total_participants}</div>
           </CardContent>
         </Card>
+        <Card
+          className="cursor-pointer hover:shadow-md transition-all hover:bg-green-50 dark:hover:bg-green-950/20"
+          onClick={() => openDialog("COMPLETED", "及格人数")}
+        >
+          <CardHeader className="pb-2">
+            <CardDescription className="flex items-center gap-1 text-green-600">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              及格人数
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{stats.passed_count}</div>
+          </CardContent>
+        </Card>
+        <Card
+          className="cursor-pointer hover:shadow-md transition-all hover:bg-red-50 dark:hover:bg-red-950/20"
+          onClick={() => openDialog("NOT_COMPLETED", "未通过人数")}
+        >
+          <CardHeader className="pb-2">
+            <CardDescription className="flex items-center gap-1 text-red-600">
+              <XCircle className="h-3.5 w-3.5" />
+              未通过人数
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{stats.failed_count}</div>
+          </CardContent>
+        </Card>
+        <Card
+          className="cursor-pointer hover:shadow-md transition-all hover:bg-amber-50 dark:hover:bg-amber-950/20"
+          onClick={() => openDialog("NOT_STARTED", "未考试人数")}
+        >
+          <CardHeader className="pb-2">
+            <CardDescription className="flex items-center gap-1 text-amber-600">
+              <AlertCircle className="h-3.5 w-3.5" />
+              未考试人数
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-600">{stats.not_started_count}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 及格率 + 平均分 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>及格率</CardDescription>
@@ -1443,14 +1620,18 @@ function ExamStatisticsTab({ exam }: { exam: Exam }) {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>及格/不及格</CardDescription>
+            <CardDescription>最高分</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              <span className="text-green-600">{stats.passed_count}</span>
-              <span className="text-muted-foreground mx-1">/</span>
-              <span className="text-red-600">{stats.failed_count}</span>
-            </div>
+            <div className="text-2xl font-bold">{stats.max_score ?? "—"}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>最低分</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.min_score ?? "—"}</div>
           </CardContent>
         </Card>
       </div>
@@ -1500,14 +1681,23 @@ function ExamStatisticsTab({ exam }: { exam: Exam }) {
               <div className="text-lg font-medium">{stats.not_started_count}</div>
             </div>
             <div>
-              <div className="text-muted-foreground">最高/最低分</div>
-              <div className="text-lg font-medium">
-                {stats.max_score ?? "—"} / {stats.min_score ?? "—"}
-              </div>
+              <div className="text-muted-foreground">已完成考试</div>
+              <div className="text-lg font-medium">{stats.passed_count + stats.failed_count}</div>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* 人员详情弹窗 */}
+      {dialogStatus && (
+        <ParticipantDetailDialog
+          examId={exam.id}
+          status={dialogStatus}
+          statusLabel={dialogLabel}
+          open={true}
+          onOpenChange={(open) => !open && closeDialog()}
+        />
+      )}
     </div>
   )
 }

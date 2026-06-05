@@ -36,7 +36,7 @@ from sqlmodel import select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.modules.wecom_gateway.deps import RequireExamAdmin
-from app.modules.exam_management.models import Exam, ExamCategory, ExamPaper
+from app.modules.exam_management.models import Exam, ExamCategory, ExamPaper, ExamParticipant
 from app.modules.exam_management.schemas import (
     AddByCentersRequest,
     AddByDepartmentsRequest,
@@ -52,6 +52,8 @@ from app.modules.exam_management.schemas import (
     ExamsPublic,
     PaperPublic,
     PaperSaveRequest,
+    ParticipantDetail,
+    ParticipantListResponse,
     ParticipantPublic,
     ParticipantsPublic,
     PublishValidation,
@@ -417,6 +419,46 @@ def get_exam_statistics_endpoint(
 ) -> ExamStatistics:
     exam = _get_exam_or_404(session, exam_id)
     return get_exam_statistics(session, exam.id)
+
+
+@router.get(
+    "/{exam_id}/participants/by-status",
+    response_model=ParticipantListResponse,
+    summary="按状态查询参与人员详情",
+)
+def get_participants_by_status_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+    exam_id: uuid.UUID,
+    status: str = Query(..., description="状态: ALL / NOT_STARTED / IN_PROGRESS / COMPLETED / NOT_COMPLETED"),
+) -> ParticipantListResponse:
+    exam = _get_exam_or_404(session, exam_id)
+    query = (
+        select(ExamParticipant)
+        .where(ExamParticipant.exam_id == exam.id)
+        .order_by(ExamParticipant.name_snapshot)
+    )
+    if status != "ALL":
+        query = query.where(ExamParticipant.completion_status == status)
+
+    participants = session.exec(query).all()
+
+    data = [
+        ParticipantDetail(
+            id=p.id,
+            userid=p.userid,
+            name_snapshot=p.name_snapshot,
+            center_snapshot=p.center_snapshot,
+            department_snapshot=p.department_snapshot,
+            position_snapshot=p.position_snapshot,
+            completion_status=p.completion_status,
+            final_score=p.final_score,
+            final_passed=p.final_passed,
+            completed_at=p.completed_at,
+        )
+        for p in participants
+    ]
+    return ParticipantListResponse(data=data, count=len(data))
 
 
 @router.post("/{exam_id}/publish", response_model=ExamPublic, summary="发布考试")

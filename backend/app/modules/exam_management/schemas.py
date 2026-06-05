@@ -212,6 +212,24 @@ class ExamStatistics(BaseModel):
     score_distribution: list[ScoreDistribution]
 
 
+class ParticipantDetail(BaseModel):
+    id: uuid.UUID
+    userid: str
+    name_snapshot: str | None
+    center_snapshot: str | None
+    department_snapshot: str | None
+    position_snapshot: str | None
+    completion_status: str
+    final_score: float | None
+    final_passed: bool
+    completed_at: datetime | None
+
+
+class ParticipantListResponse(BaseModel):
+    data: list[ParticipantDetail]
+    count: int
+
+
 # ─── System Dashboard ─────────────────────────────────────────────────────
 
 class QuestionTypeCount(BaseModel):

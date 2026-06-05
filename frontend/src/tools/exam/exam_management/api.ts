@@ -112,6 +112,31 @@ export function getExamStatistics(examId: string): Promise<ExamStatistics> {
   return apiFetch(`${BASE}/${examId}/statistics`)
 }
 
+export interface ParticipantDetail {
+  id: string
+  userid: string
+  name_snapshot: string | null
+  center_snapshot: string | null
+  department_snapshot: string | null
+  position_snapshot: string | null
+  completion_status: string
+  final_score: number | null
+  final_passed: boolean
+  completed_at: string | null
+}
+
+export interface ParticipantListResponse {
+  data: ParticipantDetail[]
+  count: number
+}
+
+export function getParticipantsByStatus(
+  examId: string,
+  status: string
+): Promise<ParticipantListResponse> {
+  return apiFetch(`${BASE}/${examId}/participants/by-status?status=${status}`)
+}
+
 // ─── Participants ───────────────────────────────────────────────────────────
 
 export function listParticipants(
