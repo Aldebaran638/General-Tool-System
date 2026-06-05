@@ -1882,7 +1882,7 @@ export function ExamDetailPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate({ to: "/exams" })}
+            onClick={() => window.history.back()}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>

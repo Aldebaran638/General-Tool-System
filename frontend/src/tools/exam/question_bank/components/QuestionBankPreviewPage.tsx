@@ -106,7 +106,7 @@ export function QuestionBankPreviewPage() {
   const detail = detailQuery.data
 
   function handleBack() {
-    navigate({ to: "/question-bank" })
+    window.history.back()
   }
 
   async function handleDownload() {
