@@ -1,6 +1,8 @@
+import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Loader2, Smartphone, Monitor, HelpCircle } from "lucide-react"
+import { Loader2, Smartphone, Monitor, HelpCircle, Calendar } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -8,24 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { getSystemDashboardStats } from "../api"
 
 const TYPE_LABELS: Record<string, string> = {
   SINGLE_CHOICE: "单选题",
   MULTIPLE_CHOICE: "多选题",
   TRUE_FALSE: "判断题",
-}
-
-const DIFFICULTY_LABELS: Record<string, string> = {
-  EASY: "简单",
-  MEDIUM: "中等",
-  HARD: "困难",
-}
-
-const DIFFICULTY_COLORS: Record<string, string> = {
-  EASY: "#22c55e",
-  MEDIUM: "#f59e0b",
-  HARD: "#ef4444",
 }
 
 const DEVICE_ICONS: Record<string, React.ReactNode> = {
@@ -42,10 +34,153 @@ const DEVICE_COLORS: Record<string, string> = {
   UNKNOWN: "#9ca3af",
 }
 
+const DEVICE_LABELS: Record<string, string> = {
+  MOBILE: "手机",
+  PC: "电脑",
+  TABLET: "平板",
+  UNKNOWN: "未知",
+}
+
+type DateRange =
+  | "last7"
+  | "last30"
+  | "last90"
+  | "thisYear"
+  | "all"
+  | "custom"
+
+function formatDateInput(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+function getDateRange(range: DateRange): { start?: string; end?: string } {
+  const now = new Date()
+  const end = formatDateInput(now)
+  if (range === "all") return {}
+  if (range === "thisYear") {
+    return { start: `${now.getFullYear()}-01-01`, end }
+  }
+  const days =
+    range === "last7" ? 7 : range === "last30" ? 30 : range === "last90" ? 90 : 0
+  if (days > 0) {
+    const startDate = new Date(now)
+    startDate.setDate(startDate.getDate() - days)
+    return { start: formatDateInput(startDate), end }
+  }
+  return {}
+}
+
+function DateRangeFilter({
+  value,
+  onChange,
+}: {
+  value: { range: DateRange; customStart: string; customEnd: string }
+  onChange: (v: { range: DateRange; customStart: string; customEnd: string }) => void
+}) {
+  const { range, customStart, customEnd } = value
+
+  const shortcuts: { key: DateRange; label: string }[] = [
+    { key: "last7", label: "近7天" },
+    { key: "last30", label: "近30天" },
+    { key: "last90", label: "近90天" },
+    { key: "thisYear", label: "本年度" },
+    { key: "all", label: "全部" },
+  ]
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <Calendar className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium">时间范围</span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {shortcuts.map((s) => (
+          <Button
+            key={s.key}
+            variant={range === s.key ? "default" : "outline"}
+            size="sm"
+            onClick={() =>
+              onChange({ range: s.key, customStart, customEnd })
+            }
+          >
+            {s.label}
+          </Button>
+        ))}
+        <Button
+          variant={range === "custom" ? "default" : "outline"}
+          size="sm"
+          onClick={() =>
+            onChange({ range: "custom", customStart, customEnd })
+          }
+        >
+          自定义
+        </Button>
+      </div>
+      {range === "custom" && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-1.5">
+            <Label className="text-xs">开始日期</Label>
+            <Input
+              type="date"
+              value={customStart}
+              onChange={(e) =>
+                onChange({
+                  range,
+                  customStart: e.target.value,
+                  customEnd,
+                })
+              }
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label className="text-xs">结束日期</Label>
+            <Input
+              type="date"
+              value={customEnd}
+              onChange={(e) =>
+                onChange({
+                  range,
+                  customStart,
+                  customEnd: e.target.value,
+                })
+              }
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function SystemDashboardPage() {
+  const [dateFilter, setDateFilter] = useState<{
+    range: DateRange
+    customStart: string
+    customEnd: string
+  }>({
+    range: "all",
+    customStart: "",
+    customEnd: "",
+  })
+
+  const queryParams = useMemo(() => {
+    if (dateFilter.range === "custom") {
+      return {
+        start_date: dateFilter.customStart || undefined,
+        end_date: dateFilter.customEnd || undefined,
+      }
+    }
+    const range = getDateRange(dateFilter.range)
+    return {
+      start_date: range.start,
+      end_date: range.end,
+    }
+  }, [dateFilter])
+
   const statsQuery = useQuery({
-    queryKey: ["systemDashboardStats"],
-    queryFn: getSystemDashboardStats,
+    queryKey: ["systemDashboardStats", queryParams],
+    queryFn: () => getSystemDashboardStats(queryParams),
   })
 
   const stats = statsQuery.data
@@ -70,7 +205,10 @@ export function SystemDashboardPage() {
   )
 
   // Calculate pie chart segments for device distribution
-  const deviceTotal = stats.device_type_distribution.reduce((sum, d) => sum + d.count, 0)
+  const deviceTotal = stats.device_type_distribution.reduce(
+    (sum, d) => sum + d.count,
+    0,
+  )
   let deviceAccumulated = 0
   const deviceSegments = stats.device_type_distribution.map((d) => {
     const start = deviceAccumulated
@@ -84,21 +222,6 @@ export function SystemDashboardPage() {
     }
   })
 
-  // Calculate pie chart segments for difficulty distribution
-  const difficultyTotal = stats.difficulty_distribution.reduce((sum, d) => sum + d.count, 0)
-  let difficultyAccumulated = 0
-  const difficultySegments = stats.difficulty_distribution.map((d) => {
-    const start = difficultyAccumulated
-    const percentage = difficultyTotal > 0 ? d.count / difficultyTotal : 0
-    difficultyAccumulated += percentage
-    return {
-      ...d,
-      start,
-      end: difficultyAccumulated,
-      percentage: Math.round(percentage * 100),
-    }
-  })
-
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -106,19 +229,32 @@ export function SystemDashboardPage() {
         <p className="text-muted-foreground">考试系统累计数据统计</p>
       </div>
 
+      {/* Date filter */}
+      <Card>
+        <CardContent className="pt-6">
+          <DateRangeFilter value={dateFilter} onChange={setDateFilter} />
+        </CardContent>
+      </Card>
+
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="flex flex-col">
           <CardHeader className="pb-2 flex-1">
-            <CardDescription className="text-xs sm:text-sm leading-tight">考试场数</CardDescription>
+            <CardDescription className="text-xs sm:text-sm leading-tight">
+              考试场数
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl sm:text-3xl font-bold">{stats.exam_count}</div>
+            <div className="text-2xl sm:text-3xl font-bold">
+              {stats.exam_count}
+            </div>
           </CardContent>
         </Card>
         <Card className="flex flex-col">
           <CardHeader className="pb-2 flex-1">
-            <CardDescription className="text-xs sm:text-sm leading-tight">总参与人次</CardDescription>
+            <CardDescription className="text-xs sm:text-sm leading-tight">
+              总参与人次
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl sm:text-3xl font-bold">
@@ -128,7 +264,9 @@ export function SystemDashboardPage() {
         </Card>
         <Card className="flex flex-col">
           <CardHeader className="pb-2 flex-1">
-            <CardDescription className="text-xs sm:text-sm leading-tight">及格率</CardDescription>
+            <CardDescription className="text-xs sm:text-sm leading-tight">
+              及格率
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl sm:text-3xl font-bold text-green-600">
@@ -138,24 +276,32 @@ export function SystemDashboardPage() {
         </Card>
         <Card className="flex flex-col">
           <CardHeader className="pb-2 flex-1">
-            <CardDescription className="text-xs sm:text-sm leading-tight">题目总数</CardDescription>
+            <CardDescription className="text-xs sm:text-sm leading-tight">
+              题目总数
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl sm:text-3xl font-bold">{stats.question_count}</div>
+            <div className="text-2xl sm:text-3xl font-bold">
+              {stats.question_count}
+            </div>
           </CardContent>
         </Card>
         <Card className="flex flex-col">
           <CardHeader className="pb-2 flex-1">
-            <CardDescription className="text-xs sm:text-sm leading-tight">试卷总数</CardDescription>
+            <CardDescription className="text-xs sm:text-sm leading-tight">
+              试卷总数
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl sm:text-3xl font-bold">{stats.paper_count}</div>
+            <div className="text-2xl sm:text-3xl font-bold">
+              {stats.paper_count}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Charts row — 2 columns after removing difficulty chart */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Device type distribution pie chart */}
         <Card>
           <CardHeader>
@@ -163,7 +309,9 @@ export function SystemDashboardPage() {
           </CardHeader>
           <CardContent>
             {deviceSegments.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">暂无数据</div>
+              <div className="text-center py-8 text-muted-foreground">
+                暂无数据
+              </div>
             ) : (
               <div className="flex flex-col items-center gap-4">
                 <div className="relative w-40 h-40">
@@ -182,55 +330,26 @@ export function SystemDashboardPage() {
                 </div>
                 <div className="flex flex-wrap gap-3 justify-center">
                   {deviceSegments.map((s) => (
-                    <div key={s.device_type} className="flex items-center gap-1.5 text-sm">
+                    <div
+                      key={s.device_type}
+                      className="flex items-center gap-1.5 text-sm"
+                    >
                       <div
                         className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: DEVICE_COLORS[s.device_type] || "#9ca3af" }}
+                        style={{
+                          backgroundColor:
+                            DEVICE_COLORS[s.device_type] || "#9ca3af",
+                        }}
                       />
-                      {DEVICE_ICONS[s.device_type] || <HelpCircle className="h-4 w-4" />}
-                      <span>{s.device_type === "UNKNOWN" ? "未知" : s.device_type === "MOBILE" ? "手机" : s.device_type === "PC" ? "电脑" : "平板"}</span>
-                      <span className="text-muted-foreground">{s.percentage}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Difficulty distribution pie chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">题库难易度占比</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {difficultySegments.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">暂无数据</div>
-            ) : (
-              <div className="flex flex-col items-center gap-4">
-                <div className="relative w-40 h-40">
-                  <div
-                    className="w-full h-full rounded-full"
-                    style={{
-                      background: `conic-gradient(${difficultySegments
-                        .map(
-                          (s) =>
-                            `${DIFFICULTY_COLORS[s.difficulty] || "#9ca3af"} ${s.start * 360}deg ${s.end * 360}deg`,
-                        )
-                        .join(", ")})`,
-                    }}
-                  />
-                  <div className="absolute inset-0 m-auto w-20 h-20 bg-card rounded-full" />
-                </div>
-                <div className="flex flex-wrap gap-3 justify-center">
-                  {difficultySegments.map((s) => (
-                    <div key={s.difficulty} className="flex items-center gap-1.5 text-sm">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: DIFFICULTY_COLORS[s.difficulty] || "#9ca3af" }}
-                      />
-                      <span>{DIFFICULTY_LABELS[s.difficulty] || s.difficulty}</span>
-                      <span className="text-muted-foreground">{s.percentage}%</span>
+                      {DEVICE_ICONS[s.device_type] || (
+                        <HelpCircle className="h-4 w-4" />
+                      )}
+                      <span>
+                        {DEVICE_LABELS[s.device_type] || s.device_type}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {s.percentage}%
+                      </span>
                     </div>
                   ))}
                 </div>

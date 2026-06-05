@@ -30,6 +30,7 @@ All endpoints require exam admin or superuser.
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlmodel import select
@@ -61,7 +62,6 @@ from app.modules.exam_management.schemas import (
     QuestionBankPublic,
     SystemDashboardStats,
     TrainerInfo,
-    TrainerSummaryItem,
     TrainerSummaryResponse,
 )
 from app.modules.exam_management.service import (
@@ -243,8 +243,10 @@ def delete_category_endpoint(
 def get_system_dashboard_stats(
     session: SessionDep,
     current_user: RequireExamAdmin,
+    start_date: datetime | None = Query(default=None, description="筛选开始日期 (YYYY-MM-DD)"),
+    end_date: datetime | None = Query(default=None, description="筛选结束日期 (YYYY-MM-DD)"),
 ) -> SystemDashboardStats:
-    return get_system_stats(session)
+    return get_system_stats(session, start_date=start_date, end_date=end_date)
 
 
 @router.get(
@@ -255,8 +257,11 @@ def get_system_dashboard_stats(
 def get_trainer_summary_endpoint(
     session: SessionDep,
     current_user: RequireExamAdmin,
+    q: str | None = Query(default=None, description="搜索讲师姓名或课程名称"),
+    start_date: datetime | None = Query(default=None, description="考试开始时间下限"),
+    end_date: datetime | None = Query(default=None, description="考试开始时间上限"),
 ) -> TrainerSummaryResponse:
-    return get_trainer_summary(session)
+    return get_trainer_summary(session, q=q, start_date=start_date, end_date=end_date)
 
 
 # ─── Question Bank ───────────────────────────────────────────────────────────

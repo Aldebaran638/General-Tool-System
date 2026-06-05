@@ -18,6 +18,13 @@ async function apiFetch<T>(url: string): Promise<T> {
   return res.json()
 }
 
-export function getSystemDashboardStats(): Promise<SystemDashboardStats> {
-  return apiFetch(`${BASE}/admin/dashboard/stats`)
+export function getSystemDashboardStats(params?: {
+  start_date?: string
+  end_date?: string
+}): Promise<SystemDashboardStats> {
+  const searchParams = new URLSearchParams()
+  if (params?.start_date) searchParams.set("start_date", params.start_date)
+  if (params?.end_date) searchParams.set("end_date", params.end_date)
+  const query = searchParams.toString()
+  return apiFetch(`${BASE}/admin/dashboard/stats${query ? `?${query}` : ""}`)
 }

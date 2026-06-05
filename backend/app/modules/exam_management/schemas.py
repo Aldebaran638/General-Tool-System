@@ -242,11 +242,6 @@ class DeviceTypeCount(BaseModel):
     count: int
 
 
-class DifficultyCount(BaseModel):
-    difficulty: str
-    count: int
-
-
 class SystemDashboardStats(BaseModel):
     exam_count: int
     total_participation: int
@@ -255,7 +250,6 @@ class SystemDashboardStats(BaseModel):
     paper_count: int
     question_type_distribution: list[QuestionTypeCount]
     device_type_distribution: list[DeviceTypeCount]
-    difficulty_distribution: list[DifficultyCount]
 
 
 # ─── Question Bank ──────────────────────────────────────────────────────────
@@ -286,9 +280,7 @@ class QuestionBankDetail(BaseModel):
 
 # ─── Trainer Summary ─────────────────────────────────────────────────────────
 
-class TrainerSummaryItem(BaseModel):
-    trainer_id: str
-    trainer_name: str
+class TrainerExamItem(BaseModel):
     exam_id: uuid.UUID
     exam_name: str
     center: str | None
@@ -296,6 +288,14 @@ class TrainerSummaryItem(BaseModel):
     participant_count: int
 
 
+class TrainerGroup(BaseModel):
+    trainer_id: str
+    trainer_name: str
+    exam_count: int
+    total_participants: int
+    exams: list[TrainerExamItem]
+
+
 class TrainerSummaryResponse(BaseModel):
-    data: list[TrainerSummaryItem]
+    data: list[TrainerGroup]
     count: int

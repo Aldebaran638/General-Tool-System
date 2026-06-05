@@ -26,7 +26,6 @@ from app.modules.exam_management.models import (
 )
 from app.modules.exam_management.schemas import (
     DeviceTypeCount,
-    DifficultyCount,
     ExamCategoryCreate,
     ExamCategoryUpdate,
     ExamCreate,
@@ -37,7 +36,8 @@ from app.modules.exam_management.schemas import (
     QuestionTypeCount,
     ScoreDistribution,
     SystemDashboardStats,
-    TrainerSummaryItem,
+    TrainerExamItem,
+    TrainerGroup,
     TrainerSummaryResponse,
 )
 
@@ -828,66 +828,123 @@ def _calculate_score_distribution(scores: list[float]) -> list[ScoreDistribution
 
 # ─── System Dashboard ───────────────────────────────────────────────────────
 
-def get_system_stats(session: Session) -> SystemDashboardStats:
-    """Get system-level dashboard statistics for admins."""
+def get_system_stats(
+    session: Session,
+    *,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+) -> SystemDashboardStats:
+    """Get system-level dashboard statistics for admins.
 
-    # Exam count
-    exam_count = session.exec(select(func.count()).select_from(Exam)).one()
+    When start_date/end_date are provided, all statistics are scoped to
+    exams whose start_at falls within the range.
+    """
 
-    # Total participation count
-    total_participation = session.exec(
-        select(func.count()).select_from(ExamParticipant)
-    ).one()
+    # Build exam filter for date range
+    exam_filter = select(Exam.id)
+    if start_date is not None:
+        exam_filter = exam_filter.where(Exam.start_at >= start_date)
+    if end_date is not None:
+        exam_filter = exam_filter.where(Exam.start_at <= end_date)
 
-    # Pass rate — based on completed participants only
-    completed_count = session.exec(
-        select(func.count()).select_from(ExamParticipant)
+    # Get filtered exam IDs (or all if no date filter)
+    filtered_exam_ids: list[uuid.UUID] | None = None
+    if start_date is not None or end_date is not None:
+        filtered_exam_ids = list(session.exec(exam_filter).all())
+
+    # ── Exam count ──
+    exam_count_base = select(func.count()).select_from(Exam)
+    if filtered_exam_ids is not None:
+        if not filtered_exam_ids:
+            # No exams in range — all counts are zero
+            return SystemDashboardStats(
+                exam_count=0,
+                total_participation=0,
+                overall_pass_rate=0.0,
+                question_count=0,
+                paper_count=0,
+                question_type_distribution=[],
+                device_type_distribution=[],
+            )
+        exam_count_base = exam_count_base.where(Exam.id.in_(filtered_exam_ids))  # type: ignore[union-attr]
+    exam_count = session.exec(exam_count_base).one()
+
+    # ── Total participation ──
+    participation_base = select(func.count()).select_from(ExamParticipant)
+    if filtered_exam_ids is not None:
+        participation_base = participation_base.where(
+            ExamParticipant.exam_id.in_(filtered_exam_ids)  # type: ignore[union-attr]
+        )
+    total_participation = session.exec(participation_base).one()
+
+    # ── Pass rate ──
+    completed_base = (
+        select(func.count())
+        .select_from(ExamParticipant)
         .where(ExamParticipant.completion_status == "COMPLETED")
-    ).one()
-    passed_count = session.exec(
-        select(func.count()).select_from(ExamParticipant)
+    )
+    passed_base = (
+        select(func.count())
+        .select_from(ExamParticipant)
         .where(
             ExamParticipant.completion_status == "COMPLETED",
             ExamParticipant.final_passed == True,  # noqa: E712
         )
-    ).one()
+    )
+    if filtered_exam_ids is not None:
+        completed_base = completed_base.where(
+            ExamParticipant.exam_id.in_(filtered_exam_ids)  # type: ignore[union-attr]
+        )
+        passed_base = passed_base.where(
+            ExamParticipant.exam_id.in_(filtered_exam_ids)  # type: ignore[union-attr]
+        )
+    completed_count = session.exec(completed_base).one()
+    passed_count = session.exec(passed_base).one()
     pass_rate = (passed_count / completed_count * 100) if completed_count else 0.0
 
-    # Question count
-    question_count = session.exec(select(func.count()).select_from(Question)).one()
+    # ── Question count ──
+    question_base = select(func.count()).select_from(Question)
+    if filtered_exam_ids is not None:
+        question_base = question_base.where(
+            Question.exam_id.in_(filtered_exam_ids)  # type: ignore[union-attr]
+        )
+    question_count = session.exec(question_base).one()
 
-    # Paper snapshot count
-    paper_count = session.exec(
-        select(func.count()).select_from(ExamPaperSnapshot)
-    ).one()
+    # ── Paper snapshot count ──
+    paper_base = select(func.count()).select_from(ExamPaperSnapshot)
+    if filtered_exam_ids is not None:
+        paper_base = paper_base.where(
+            ExamPaperSnapshot.exam_id.in_(filtered_exam_ids)  # type: ignore[union-attr]
+        )
+    paper_count = session.exec(paper_base).one()
 
-    # Question type distribution
-    type_rows = session.exec(
+    # ── Question type distribution ──
+    type_base = (
         select(Question.question_type, func.count())
         .group_by(Question.question_type)
-    ).all()
+    )
+    if filtered_exam_ids is not None:
+        type_base = type_base.where(
+            Question.exam_id.in_(filtered_exam_ids)  # type: ignore[union-attr]
+        )
+    type_rows = session.exec(type_base).all()
     type_distribution = [
         QuestionTypeCount(question_type=qt, count=c) for qt, c in type_rows
     ]
 
-    # Device type distribution
-    device_rows = session.exec(
+    # ── Device type distribution ──
+    device_base = (
         select(ExamAttempt.device_type, func.count())
         .where(ExamAttempt.device_type.isnot(None))
         .group_by(ExamAttempt.device_type)
-    ).all()
+    )
+    if filtered_exam_ids is not None:
+        device_base = device_base.where(
+            ExamAttempt.exam_id.in_(filtered_exam_ids)  # type: ignore[union-attr]
+        )
+    device_rows = session.exec(device_base).all()
     device_distribution = [
         DeviceTypeCount(device_type=dt or "UNKNOWN", count=c) for dt, c in device_rows
-    ]
-
-    # Difficulty distribution
-    difficulty_rows = session.exec(
-        select(Question.difficulty, func.count())
-        .where(Question.difficulty.isnot(None))
-        .group_by(Question.difficulty)
-    ).all()
-    difficulty_distribution = [
-        DifficultyCount(difficulty=d or "MEDIUM", count=c) for d, c in difficulty_rows
     ]
 
     return SystemDashboardStats(
@@ -898,26 +955,37 @@ def get_system_stats(session: Session) -> SystemDashboardStats:
         paper_count=paper_count,
         question_type_distribution=type_distribution,
         device_type_distribution=device_distribution,
-        difficulty_distribution=difficulty_distribution,
     )
 
 
 # ─── Trainer Summary ─────────────────────────────────────────────────────────
 
-def get_trainer_summary(session: Session) -> TrainerSummaryResponse:
+def get_trainer_summary(
+    session: Session,
+    *,
+    q: str | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+) -> TrainerSummaryResponse:
     """Get summary of all trainers and their associated exams.
 
     Queries all PUBLISHED or ARCHIVED exams that have at least one trainer,
-    expands trainer_ids into individual rows, fetches trainer names from
-    the user table, counts participants per exam, and picks the first
-    non-empty center_snapshot as the exam's center.
+    applies optional filters (search text, date range), then groups results
+    by trainer. Each trainer group contains their exam list sorted by start_at
+    descending.
     """
-    exams = session.exec(
+    base = (
         select(Exam)
         .where(Exam.status.in_(["PUBLISHED", "ARCHIVED"]))
         .where(Exam.trainer_ids.isnot(None))  # type: ignore[union-attr]
-        .order_by(Exam.start_at.desc())
-    ).all()
+    )
+
+    if start_date is not None:
+        base = base.where(Exam.start_at >= start_date)
+    if end_date is not None:
+        base = base.where(Exam.start_at <= end_date)
+
+    exams = session.exec(base.order_by(Exam.start_at.desc())).all()
 
     # Collect all trainer IDs to batch-load user names
     trainer_id_set: set[str] = set()
@@ -966,16 +1034,14 @@ def get_trainer_summary(session: Session) -> TrainerSummaryResponse:
             ).first()
             exam_centers[exam_id] = participant.center_snapshot if participant else None
 
-    # Build result rows — expand each trainer_id into its own record
-    items: list[TrainerSummaryItem] = []
+    # Build per-trainer exam lists
+    trainer_exams: dict[str, list[TrainerExamItem]] = {}
     for exam in exams:
         if not exam.trainer_ids:
             continue
         for trainer_id in exam.trainer_ids:
-            items.append(
-                TrainerSummaryItem(
-                    trainer_id=trainer_id,
-                    trainer_name=trainer_name_map.get(trainer_id, trainer_id),
+            trainer_exams.setdefault(trainer_id, []).append(
+                TrainerExamItem(
                     exam_id=exam.id,
                     exam_name=exam.name,
                     center=exam_centers.get(exam.id),
@@ -984,7 +1050,40 @@ def get_trainer_summary(session: Session) -> TrainerSummaryResponse:
                 )
             )
 
-    return TrainerSummaryResponse(data=items, count=len(items))
+    # Apply search filter (trainer_name or exam_name)
+    if q:
+        like_q = q.lower()
+        filtered_trainers: dict[str, list[TrainerExamItem]] = {}
+        for trainer_id, exam_list in trainer_exams.items():
+            trainer_name = trainer_name_map.get(trainer_id, trainer_id).lower()
+            # Keep trainer if their name matches, or any of their exams match
+            if like_q in trainer_name:
+                filtered_trainers[trainer_id] = exam_list
+            else:
+                matched_exams = [
+                    e for e in exam_list if like_q in e.exam_name.lower()
+                ]
+                if matched_exams:
+                    filtered_trainers[trainer_id] = matched_exams
+        trainer_exams = filtered_trainers
+
+    # Build grouped response
+    groups: list[TrainerGroup] = []
+    for trainer_id, exam_list in trainer_exams.items():
+        groups.append(
+            TrainerGroup(
+                trainer_id=trainer_id,
+                trainer_name=trainer_name_map.get(trainer_id, trainer_id),
+                exam_count=len(exam_list),
+                total_participants=sum(e.participant_count for e in exam_list),
+                exams=exam_list,
+            )
+        )
+
+    # Sort groups by trainer_name for stable ordering
+    groups.sort(key=lambda g: g.trainer_name)
+
+    return TrainerSummaryResponse(data=groups, count=len(groups))
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
