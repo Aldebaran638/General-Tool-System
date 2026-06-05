@@ -478,6 +478,30 @@ def publish_exam(session: Session, exam: Exam) -> Exam:
     return exam
 
 
+def _generate_paper_if_needed(session: Session, exam: Exam) -> None:
+    """Generate docx paper for an exam if one doesn't already exist."""
+    existing = session.exec(
+        select(ExamPaper).where(ExamPaper.exam_id == exam.id)
+    ).first()
+    if existing:
+        return
+
+    now = _now()
+    try:
+        from app.modules.exam_management.docx_generator import generate_exam_paper_docx
+        docx_path = generate_exam_paper_docx(exam.id, session)
+        paper = ExamPaper(
+            exam_id=exam.id,
+            docx_path=docx_path,
+            status="GENERATED",
+            generated_at=now,
+        )
+    except Exception:
+        paper = ExamPaper(exam_id=exam.id, status="FAILED")
+    session.add(paper)
+    session.commit()
+
+
 def archive_exam(session: Session, exam: Exam) -> Exam:
     if exam.status == "DRAFT":
         raise ValueError("未发布的考试不能归档")
@@ -486,7 +510,59 @@ def archive_exam(session: Session, exam: Exam) -> Exam:
     session.add(exam)
     session.commit()
     session.refresh(exam)
+    # Trigger docx generation synchronously on archive
+    _generate_paper_if_needed(session, exam)
     return exam
+
+
+def generate_paper_for_exam(session: Session, exam_id: uuid.UUID) -> ExamPaper:
+    """Manually trigger docx generation for an exam (admin use).
+
+    Idempotent: if a GENERATED paper already exists, returns it unchanged.
+    If a FAILED paper exists, retries generation.
+    """
+    exam = session.get(Exam, exam_id)
+    if not exam:
+        raise ValueError("考试不存在")
+    if exam.status not in ("PUBLISHED", "ARCHIVED"):
+        raise ValueError("只能为已发布或已归档的考试生成试题库")
+
+    now = _now()
+    existing = session.exec(
+        select(ExamPaper).where(ExamPaper.exam_id == exam_id)
+    ).first()
+
+    if existing and existing.status == "GENERATED":
+        return existing
+
+    try:
+        from app.modules.exam_management.docx_generator import generate_exam_paper_docx
+        docx_path = generate_exam_paper_docx(exam_id, session)
+        if existing:
+            existing.docx_path = docx_path
+            existing.status = "GENERATED"
+            existing.generated_at = now
+            session.add(existing)
+        else:
+            existing = ExamPaper(
+                exam_id=exam_id,
+                docx_path=docx_path,
+                status="GENERATED",
+                generated_at=now,
+            )
+            session.add(existing)
+        session.commit()
+        session.refresh(existing)
+        return existing
+    except Exception as exc:
+        if not existing:
+            existing = ExamPaper(exam_id=exam_id, status="FAILED")
+            session.add(existing)
+        else:
+            existing.status = "FAILED"
+            session.add(existing)
+        session.commit()
+        raise ValueError(f"试题库生成失败: {exc}") from exc
 
 
 # ─── Participants ────────────────────────────────────────────────────────────
@@ -913,49 +989,31 @@ def get_question_bank_detail(
 # ─── Docx Generation Scheduler ─────────────────────────────────────────────
 
 def check_and_generate_expired_exam_papers(session: Session) -> None:
-    """Check for expired exams and generate docx papers.
+    """Check for exams that need docx papers and generate them.
 
-    This function is called by the scheduler to automatically generate
-    exam papers for exams that have ended but don't have papers yet.
+    Covers two cases:
+    1. PUBLISHED exams whose end_at has passed (time-based expiry).
+    2. ARCHIVED exams (explicitly archived by admin, regardless of time).
+
+    Both cases are idempotent via _generate_paper_if_needed.
     """
     now = datetime.now(timezone.utc)
 
-    # Find published exams that have ended
-    expired_exams = session.exec(
+    # Case 1: published exams whose window has closed
+    expired_published = session.exec(
         select(Exam)
         .where(Exam.end_at <= now)
         .where(Exam.status == "PUBLISHED")
     ).all()
 
-    for exam in expired_exams:
-        # Check if paper already exists
-        existing = session.exec(
-            select(ExamPaper).where(ExamPaper.exam_id == exam.id)
-        ).first()
+    # Case 2: archived exams (may have been archived before end_at)
+    archived_exams = session.exec(
+        select(Exam).where(Exam.status == "ARCHIVED")
+    ).all()
 
-        if existing:
+    seen: set[uuid.UUID] = set()
+    for exam in [*expired_published, *archived_exams]:
+        if exam.id in seen:
             continue
-
-        try:
-            from app.modules.exam_management.docx_generator import (
-                generate_exam_paper_docx,
-            )
-
-            docx_path = generate_exam_paper_docx(exam.id, session)
-
-            paper = ExamPaper(
-                exam_id=exam.id,
-                docx_path=docx_path,
-                status="GENERATED",
-                generated_at=now,
-            )
-            session.add(paper)
-            session.commit()
-        except Exception:
-            # Record failure
-            paper = ExamPaper(
-                exam_id=exam.id,
-                status="FAILED",
-            )
-            session.add(paper)
-            session.commit()
+        seen.add(exam.id)
+        _generate_paper_if_needed(session, exam)

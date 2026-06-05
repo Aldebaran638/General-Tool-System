@@ -69,6 +69,7 @@ from app.modules.exam_management.service import (
     create_exam,
     delete_category,
     delete_exam,
+    generate_paper_for_exam,
     get_category,
     get_exam,
     get_exam_statistics,
@@ -467,6 +468,23 @@ def archive_exam_endpoint(
         raise HTTPException(status_code=400, detail=str(e))
     cat_name = _resolve_category_name(session, archived.category_id)
     return _to_public(archived, category_name=cat_name, session=session)
+
+
+@router.post("/{exam_id}/generate-paper", summary="手动触发试题库生成")
+def generate_paper_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+    exam_id: uuid.UUID,
+) -> dict:
+    """Manually trigger docx generation for a published or archived exam.
+    Idempotent — safe to call multiple times; re-generates only if previous attempt failed.
+    """
+    _get_exam_or_404(session, exam_id)
+    try:
+        paper = generate_paper_for_exam(session, exam_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"status": paper.status, "docx_path": paper.docx_path, "generated_at": paper.generated_at}
 
 
 # ─── Paper ───────────────────────────────────────────────────────────────────

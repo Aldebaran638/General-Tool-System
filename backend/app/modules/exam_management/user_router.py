@@ -129,15 +129,17 @@ def list_my_exams(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
 ) -> MyExamsPublic:
-    """List exams that the current user is enrolled in."""
+    """List exams that the current user is enrolled in (published + archived)."""
     user_ids = _get_user_identifiers(current_user)
+
+    _VISIBLE_STATUSES = ("PUBLISHED", "ARCHIVED")
 
     # Find exams where user is a participant
     query = (
         select(Exam)
         .join(ExamParticipant, ExamParticipant.exam_id == Exam.id)
         .where(ExamParticipant.userid.in_(user_ids))
-        .where(Exam.status == "PUBLISHED")
+        .where(Exam.status.in_(_VISIBLE_STATUSES))
         .order_by(Exam.start_at.desc())
     )
 
@@ -147,8 +149,9 @@ def list_my_exams(
         .select_from(Exam)
         .join(ExamParticipant, ExamParticipant.exam_id == Exam.id)
         .where(ExamParticipant.userid.in_(user_ids))
-        .where(Exam.status == "PUBLISHED")
+        .where(Exam.status.in_(_VISIBLE_STATUSES))
     )
+
 
     count = session.exec(count_query).one()
     offset = (page - 1) * limit
@@ -244,7 +247,7 @@ def get_my_exam(
         .join(ExamParticipant, ExamParticipant.exam_id == Exam.id)
         .where(Exam.id == exam_id)
         .where(ExamParticipant.userid.in_(user_ids))
-        .where(Exam.status == "PUBLISHED")
+        .where(Exam.status.in_(("PUBLISHED", "ARCHIVED")))
     ).first()
 
     if not exam:
