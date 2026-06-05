@@ -1167,41 +1167,39 @@ function DepartmentCheckboxList({
         )}
       </div>
 
-      {/* Selected tags */}
-      {selectedDepartments.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {selectedDepartments.map((dept) => (
-            <Badge
-              key={dept.id}
-              variant="secondary"
-              className="pr-1 text-xs"
-            >
-              <span className="mr-1">{dept.name}</span>
-              {!disabled && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-3.5 w-3.5 ml-0.5 hover:bg-destructive/20"
-                  onClick={() => removeDepartment(dept.id)}
-                >
-                  <X className="h-2.5 w-2.5" />
-                </Button>
-              )}
-            </Badge>
-          ))}
-        </div>
-      )}
+      {/* Selected tags — fixed min-height to prevent layout shift */}
+      <div className="min-h-[40px] flex flex-wrap gap-1.5 content-start">
+        {selectedDepartments.map((dept) => (
+          <Badge
+            key={dept.id}
+            variant="secondary"
+            className="pr-1 text-xs max-w-[200px]"
+          >
+            <span className="mr-1 truncate">{dept.name}</span>
+            {!disabled && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-3.5 w-3.5 ml-0.5 hover:bg-destructive/20 shrink-0"
+                onClick={() => removeDepartment(dept.id)}
+              >
+                <X className="h-2.5 w-2.5" />
+              </Button>
+            )}
+          </Badge>
+        ))}
+      </div>
 
-      {/* Checkbox list */}
-      <div className="rounded-md border max-h-[240px] overflow-y-auto">
+      {/* Checkbox list — fixed height for stable layout */}
+      <div className="rounded-md border bg-card h-[240px] overflow-y-auto">
         {query.isLoading && (
-          <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             加载中...
           </div>
         )}
         {!query.isLoading && allDepartments.length === 0 && (
-          <div className="py-6 text-center text-sm text-muted-foreground">
+          <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
             {searchQuery ? "未找到匹配的部门" : "暂无数据"}
           </div>
         )}
@@ -1211,7 +1209,7 @@ function DepartmentCheckboxList({
             return (
               <div
                 key={dept.id}
-                className={`flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50 cursor-pointer ${
+                className={`flex items-center gap-2 px-3 h-10 text-sm hover:bg-muted/50 cursor-pointer border-b border-border/50 last:border-b-0 ${
                   isSelected ? "bg-muted/30" : ""
                 }`}
                 onClick={() => !disabled && toggleDepartment(dept)}
@@ -1220,9 +1218,10 @@ function DepartmentCheckboxList({
                   checked={isSelected}
                   disabled={disabled}
                   onCheckedChange={() => toggleDepartment(dept)}
+                  className="shrink-0"
                 />
-                <span className="flex-1">{dept.name}</span>
-                <span className="text-xs text-muted-foreground">
+                <span className="flex-1 truncate">{dept.name}</span>
+                <span className="text-xs text-muted-foreground shrink-0">
                   ID: {dept.id}
                 </span>
               </div>
