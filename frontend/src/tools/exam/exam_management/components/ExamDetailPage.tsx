@@ -13,6 +13,7 @@ import {
   GripVertical,
   CheckCircle2,
   XCircle,
+  AlertCircle,
   Search,
   X,
   Check,
@@ -64,6 +65,7 @@ import {
   searchDepartments,
   getExamStatistics,
 } from "../api"
+import { apiDatetimeToLocal, datetimeLocalToApi } from "../datetime"
 import type { WecomUser, WecomDepartment } from "../api"
 import type { Exam, ExamUpdate, QuestionCreate } from "../types"
 import { TrainerSearchSelect } from "./TrainerSearchSelect"
@@ -71,15 +73,11 @@ import { listExamCategories } from "../../category_management/api"
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+const EXAM_TOTAL_SCORE = 100
+
 function fmtDate(s: string | null): string {
   if (!s) return "—"
   return new Date(s).toLocaleString("zh-CN", { hour12: false })
-}
-
-function toLocalDatetime(s: string): string {
-  const d = new Date(s)
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 // ─── Exam Settings Tab ──────────────────────────────────────────────────────
@@ -90,8 +88,8 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
     name: exam.name,
     trainer_ids: exam.trainer_ids ?? [],
     category_id: exam.category_id ?? null,
-    start_at: toLocalDatetime(exam.start_at),
-    end_at: toLocalDatetime(exam.end_at),
+    start_at: apiDatetimeToLocal(exam.start_at),
+    end_at: apiDatetimeToLocal(exam.end_at),
     duration_minutes: exam.duration_minutes,
     attempt_limit_type: exam.attempt_limit_type,
     attempt_limit_count: exam.attempt_limit_count ?? undefined,
@@ -118,11 +116,11 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
   const isDraft = exam.status === "DRAFT"
 
   function handleSave() {
-    const data: ExamUpdate = { ...form }
-    if (data.start_at && !data.start_at.endsWith("Z"))
-      data.start_at = data.start_at + ":00Z"
-    if (data.end_at && !data.end_at.endsWith("Z"))
-      data.end_at = data.end_at + ":00Z"
+    const data: ExamUpdate = {
+      ...form,
+      start_at: datetimeLocalToApi(form.start_at),
+      end_at: datetimeLocalToApi(form.end_at),
+    }
     updateMutation.mutate(data)
   }
 
@@ -397,6 +395,8 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
 
   const isDraft = exam.status === "DRAFT"
   const totalScore = questions.reduce((sum, q) => sum + q.score, 0)
+  const scoreDelta = EXAM_TOTAL_SCORE - totalScore
+  const isTotalScoreValid = Math.abs(scoreDelta) < 0.001
 
   function addQuestion(type: QuestionCreate["question_type"]) {
     const sortNo = questions.length + 1
@@ -563,9 +563,19 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
             判断题
           </Button>
         </div>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
           <span>共 {questions.length} 题</span>
-          <span>总分 {totalScore}</span>
+          <span className={isTotalScoreValid ? "text-emerald-600" : "text-amber-600"}>
+            总分 {totalScore} / {EXAM_TOTAL_SCORE}
+          </span>
+          {!isTotalScoreValid && (
+            <span className="inline-flex items-center gap-1 text-amber-600">
+              <AlertCircle className="h-3.5 w-3.5" />
+              {scoreDelta > 0
+                ? `还差 ${scoreDelta} 分`
+                : `超出 ${Math.abs(scoreDelta)} 分`}
+            </span>
+          )}
           {isDraft && (
             <Button
               size="sm"

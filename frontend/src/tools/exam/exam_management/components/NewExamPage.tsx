@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select"
 
 import { createExam } from "../api"
+import { datetimeLocalToApi } from "../datetime"
 import type { ExamCreate } from "../types"
 import { TrainerSearchSelect } from "./TrainerSearchSelect"
 
@@ -28,7 +29,7 @@ export function NewExamPage() {
     end_at: "",
     duration_minutes: 60,
     attempt_limit_type: "UNLIMITED",
-    pass_score: 30,
+    pass_score: 60,
     submit_rule: "ALL_REQUIRED",
     show_answer: false,
     random_question_order: false,
@@ -37,11 +38,11 @@ export function NewExamPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: ExamCreate) => {
-      const payload = { ...data }
-      if (payload.start_at && !payload.start_at.endsWith("Z"))
-        payload.start_at = payload.start_at + ":00Z"
-      if (payload.end_at && !payload.end_at.endsWith("Z"))
-        payload.end_at = payload.end_at + ":00Z"
+      const payload = {
+        ...data,
+        start_at: datetimeLocalToApi(data.start_at) ?? data.start_at,
+        end_at: datetimeLocalToApi(data.end_at) ?? data.end_at,
+      }
       return createExam(payload)
     },
     onSuccess: (exam) => navigate({ to: `/exams/${exam.id}` }),
@@ -129,11 +130,15 @@ export function NewExamPage() {
               <Label>及格分数 *</Label>
               <Input
                 type="number"
+                max={100}
                 value={form.pass_score}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setForm({ ...form, pass_score: Number(e.target.value) })
                 }
               />
+              <p className="text-xs text-muted-foreground">
+                试卷总分固定为 100 分，及格分数不能超过 100。
+              </p>
             </div>
           </div>
         </CardContent>
