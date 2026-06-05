@@ -17,12 +17,13 @@ import {
   History,
   Lock,
   RotateCcw,
+  Search,
   Star,
   Timer,
   Trophy,
   XCircle,
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -32,9 +33,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { downloadQuestionBank } from "@/tools/exam/question_bank/api"
+import { listExamCategories } from "@/tools/exam/category_management/api"
 import { fetchMyExams, type MyExam, type MyExamsResponse } from "../api"
 
 function formatDate(s: string): string {
@@ -54,6 +64,31 @@ function formatDateShort(s: string): string {
 /** Returns true when the exam window has ended (by time or archival) */
 function isExamDone(exam: MyExam): boolean {
   return exam.is_ended || exam.status === "ARCHIVED"
+}
+
+// ─── Status filter types ──────────────────────────────────────────────────────
+
+type StatusFilter = "all" | "active" | "upcoming" | "ended" | "completed" | "failed"
+
+function matchStatusFilter(exam: MyExam, filter: StatusFilter): boolean {
+  const now = new Date()
+  const start = new Date(exam.start_at)
+  const end = new Date(exam.end_at)
+
+  switch (filter) {
+    case "active":
+      return now >= start && now <= end && exam.status !== "ARCHIVED"
+    case "upcoming":
+      return now < start
+    case "ended":
+      return now > end || exam.status === "ARCHIVED"
+    case "completed":
+      return exam.completion_status === "COMPLETED"
+    case "failed":
+      return exam.completion_status === "NOT_COMPLETED" && exam.attempt_count > 0
+    default:
+      return true
+  }
 }
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
@@ -427,18 +462,45 @@ function StatsBar({ exams }: { exams: MyExam[] }) {
 
 export function ExamParticipationPage() {
   const [page] = useState(1)
+  const [search, setSearch] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
 
   const examsQuery = useQuery<MyExamsResponse>({
     queryKey: ["my-exams", page],
-    queryFn: () => fetchMyExams(page, 100), // load more since we split into tabs
+    queryFn: () => fetchMyExams(page, 100),
+  })
+
+  const categoriesQuery = useQuery({
+    queryKey: ["examCategories"],
+    queryFn: listExamCategories,
   })
 
   const allExams = examsQuery.data?.data ?? []
+  const categories = categoriesQuery.data?.data ?? []
+  const filteredExams = useMemo(() => {
+    return allExams.filter((exam) => {
+      if (search && !exam.name.toLowerCase().includes(search.toLowerCase())) {
+        return false
+      }
+      // Filter by category
+      if (categoryFilter !== "all" && exam.category_id?.toString() !== categoryFilter) {
+        return false
+      }
+      // Filter by status
+      if (statusFilter !== "all" && !matchStatusFilter(exam, statusFilter)) {
+        return false
+      }
+      return true
+    })
+  }, [allExams, search, categoryFilter, statusFilter])
 
-  const activeExams = allExams.filter((e) => !isExamDone(e))
-  const historyExams = allExams.filter((e) => isExamDone(e))
+  const activeExams = filteredExams.filter((e) => !isExamDone(e))
+  const historyExams = filteredExams.filter((e) => isExamDone(e))
 
   const defaultTab = activeExams.length > 0 ? "active" : "history"
+
+  const hasFilters = search || categoryFilter !== "all" || statusFilter !== "all"
 
   return (
     <div className="flex flex-col gap-6">
@@ -490,7 +552,7 @@ export function ExamParticipationPage() {
         </Card>
       )}
 
-      {/* Empty */}
+      {/* Empty — no exams at all */}
       {!examsQuery.isLoading && !examsQuery.isError && allExams.length === 0 && (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-20 gap-4">
@@ -510,9 +572,63 @@ export function ExamParticipationPage() {
         </Card>
       )}
 
-      {/* Tabs */}
+      {/* Search & Filters + Tabs */}
       {!examsQuery.isLoading && !examsQuery.isError && allExams.length > 0 && (
         <Tabs defaultValue={defaultTab} className="w-full">
+          {/* Search and Filters */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="搜索考试名称..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="全部分类" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部分类</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id.toString()}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="全部状态" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部状态</SelectItem>
+                  <SelectItem value="active">进行中</SelectItem>
+                  <SelectItem value="upcoming">未开始</SelectItem>
+                  <SelectItem value="ended">已结束</SelectItem>
+                  <SelectItem value="completed">已完成</SelectItem>
+                  <SelectItem value="failed">未通过</SelectItem>
+                </SelectContent>
+              </Select>
+              {hasFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSearch("")
+                    setCategoryFilter("all")
+                    setStatusFilter("all")
+                  }}
+                >
+                  清除
+                </Button>
+              )}
+            </div>
+          </div>
+
           <TabsList className="grid w-full max-w-xs grid-cols-2">
             <TabsTrigger value="active" className="gap-1.5">
               <BookOpen className="h-3.5 w-3.5" />
@@ -541,8 +657,14 @@ export function ExamParticipationPage() {
                 <CardContent className="flex flex-col items-center justify-center py-12 gap-3 text-center">
                   <Timer className="h-10 w-10 text-muted-foreground/50" />
                   <div>
-                    <p className="font-medium">没有进行中的考试</p>
-                    <p className="text-sm text-muted-foreground">所有考试已结束或归档，请查看历史记录</p>
+                    <p className="font-medium">
+                      {hasFilters ? "没有匹配的考试" : "没有进行中的考试"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {hasFilters
+                        ? "请尝试调整搜索条件"
+                        : "所有考试已结束或归档，请查看历史记录"}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -564,8 +686,14 @@ export function ExamParticipationPage() {
                 <CardContent className="flex flex-col items-center justify-center py-12 gap-3 text-center">
                   <History className="h-10 w-10 text-muted-foreground/50" />
                   <div>
-                    <p className="font-medium">暂无历史记录</p>
-                    <p className="text-sm text-muted-foreground">参加过的结束考试会显示在这里</p>
+                    <p className="font-medium">
+                      {hasFilters ? "没有匹配的考试" : "暂无历史记录"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {hasFilters
+                        ? "请尝试调整搜索条件"
+                        : "参加过的结束考试会显示在这里"}
+                    </p>
                   </div>
                 </CardContent>
               </Card>

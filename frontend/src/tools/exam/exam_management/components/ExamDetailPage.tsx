@@ -835,8 +835,8 @@ function UserSearchSelect({
           {selectedUsers.map((user) => (
             <Badge key={user.userid} variant="secondary" className="pr-1">
               <span className="mr-1">{user.name}</span>
-              <span className="text-xs text-muted-foreground">
-                ({user.userid})
+              <span className="text-[10px] text-muted-foreground/60">
+                {user.userid}
               </span>
               {!disabled && (
                 <Button
@@ -995,8 +995,8 @@ function DepartmentSearchSelect({
           {selectedDepartments.map((dept) => (
             <Badge key={dept.id} variant="secondary" className="pr-1">
               <span className="mr-1">{dept.name}</span>
-              <span className="text-xs text-muted-foreground">
-                (ID: {dept.id})
+              <span className="text-[10px] text-muted-foreground/60">
+                ID: {dept.id}
               </span>
               {!disabled && (
                 <Button
@@ -1069,7 +1069,7 @@ function DepartmentSearchSelect({
                   >
                     <div className="flex flex-col">
                       <span className="font-medium">{dept.name}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-[10px] text-muted-foreground/60">
                         ID: {dept.id}
                         {dept.name_en && ` · ${dept.name_en}`}
                       </span>
@@ -1284,7 +1284,7 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
       <div className="relative max-w-sm">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="搜索姓名或 userid…"
+          placeholder="搜索姓名…"
           value={search}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setSearch(e.target.value)
@@ -1299,7 +1299,6 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Userid</TableHead>
               <TableHead>姓名</TableHead>
               <TableHead>中心</TableHead>
               <TableHead>部门</TableHead>
@@ -1311,7 +1310,7 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
             {participantsQuery.isLoading && (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={5}
                   className="text-center text-muted-foreground"
                 >
                   加载中…
@@ -1321,7 +1320,7 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
             {!participantsQuery.isLoading && participants.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={5}
                   className="text-center text-muted-foreground"
                 >
                   暂无学员
@@ -1330,7 +1329,6 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
             )}
             {participants.map((p) => (
               <TableRow key={p.id}>
-                <TableCell className="font-mono text-sm">{p.userid}</TableCell>
                 <TableCell className="font-medium">
                   {p.name_snapshot ?? "—"}
                 </TableCell>

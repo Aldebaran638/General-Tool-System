@@ -140,7 +140,6 @@ export function ExamCategoryManagementPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
                   <TableHead>名称</TableHead>
                   <TableHead>排序</TableHead>
                   <TableHead>创建时间</TableHead>
@@ -150,7 +149,6 @@ export function ExamCategoryManagementPage() {
               <TableBody>
                 {categories.map((category) => (
                   <TableRow key={category.id}>
-                    <TableCell>{category.id}</TableCell>
                     <TableCell>
                       {editingId === category.id ? (
                         <Input

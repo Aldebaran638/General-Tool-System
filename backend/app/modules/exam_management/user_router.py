@@ -54,6 +54,8 @@ class MyExamPublic(BaseModel):
     """Exam info for regular users."""
     id: uuid.UUID
     name: str
+    category_id: int | None = None
+    category_name: str | None = None
     trainer_ids: list[str] | None = None
     status: str
     start_at: datetime
@@ -184,6 +186,14 @@ def list_my_exams(
     participants = session.exec(participants_query).all()
     participant_map = {p.exam_id: p for p in participants}
 
+    # Batch fetch category names
+    cat_ids = {e.category_id for e in exams if e.category_id is not None}
+    cat_map: dict[int, str] = {}
+    if cat_ids:
+        from app.modules.exam_management.models import ExamCategory
+        cats = session.exec(select(ExamCategory).where(ExamCategory.id.in_(cat_ids))).all()
+        cat_map = {c.id: c.name for c in cats}
+
     # Build exam list with attempt stats
     now = datetime.now(timezone.utc)
     exam_data = []
@@ -211,6 +221,8 @@ def list_my_exams(
         exam_data.append(MyExamPublic(
             id=e.id,
             name=e.name,
+            category_id=e.category_id,
+            category_name=cat_map.get(e.category_id) if e.category_id else None,
             trainer_ids=e.trainer_ids,
             status=e.status,
             start_at=e.start_at,
