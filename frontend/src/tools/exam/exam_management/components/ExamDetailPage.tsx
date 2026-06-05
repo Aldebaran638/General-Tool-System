@@ -792,146 +792,118 @@ function UserSearchSelect({
   onSelectionChange,
   disabled,
 }: UserSearchSelectProps) {
-  const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const containerRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
 
   const searchQuery_ = useQuery({
     queryKey: ["userSearch", searchQuery],
-    queryFn: () => searchUsers({ q: searchQuery || undefined, limit: 20 }),
-    enabled: open && searchQuery.length >= 0,
+    queryFn: () => searchUsers({ q: searchQuery || undefined, limit: 100 }),
   })
 
   const users = searchQuery_?.data?.data ?? []
   const isLoading = searchQuery_?.isLoading ?? false
 
-  // Filter out already selected users from search results
   const selectedUserids = new Set(selectedUsers.map((u) => u.userid))
-  const availableUsers = users.filter((u) => !selectedUserids.has(u.userid))
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setOpen(false)
-      }
+  function handleToggle(user: WecomUser) {
+    if (selectedUserids.has(user.userid)) {
+      onSelectionChange(selectedUsers.filter((u) => u.userid !== user.userid))
+    } else {
+      onSelectionChange([...selectedUsers, user])
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
-
-  function handleSelect(user: WecomUser) {
-    onSelectionChange([...selectedUsers, user])
-    setSearchQuery("")
-    inputRef.current?.focus()
   }
 
   function handleRemove(userid: string) {
     onSelectionChange(selectedUsers.filter((u) => u.userid !== userid))
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Escape") {
-      setOpen(false)
-    }
-  }
-
   return (
     <div className="flex flex-col gap-2">
-      {/* Selected users tags */}
-      {selectedUsers.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {selectedUsers.map((user) => (
-            <Badge key={user.userid} variant="secondary" className="pr-1">
-              <span className="mr-1">{user.name}</span>
-              <span className="text-[10px] text-muted-foreground/60">
-                {user.userid}
-              </span>
-              {!disabled && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-4 w-4 ml-1 hover:bg-destructive/20"
-                  onClick={() => handleRemove(user.userid)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              )}
-            </Badge>
-          ))}
-        </div>
-      )}
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="输入姓名或 userid 搜索..."
+          value={searchQuery}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setSearchQuery(e.target.value)
+          }
+          className="pl-8"
+          disabled={disabled}
+        />
+        {searchQuery && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1 h-7 w-7"
+            onClick={() => setSearchQuery("")}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
 
-      {/* Search input with dropdown */}
-      <div ref={containerRef} className="relative">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            ref={inputRef}
-            placeholder="输入姓名或 userid 搜索..."
-            value={searchQuery}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setSearchQuery(e.target.value)
-              if (!open) setOpen(true)
-            }}
-            onFocus={() => setOpen(true)}
-            onKeyDown={handleKeyDown}
-            className="pl-8"
-            disabled={disabled}
-          />
-          {searchQuery && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1 h-7 w-7"
-              onClick={() => {
-                setSearchQuery("")
-                inputRef.current?.focus()
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+      {/* Selected tags — fixed min-height to prevent layout shift */}
+      <div className="min-h-[40px] flex flex-wrap gap-1.5 content-start">
+        {selectedUsers.map((user) => (
+          <Badge
+            key={user.userid}
+            variant="secondary"
+            className="pr-1 text-xs max-w-[200px]"
+          >
+            <span className="mr-1 truncate">{user.name}</span>
+            {!disabled && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-3.5 w-3.5 ml-0.5 hover:bg-destructive/20 shrink-0"
+                onClick={() => handleRemove(user.userid)}
+              >
+                <X className="h-2.5 w-2.5" />
+              </Button>
+            )}
+          </Badge>
+        ))}
+      </div>
 
-        {/* Dropdown */}
-        {open && (
-          <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
-            <div className="max-h-[300px] overflow-auto p-1">
-              {isLoading && (
-                <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  搜索中...
-                </div>
-              )}
-              {!isLoading && availableUsers.length === 0 && (
-                <div className="py-6 text-center text-sm text-muted-foreground">
-                  {searchQuery ? "未找到匹配的用户" : "请输入关键词搜索"}
-                </div>
-              )}
-              {!isLoading &&
-                availableUsers.map((user) => (
-                  <div
-                    key={user.userid}
-                    className="flex cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                    onClick={() => handleSelect(user)}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{user.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {user.userid}
-                      </span>
-                    </div>
-                    <Check className="h-4 w-4 opacity-0" />
-                  </div>
-                ))}
-            </div>
+      {/* User list — fixed height for stable layout */}
+      <div className="rounded-md border bg-card h-[240px] overflow-y-auto">
+        {isLoading && (
+          <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            加载中...
           </div>
         )}
+        {!isLoading && users.length === 0 && (
+          <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+            {searchQuery ? "未找到匹配的用户" : "请输入关键词搜索"}
+          </div>
+        )}
+        {!isLoading &&
+          users.map((user) => {
+            const isSelected = selectedUserids.has(user.userid)
+            return (
+              <div
+                key={user.userid}
+                className={`flex items-center gap-2 px-3 h-10 text-sm hover:bg-muted/50 cursor-pointer border-b border-border/50 last:border-b-0 ${
+                  isSelected ? "bg-muted/30" : ""
+                }`}
+                onClick={() => !disabled && handleToggle(user)}
+              >
+                <Checkbox
+                  checked={isSelected}
+                  disabled={disabled}
+                  onCheckedChange={() => handleToggle(user)}
+                  className="shrink-0"
+                />
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="truncate">{user.name}</span>
+                </div>
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {user.userid}
+                </span>
+              </div>
+            )
+          })}
       </div>
     </div>
   )
