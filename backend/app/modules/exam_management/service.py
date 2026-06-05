@@ -25,6 +25,8 @@ from app.modules.exam_management.models import (
     QuestionOption,
 )
 from app.modules.exam_management.schemas import (
+    DeviceTypeCount,
+    DifficultyCount,
     ExamCategoryCreate,
     ExamCategoryUpdate,
     ExamCreate,
@@ -852,6 +854,26 @@ def get_system_stats(session: Session) -> SystemDashboardStats:
         QuestionTypeCount(question_type=qt, count=c) for qt, c in type_rows
     ]
 
+    # Device type distribution
+    device_rows = session.exec(
+        select(ExamAttempt.device_type, func.count())
+        .where(ExamAttempt.device_type.isnot(None))
+        .group_by(ExamAttempt.device_type)
+    ).all()
+    device_distribution = [
+        DeviceTypeCount(device_type=dt or "UNKNOWN", count=c) for dt, c in device_rows
+    ]
+
+    # Difficulty distribution
+    difficulty_rows = session.exec(
+        select(Question.difficulty, func.count())
+        .where(Question.difficulty.isnot(None))
+        .group_by(Question.difficulty)
+    ).all()
+    difficulty_distribution = [
+        DifficultyCount(difficulty=d or "MEDIUM", count=c) for d, c in difficulty_rows
+    ]
+
     return SystemDashboardStats(
         exam_count=exam_count,
         total_participation=total_participation,
@@ -859,6 +881,8 @@ def get_system_stats(session: Session) -> SystemDashboardStats:
         question_count=question_count,
         paper_count=paper_count,
         question_type_distribution=type_distribution,
+        device_type_distribution=device_distribution,
+        difficulty_distribution=difficulty_distribution,
     )
 
 

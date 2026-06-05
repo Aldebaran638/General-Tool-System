@@ -237,6 +237,16 @@ class QuestionTypeCount(BaseModel):
     count: int
 
 
+class DeviceTypeCount(BaseModel):
+    device_type: str
+    count: int
+
+
+class DifficultyCount(BaseModel):
+    difficulty: str
+    count: int
+
+
 class SystemDashboardStats(BaseModel):
     exam_count: int
     total_participation: int
@@ -244,6 +254,8 @@ class SystemDashboardStats(BaseModel):
     question_count: int
     paper_count: int
     question_type_distribution: list[QuestionTypeCount]
+    device_type_distribution: list[DeviceTypeCount]
+    difficulty_distribution: list[DifficultyCount]
 
 
 # ─── Question Bank ──────────────────────────────────────────────────────────

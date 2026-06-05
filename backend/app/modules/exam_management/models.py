@@ -107,6 +107,8 @@ class Question(SQLModel, table=True):
     # SINGLE_CHOICE / MULTIPLE_CHOICE / TRUE_FALSE
     stem: str = Field(sa_column=Column(Text, nullable=False))
     score: float
+    difficulty: str = Field(default="MEDIUM", max_length=10)
+    # EASY / MEDIUM / HARD
     sort_no: int = Field(default=0)
     analysis: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
 
@@ -210,6 +212,10 @@ class ExamAttempt(SQLModel, table=True):
     submitted_at: datetime = Field(
         default_factory=_utcnow, sa_type=DateTime(timezone=True)  # type: ignore[call-arg]
     )
+
+    # Device info
+    device_type: str | None = Field(default=None, max_length=10)
+    # MOBILE / PC / TABLET / UNKNOWN
 
     # Random order snapshots
     question_order_snapshot: list[Any] | None = Field(default=None, sa_column=Column(JSON))

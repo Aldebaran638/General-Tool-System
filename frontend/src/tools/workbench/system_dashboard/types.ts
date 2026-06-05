@@ -5,6 +5,16 @@ export interface QuestionTypeCount {
   count: number
 }
 
+export interface DeviceTypeCount {
+  device_type: string
+  count: number
+}
+
+export interface DifficultyCount {
+  difficulty: string
+  count: number
+}
+
 export interface SystemDashboardStats {
   exam_count: number
   total_participation: number
@@ -12,4 +22,6 @@ export interface SystemDashboardStats {
   question_count: number
   paper_count: number
   question_type_distribution: QuestionTypeCount[]
+  device_type_distribution: DeviceTypeCount[]
+  difficulty_distribution: DifficultyCount[]
 }
