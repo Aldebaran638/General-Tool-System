@@ -1,7 +1,8 @@
 import {
   getDepartmentStatus,
   getDepartmentTasks,
-  getDepartments,
+  getCenters,
+  getDepartmentsOnly,
   triggerDepartmentSync,
 } from "@/tools/data_sync/_shared/api"
 import { SyncPage } from "@/tools/data_sync/_shared/SyncPage"
@@ -16,7 +17,8 @@ export function WecomDepartmentSyncPage() {
       fetchStatus={getDepartmentStatus}
       fetchTasks={(page) => getDepartmentTasks(page)}
       triggerSync={(mode) => triggerDepartmentSync({ mode })}
-      fetchDepartments={(page) => getDepartments(page)}
+      fetchCenters={(page, q) => getCenters(page, 20, q)}
+      fetchDepartmentsOnly={(page, q) => getDepartmentsOnly(page, 20, q)}
     />
   )
 }

@@ -50,6 +50,7 @@ class WecomDepartmentPublic(SQLModel):
     name_en: str | None = None
     parentid: int | None = None
     order: int = 0
+    level: int = 0
     synced_at: datetime
 
 

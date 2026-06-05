@@ -72,6 +72,8 @@ import {
   removeParticipant,
   searchUsers,
   searchDepartments,
+  getCenters,
+  getDepartmentsOnly,
   getExamStatistics,
   getParticipantsByStatus,
 } from "../api"
@@ -1096,6 +1098,141 @@ function DepartmentSearchSelect({
   )
 }
 
+// ─── Department Checkbox List ───────────────────────────────────────────────
+
+interface DepartmentCheckboxListProps {
+  selectedDepartments: WecomDepartment[]
+  onSelectionChange: (departments: WecomDepartment[]) => void
+  fetchDepartments: (params: { q?: string; limit?: number }) => Promise<{
+    data: WecomDepartment[]
+    count: number
+  }>
+  disabled?: boolean
+  placeholder?: string
+  label?: string
+}
+
+function DepartmentCheckboxList({
+  selectedDepartments,
+  onSelectionChange,
+  fetchDepartments,
+  disabled,
+  placeholder = "搜索...",
+  label,
+}: DepartmentCheckboxListProps) {
+  const [searchQuery, setSearchQuery] = useState("")
+  const query = useQuery({
+    queryKey: ["department-checkbox-list", label, searchQuery],
+    queryFn: () => fetchDepartments({ q: searchQuery || undefined, limit: 100 }),
+  })
+
+  const allDepartments = query.data?.data ?? []
+  const selectedIds = new Set(selectedDepartments.map((d) => d.id))
+
+  function toggleDepartment(dept: WecomDepartment) {
+    if (selectedIds.has(dept.id)) {
+      onSelectionChange(selectedDepartments.filter((d) => d.id !== dept.id))
+    } else {
+      onSelectionChange([...selectedDepartments, dept])
+    }
+  }
+
+  function removeDepartment(id: number) {
+    onSelectionChange(selectedDepartments.filter((d) => d.id !== id))
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder={placeholder}
+          value={searchQuery}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setSearchQuery(e.target.value)
+          }
+          className="pl-8"
+          disabled={disabled}
+        />
+        {searchQuery && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1 h-7 w-7"
+            onClick={() => setSearchQuery("")}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      {/* Selected tags */}
+      {selectedDepartments.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedDepartments.map((dept) => (
+            <Badge
+              key={dept.id}
+              variant="secondary"
+              className="pr-1 text-xs"
+            >
+              <span className="mr-1">{dept.name}</span>
+              {!disabled && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-3.5 w-3.5 ml-0.5 hover:bg-destructive/20"
+                  onClick={() => removeDepartment(dept.id)}
+                >
+                  <X className="h-2.5 w-2.5" />
+                </Button>
+              )}
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      {/* Checkbox list */}
+      <div className="rounded-md border max-h-[240px] overflow-y-auto">
+        {query.isLoading && (
+          <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            加载中...
+          </div>
+        )}
+        {!query.isLoading && allDepartments.length === 0 && (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            {searchQuery ? "未找到匹配的部门" : "暂无数据"}
+          </div>
+        )}
+        {!query.isLoading &&
+          allDepartments.map((dept) => {
+            const isSelected = selectedIds.has(dept.id)
+            return (
+              <div
+                key={dept.id}
+                className={`flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50 cursor-pointer ${
+                  isSelected ? "bg-muted/30" : ""
+                }`}
+                onClick={() => !disabled && toggleDepartment(dept)}
+              >
+                <Checkbox
+                  checked={isSelected}
+                  disabled={disabled}
+                  onCheckedChange={() => toggleDepartment(dept)}
+                />
+                <span className="flex-1">{dept.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  ID: {dept.id}
+                </span>
+              </div>
+            )
+          })}
+      </div>
+    </div>
+  )
+}
+
 // ─── Participants Tab ───────────────────────────────────────────────────────
 
 function ParticipantsTab({ exam }: { exam: Exam }) {
@@ -1206,11 +1343,13 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
             </div>
             {addMode === "centers" && (
               <div className="flex flex-col gap-3">
-                <DepartmentSearchSelect
+                <DepartmentCheckboxList
                   selectedDepartments={selectedCenters}
                   onSelectionChange={setSelectedCenters}
+                  fetchDepartments={getCenters}
                   disabled={isMutating}
-                  placeholder="输入中心名称搜索..."
+                  placeholder="搜索中心名称..."
+                  label="centers"
                 />
                 {selectedCenters.length > 0 && (
                   <div className="flex items-center gap-2">
@@ -1229,11 +1368,13 @@ function ParticipantsTab({ exam }: { exam: Exam }) {
             )}
             {addMode === "departments" && (
               <div className="flex flex-col gap-3">
-                <DepartmentSearchSelect
+                <DepartmentCheckboxList
                   selectedDepartments={selectedDepartments}
                   onSelectionChange={setSelectedDepartments}
+                  fetchDepartments={getDepartmentsOnly}
                   disabled={isMutating}
-                  placeholder="输入部门名称搜索..."
+                  placeholder="搜索部门名称..."
+                  label="departments"
                 />
                 {selectedDepartments.length > 0 && (
                   <div className="flex items-center gap-2">

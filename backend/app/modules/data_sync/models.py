@@ -34,6 +34,10 @@ class WecomDepartment(SQLModel, table=True):
     parentid: int | None = Field(default=None, index=True)
     order: int = Field(default=0)
 
+    # Hierarchy level: 1 = root child (center), 2 = first-level child (department),
+    # 3+ = deeper levels (invalid for our use case). Defaults to 0 until computed.
+    level: int = Field(default=0)
+
     # Our metadata
     synced_at: datetime = Field(
         default_factory=_utcnow,

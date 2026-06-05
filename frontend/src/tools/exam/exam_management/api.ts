@@ -241,6 +241,7 @@ export interface WecomDepartment {
   name_en: string | null
   parentid: number | null
   order: number
+  level?: number
 }
 
 export interface WecomDepartmentsResponse {
@@ -257,5 +258,30 @@ export async function searchDepartments(params: {
   if (params.q) p.set("q", params.q)
   if (params.page) p.set("page", String(params.page))
   if (params.limit) p.set("limit", String(params.limit))
+  return apiFetch<WecomDepartmentsResponse>(`/api/v1/data-sync/wecom-departments?${p}`)
+}
+
+export async function getCenters(params: {
+  q?: string
+  page?: number
+  limit?: number
+}): Promise<WecomDepartmentsResponse> {
+  const p = new URLSearchParams()
+  if (params.q) p.set("q", params.q)
+  if (params.page) p.set("page", String(params.page))
+  if (params.limit) p.set("limit", String(params.limit))
+  return apiFetch<WecomDepartmentsResponse>(`/api/v1/data-sync/wecom-centers?${p}`)
+}
+
+export async function getDepartmentsOnly(params: {
+  q?: string
+  page?: number
+  limit?: number
+}): Promise<WecomDepartmentsResponse> {
+  const p = new URLSearchParams()
+  if (params.q) p.set("q", params.q)
+  if (params.page) p.set("page", String(params.page))
+  if (params.limit) p.set("limit", String(params.limit))
+  p.set("level", "2")
   return apiFetch<WecomDepartmentsResponse>(`/api/v1/data-sync/wecom-departments?${p}`)
 }

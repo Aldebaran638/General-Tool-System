@@ -477,12 +477,16 @@ function SyncedDepartmentTable({
   isLoading,
   page,
   total,
+  search,
+  onSearchChange,
   onPageChange,
 }: {
   data: WecomDepartment[]
   isLoading: boolean
   page: number
   total: number
+  search: string
+  onSearchChange: (v: string) => void
   onPageChange: (p: number) => void
 }) {
   const pageSize = 20
@@ -490,6 +494,18 @@ function SyncedDepartmentTable({
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="搜索名称..."
+          value={search}
+          onChange={(e) => {
+            onSearchChange(e.target.value)
+            onPageChange(1)
+          }}
+          className="pl-9 transition-all focus-visible:ring-2 focus-visible:ring-primary/20"
+        />
+      </div>
       <Card>
         <CardContent className="p-0">
           <div className="rounded-lg overflow-hidden">
@@ -678,8 +694,10 @@ export interface SyncPageProps {
   fetchStatus: () => Promise<SyncStatusResponse>
   fetchTasks: (page: number) => Promise<SyncTasksResponse>
   triggerSync: (mode: SyncMode) => Promise<SyncTask>
-  /** Fetch paginated synced departments */
-  fetchDepartments?: (page: number) => Promise<WecomDepartmentsResponse>
+  /** Fetch paginated synced centers (level=1) */
+  fetchCenters?: (page: number, q?: string) => Promise<WecomDepartmentsResponse>
+  /** Fetch paginated synced departments (level=2) */
+  fetchDepartmentsOnly?: (page: number, q?: string) => Promise<WecomDepartmentsResponse>
   /** Fetch paginated synced members (with optional search) */
   fetchMembers?: (page: number, q?: string) => Promise<WecomMembersResponse>
 }
@@ -692,11 +710,15 @@ export function SyncPage({
   fetchStatus,
   fetchTasks,
   triggerSync,
-  fetchDepartments,
+  fetchCenters,
+  fetchDepartmentsOnly,
   fetchMembers,
 }: SyncPageProps) {
   const [page, setPage] = useState(1)
-  const [dataPage, setDataPage] = useState(1)
+  const [centerPage, setCenterPage] = useState(1)
+  const [deptPage, setDeptPage] = useState(1)
+  const [centerSearch, setCenterSearch] = useState("")
+  const [deptSearch, setDeptSearch] = useState("")
   const [memberSearch, setMemberSearch] = useState("")
   const queryClient = useQueryClient()
 
@@ -727,19 +749,25 @@ export function SyncPage({
     },
   })
 
-  const departmentsQuery = useQuery({
-    queryKey: ["synced-departments", dataPage],
-    queryFn: () => fetchDepartments!(dataPage),
-    enabled: !!fetchDepartments,
+  const centersQuery = useQuery({
+    queryKey: ["synced-centers", centerPage, centerSearch],
+    queryFn: () => fetchCenters!(centerPage, centerSearch || undefined),
+    enabled: !!fetchCenters,
+  })
+
+  const departmentsOnlyQuery = useQuery({
+    queryKey: ["synced-departments-only", deptPage, deptSearch],
+    queryFn: () => fetchDepartmentsOnly!(deptPage, deptSearch || undefined),
+    enabled: !!fetchDepartmentsOnly,
   })
 
   const membersQuery = useQuery({
-    queryKey: ["synced-members", dataPage, memberSearch],
-    queryFn: () => fetchMembers!(dataPage, memberSearch || undefined),
+    queryKey: ["synced-members", 1, memberSearch],
+    queryFn: () => fetchMembers!(1, memberSearch || undefined),
     enabled: !!fetchMembers,
   })
 
-  const hasSyncedData = !!fetchDepartments || !!fetchMembers
+  const hasSyncedData = !!fetchCenters || !!fetchDepartmentsOnly || !!fetchMembers
 
   return (
     <div className="flex flex-col gap-6">
@@ -793,25 +821,56 @@ export function SyncPage({
         </TabsContent>
 
         {hasSyncedData && (
-          <TabsContent value="data" className="mt-6">
-            {fetchDepartments && (
-              <SyncedDepartmentTable
-                data={departmentsQuery.data?.data ?? []}
-                isLoading={departmentsQuery.isLoading}
-                page={dataPage}
-                total={departmentsQuery.data?.count ?? 0}
-                onPageChange={setDataPage}
-              />
+          <TabsContent value="data" className="mt-6 flex flex-col gap-8">
+            {fetchCenters && (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-semibold">中心列表</h2>
+                  <span className="text-sm text-muted-foreground">
+                    （共 {centersQuery.data?.count ?? 0} 个）
+                  </span>
+                </div>
+                <SyncedDepartmentTable
+                  data={centersQuery.data?.data ?? []}
+                  isLoading={centersQuery.isLoading}
+                  page={centerPage}
+                  total={centersQuery.data?.count ?? 0}
+                  search={centerSearch}
+                  onSearchChange={setCenterSearch}
+                  onPageChange={setCenterPage}
+                />
+              </div>
+            )}
+            {fetchDepartmentsOnly && (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-blue-500" />
+                  <h2 className="text-lg font-semibold">部门列表</h2>
+                  <span className="text-sm text-muted-foreground">
+                    （共 {departmentsOnlyQuery.data?.count ?? 0} 个）
+                  </span>
+                </div>
+                <SyncedDepartmentTable
+                  data={departmentsOnlyQuery.data?.data ?? []}
+                  isLoading={departmentsOnlyQuery.isLoading}
+                  page={deptPage}
+                  total={departmentsOnlyQuery.data?.count ?? 0}
+                  search={deptSearch}
+                  onSearchChange={setDeptSearch}
+                  onPageChange={setDeptPage}
+                />
+              </div>
             )}
             {fetchMembers && (
               <SyncedMemberTable
                 data={membersQuery.data?.data ?? []}
                 isLoading={membersQuery.isLoading}
-                page={dataPage}
+                page={1}
                 total={membersQuery.data?.count ?? 0}
                 search={memberSearch}
                 onSearchChange={setMemberSearch}
-                onPageChange={setDataPage}
+                onPageChange={() => {}}
               />
             )}
           </TabsContent>
