@@ -61,6 +61,8 @@ from app.modules.exam_management.schemas import (
     QuestionBankPublic,
     SystemDashboardStats,
     TrainerInfo,
+    TrainerSummaryItem,
+    TrainerSummaryResponse,
 )
 from app.modules.exam_management.service import (
     add_participants_by_centers,
@@ -78,6 +80,7 @@ from app.modules.exam_management.service import (
     get_paper,
     get_question_bank_detail,
     get_system_stats,
+    get_trainer_summary,
     list_categories,
     list_exams,
     list_participants,
@@ -242,6 +245,18 @@ def get_system_dashboard_stats(
     current_user: RequireExamAdmin,
 ) -> SystemDashboardStats:
     return get_system_stats(session)
+
+
+@router.get(
+    "/admin/trainers/summary",
+    response_model=TrainerSummaryResponse,
+    summary="培训讲师汇总",
+)
+def get_trainer_summary_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+) -> TrainerSummaryResponse:
+    return get_trainer_summary(session)
 
 
 # ─── Question Bank ───────────────────────────────────────────────────────────

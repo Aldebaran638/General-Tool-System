@@ -16,8 +16,8 @@ import "@/tools/exam/exam_management"
 import "@/tools/exam/exam_participation"
 import "@/tools/exam/category_management"
 import "@/tools/exam/question_bank"
-import "@/tools/workbench/project_management"
 import "@/tools/workbench/system_dashboard"
+import "@/tools/workbench/trainer_summary"
 
 /**
  * Platform-level navigation entries.

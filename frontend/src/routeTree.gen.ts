@@ -18,6 +18,7 @@ import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as AuthWecomCallbackRouteImport } from './routes/auth/wecom-callback'
 import { Route as LayoutWecomMemberSyncRouteImport } from './routes/_layout/wecom-member-sync'
 import { Route as LayoutWecomDepartmentSyncRouteImport } from './routes/_layout/wecom-department-sync'
+import { Route as LayoutTrainerSummaryRouteImport } from './routes/_layout/trainer-summary'
 import { Route as LayoutSystemDashboardRouteImport } from './routes/_layout/system-dashboard'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutQuestionBankRouteImport } from './routes/_layout/question-bank'
@@ -77,6 +78,11 @@ const LayoutWecomDepartmentSyncRoute =
     path: '/wecom-department-sync',
     getParentRoute: () => LayoutRoute,
   } as any)
+const LayoutTrainerSummaryRoute = LayoutTrainerSummaryRouteImport.update({
+  id: '/trainer-summary',
+  path: '/trainer-summary',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutSystemDashboardRoute = LayoutSystemDashboardRouteImport.update({
   id: '/system-dashboard',
   path: '/system-dashboard',
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/question-bank': typeof LayoutQuestionBankRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
   '/system-dashboard': typeof LayoutSystemDashboardRoute
+  '/trainer-summary': typeof LayoutTrainerSummaryRoute
   '/wecom-department-sync': typeof LayoutWecomDepartmentSyncRoute
   '/wecom-member-sync': typeof LayoutWecomMemberSyncRoute
   '/auth/wecom-callback': typeof AuthWecomCallbackRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/question-bank': typeof LayoutQuestionBankRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
   '/system-dashboard': typeof LayoutSystemDashboardRoute
+  '/trainer-summary': typeof LayoutTrainerSummaryRoute
   '/wecom-department-sync': typeof LayoutWecomDepartmentSyncRoute
   '/wecom-member-sync': typeof LayoutWecomMemberSyncRoute
   '/auth/wecom-callback': typeof AuthWecomCallbackRoute
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/_layout/question-bank': typeof LayoutQuestionBankRouteWithChildren
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/system-dashboard': typeof LayoutSystemDashboardRoute
+  '/_layout/trainer-summary': typeof LayoutTrainerSummaryRoute
   '/_layout/wecom-department-sync': typeof LayoutWecomDepartmentSyncRoute
   '/_layout/wecom-member-sync': typeof LayoutWecomMemberSyncRoute
   '/auth/wecom-callback': typeof AuthWecomCallbackRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/question-bank'
     | '/settings'
     | '/system-dashboard'
+    | '/trainer-summary'
     | '/wecom-department-sync'
     | '/wecom-member-sync'
     | '/auth/wecom-callback'
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/question-bank'
     | '/settings'
     | '/system-dashboard'
+    | '/trainer-summary'
     | '/wecom-department-sync'
     | '/wecom-member-sync'
     | '/auth/wecom-callback'
@@ -275,6 +286,7 @@ export interface FileRouteTypes {
     | '/_layout/question-bank'
     | '/_layout/settings'
     | '/_layout/system-dashboard'
+    | '/_layout/trainer-summary'
     | '/_layout/wecom-department-sync'
     | '/_layout/wecom-member-sync'
     | '/auth/wecom-callback'
@@ -358,6 +370,13 @@ declare module '@tanstack/react-router' {
       path: '/wecom-department-sync'
       fullPath: '/wecom-department-sync'
       preLoaderRoute: typeof LayoutWecomDepartmentSyncRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/trainer-summary': {
+      id: '/_layout/trainer-summary'
+      path: '/trainer-summary'
+      fullPath: '/trainer-summary'
+      preLoaderRoute: typeof LayoutTrainerSummaryRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/system-dashboard': {
@@ -502,6 +521,7 @@ interface LayoutRouteChildren {
   LayoutQuestionBankRoute: typeof LayoutQuestionBankRouteWithChildren
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutSystemDashboardRoute: typeof LayoutSystemDashboardRoute
+  LayoutTrainerSummaryRoute: typeof LayoutTrainerSummaryRoute
   LayoutWecomDepartmentSyncRoute: typeof LayoutWecomDepartmentSyncRoute
   LayoutWecomMemberSyncRoute: typeof LayoutWecomMemberSyncRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
@@ -516,6 +536,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutQuestionBankRoute: LayoutQuestionBankRouteWithChildren,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutSystemDashboardRoute: LayoutSystemDashboardRoute,
+  LayoutTrainerSummaryRoute: LayoutTrainerSummaryRoute,
   LayoutWecomDepartmentSyncRoute: LayoutWecomDepartmentSyncRoute,
   LayoutWecomMemberSyncRoute: LayoutWecomMemberSyncRoute,
   LayoutIndexRoute: LayoutIndexRoute,

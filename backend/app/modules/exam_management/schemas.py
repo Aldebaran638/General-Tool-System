@@ -282,3 +282,20 @@ class QuestionBankDetail(BaseModel):
     questions: list[QuestionPublic]
     total_score: float
     question_count: int
+
+
+# ─── Trainer Summary ─────────────────────────────────────────────────────────
+
+class TrainerSummaryItem(BaseModel):
+    trainer_id: str
+    trainer_name: str
+    exam_id: uuid.UUID
+    exam_name: str
+    center: str | None
+    start_at: datetime
+    participant_count: int
+
+
+class TrainerSummaryResponse(BaseModel):
+    data: list[TrainerSummaryItem]
+    count: int

@@ -37,6 +37,8 @@ from app.modules.exam_management.schemas import (
     QuestionTypeCount,
     ScoreDistribution,
     SystemDashboardStats,
+    TrainerSummaryItem,
+    TrainerSummaryResponse,
 )
 
 
@@ -898,6 +900,91 @@ def get_system_stats(session: Session) -> SystemDashboardStats:
         device_type_distribution=device_distribution,
         difficulty_distribution=difficulty_distribution,
     )
+
+
+# ─── Trainer Summary ─────────────────────────────────────────────────────────
+
+def get_trainer_summary(session: Session) -> TrainerSummaryResponse:
+    """Get summary of all trainers and their associated exams.
+
+    Queries all PUBLISHED or ARCHIVED exams that have at least one trainer,
+    expands trainer_ids into individual rows, fetches trainer names from
+    the user table, counts participants per exam, and picks the first
+    non-empty center_snapshot as the exam's center.
+    """
+    exams = session.exec(
+        select(Exam)
+        .where(Exam.status.in_(["PUBLISHED", "ARCHIVED"]))
+        .where(Exam.trainer_ids.isnot(None))  # type: ignore[union-attr]
+        .order_by(Exam.start_at.desc())
+    ).all()
+
+    # Collect all trainer IDs to batch-load user names
+    trainer_id_set: set[str] = set()
+    for exam in exams:
+        if exam.trainer_ids:
+            trainer_id_set.update(exam.trainer_ids)
+
+    # Batch-load user names
+    trainer_name_map: dict[str, str] = {}
+    if trainer_id_set:
+        trainer_uuids = []
+        for tid in trainer_id_set:
+            try:
+                trainer_uuids.append(uuid.UUID(tid))
+            except ValueError:
+                pass
+        if trainer_uuids:
+            users = session.exec(
+                select(User).where(User.id.in_(trainer_uuids))  # type: ignore[union-attr]
+            ).all()
+            for user in users:
+                trainer_name_map[str(user.id)] = user.full_name or user.email or str(user.id)
+
+    # Batch-load participant counts per exam
+    exam_ids = [exam.id for exam in exams]
+    participant_counts: dict[uuid.UUID, int] = {}
+    if exam_ids:
+        count_rows = session.exec(
+            select(ExamParticipant.exam_id, func.count())  # type: ignore[arg-type]
+            .where(ExamParticipant.exam_id.in_(exam_ids))  # type: ignore[union-attr]
+            .group_by(ExamParticipant.exam_id)
+        ).all()
+        participant_counts = {row[0]: row[1] for row in count_rows}
+
+    # Batch-load first non-empty center per exam
+    exam_centers: dict[uuid.UUID, str | None] = {}
+    if exam_ids:
+        for exam_id in exam_ids:
+            participant = session.exec(
+                select(ExamParticipant)
+                .where(ExamParticipant.exam_id == exam_id)
+                .where(ExamParticipant.center_snapshot.isnot(None))  # type: ignore[union-attr]
+                .where(ExamParticipant.center_snapshot != "")  # type: ignore[union-attr]
+                .order_by(ExamParticipant.created_at)
+                .limit(1)
+            ).first()
+            exam_centers[exam_id] = participant.center_snapshot if participant else None
+
+    # Build result rows — expand each trainer_id into its own record
+    items: list[TrainerSummaryItem] = []
+    for exam in exams:
+        if not exam.trainer_ids:
+            continue
+        for trainer_id in exam.trainer_ids:
+            items.append(
+                TrainerSummaryItem(
+                    trainer_id=trainer_id,
+                    trainer_name=trainer_name_map.get(trainer_id, trainer_id),
+                    exam_id=exam.id,
+                    exam_name=exam.name,
+                    center=exam_centers.get(exam.id),
+                    start_at=exam.start_at,
+                    participant_count=participant_counts.get(exam.id, 0),
+                )
+            )
+
+    return TrainerSummaryResponse(data=items, count=len(items))
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
