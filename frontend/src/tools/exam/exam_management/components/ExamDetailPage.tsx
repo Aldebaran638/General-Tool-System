@@ -544,8 +544,8 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
   return (
     <div className="flex flex-col gap-6">
       {/* Toolbar */}
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -574,7 +574,7 @@ function PaperEditorTab({ exam }: { exam: Exam }) {
             判断题
           </Button>
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-x-4 gap-y-2 text-sm text-muted-foreground flex-wrap">
           <span>共 {questions.length} 题</span>
           <span className={isTotalScoreValid ? "text-emerald-600" : "text-amber-600"}>
             总分 {totalScore} / {EXAM_TOTAL_SCORE}

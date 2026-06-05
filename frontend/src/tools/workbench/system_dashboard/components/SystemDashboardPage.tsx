@@ -108,48 +108,48 @@ export function SystemDashboardPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>考试场数</CardDescription>
+        <Card className="flex flex-col">
+          <CardHeader className="pb-2 flex-1">
+            <CardDescription className="text-xs sm:text-sm leading-tight">考试场数</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stats.exam_count}</div>
+            <div className="text-2xl sm:text-3xl font-bold">{stats.exam_count}</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>总参与人次</CardDescription>
+        <Card className="flex flex-col">
+          <CardHeader className="pb-2 flex-1">
+            <CardDescription className="text-xs sm:text-sm leading-tight">总参与人次</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
+            <div className="text-2xl sm:text-3xl font-bold">
               {stats.total_participation}
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>及格率</CardDescription>
+        <Card className="flex flex-col">
+          <CardHeader className="pb-2 flex-1">
+            <CardDescription className="text-xs sm:text-sm leading-tight">及格率</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">
+            <div className="text-2xl sm:text-3xl font-bold text-green-600">
               {stats.overall_pass_rate}%
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>题目总数</CardDescription>
+        <Card className="flex flex-col">
+          <CardHeader className="pb-2 flex-1">
+            <CardDescription className="text-xs sm:text-sm leading-tight">题目总数</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stats.question_count}</div>
+            <div className="text-2xl sm:text-3xl font-bold">{stats.question_count}</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>试卷总数</CardDescription>
+        <Card className="flex flex-col">
+          <CardHeader className="pb-2 flex-1">
+            <CardDescription className="text-xs sm:text-sm leading-tight">试卷总数</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stats.paper_count}</div>
+            <div className="text-2xl sm:text-3xl font-bold">{stats.paper_count}</div>
           </CardContent>
         </Card>
       </div>
