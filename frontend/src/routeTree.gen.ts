@@ -24,6 +24,7 @@ import { Route as LayoutQuestionBankRouteImport } from './routes/_layout/questio
 import { Route as LayoutMyExamsRouteImport } from './routes/_layout/my-exams'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutExamsRouteImport } from './routes/_layout/exams'
+import { Route as LayoutExamCategoriesRouteImport } from './routes/_layout/exam-categories'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutExamsIndexRouteImport } from './routes/_layout/exams/index'
 import { Route as LayoutQuestionBankExamIdRouteImport } from './routes/_layout/question-bank.$examId'
@@ -106,6 +107,11 @@ const LayoutExamsRoute = LayoutExamsRouteImport.update({
   path: '/exams',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutExamCategoriesRoute = LayoutExamCategoriesRouteImport.update({
+  id: '/exam-categories',
+  path: '/exam-categories',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutAdminRoute = LayoutAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
+  '/exam-categories': typeof LayoutExamCategoriesRoute
   '/exams': typeof LayoutExamsRouteWithChildren
   '/items': typeof LayoutItemsRoute
   '/my-exams': typeof LayoutMyExamsRouteWithChildren
@@ -166,6 +173,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
+  '/exam-categories': typeof LayoutExamCategoriesRoute
   '/items': typeof LayoutItemsRoute
   '/my-exams': typeof LayoutMyExamsRouteWithChildren
   '/question-bank': typeof LayoutQuestionBankRouteWithChildren
@@ -189,6 +197,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
+  '/_layout/exam-categories': typeof LayoutExamCategoriesRoute
   '/_layout/exams': typeof LayoutExamsRouteWithChildren
   '/_layout/items': typeof LayoutItemsRoute
   '/_layout/my-exams': typeof LayoutMyExamsRouteWithChildren
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
+    | '/exam-categories'
     | '/exams'
     | '/items'
     | '/my-exams'
@@ -235,6 +245,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
+    | '/exam-categories'
     | '/items'
     | '/my-exams'
     | '/question-bank'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_layout/admin'
+    | '/_layout/exam-categories'
     | '/_layout/exams'
     | '/_layout/items'
     | '/_layout/my-exams'
@@ -390,6 +402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutExamsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/exam-categories': {
+      id: '/_layout/exam-categories'
+      path: '/exam-categories'
+      fullPath: '/exam-categories'
+      preLoaderRoute: typeof LayoutExamCategoriesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/admin': {
       id: '/_layout/admin'
       path: '/admin'
@@ -476,6 +495,7 @@ const LayoutQuestionBankRouteWithChildren =
 
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
+  LayoutExamCategoriesRoute: typeof LayoutExamCategoriesRoute
   LayoutExamsRoute: typeof LayoutExamsRouteWithChildren
   LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutMyExamsRoute: typeof LayoutMyExamsRouteWithChildren
@@ -489,6 +509,7 @@ interface LayoutRouteChildren {
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
+  LayoutExamCategoriesRoute: LayoutExamCategoriesRoute,
   LayoutExamsRoute: LayoutExamsRouteWithChildren,
   LayoutItemsRoute: LayoutItemsRoute,
   LayoutMyExamsRoute: LayoutMyExamsRouteWithChildren,

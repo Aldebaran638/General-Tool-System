@@ -91,13 +91,32 @@ export function getQuestionBankDetail(
   return apiFetch(`${BASE}/question-bank/${examId}`)
 }
 
-export function downloadQuestionBank(examId: string): void {
+function filenameFromDisposition(disposition: string | null): string {
+  if (!disposition) return "exam_paper.docx"
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i)
+  if (utf8Match?.[1]) return decodeURIComponent(utf8Match[1])
+  const asciiMatch = disposition.match(/filename="?([^";]+)"?/i)
+  return asciiMatch?.[1] ?? "exam_paper.docx"
+}
+
+export async function downloadQuestionBank(examId: string): Promise<void> {
   const token = localStorage.getItem("access_token")
   const url = `${BASE}/question-bank/${examId}/download`
+  const res = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body?.detail ?? `HTTP ${res.status}`)
+  }
+
+  const blob = await res.blob()
+  const objectUrl = URL.createObjectURL(blob)
   const a = document.createElement("a")
-  a.href = token ? `${url}?access_token=${token}` : url
-  a.download = "" // Browser will use the filename from the server
+  a.href = objectUrl
+  a.download = filenameFromDisposition(res.headers.get("content-disposition"))
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)
 }

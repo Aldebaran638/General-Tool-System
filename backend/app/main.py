@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
+import os
 from typing import AsyncGenerator
 
 import sentry_sdk
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.routing import APIRoute
@@ -57,10 +58,32 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(wecom_auth.router, prefix="/api/auth")
 
 
-@app.get("/WW_verify_HUz4rWBElVbwEoOX.txt", response_class=PlainTextResponse, tags=["wecom-verify"])
+def _resolve_wecom_verify_filename() -> str:
+    configured_filename = os.getenv("WECOM_VERIFY_FILENAME")
+    if configured_filename:
+        return configured_filename
+
+    verify_files = sorted(Path(__file__).parent.glob("WW_verify_*.txt"))
+    if verify_files:
+        return verify_files[0].name
+
+    return "WW_verify.txt"
+
+
+WECOM_VERIFY_FILENAME = _resolve_wecom_verify_filename()
+
+
+@app.get(f"/{WECOM_VERIFY_FILENAME}", response_class=PlainTextResponse, tags=["wecom-verify"])
 async def wecom_verify() -> str:
-    verify_path = Path(__file__).parent / "WW_verify_HUz4rWBElVbwEoOX.txt"
-    return verify_path.read_text(encoding="utf-8")
+    verify_content = os.getenv("WECOM_VERIFY_CONTENT")
+    if verify_content:
+        return verify_content
+
+    verify_path = Path(__file__).parent / WECOM_VERIFY_FILENAME
+    if verify_path.exists():
+        return verify_path.read_text(encoding="utf-8")
+
+    raise HTTPException(status_code=404, detail="WeCom verify file is not configured")
 
 
 def _resolve_upload_root_dir() -> Path:

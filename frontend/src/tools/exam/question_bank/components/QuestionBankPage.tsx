@@ -2,28 +2,27 @@
  * Question Bank Page — browse and download exam papers
  */
 
-import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import {
+  AlertCircle,
   BookOpen,
-  Download,
-  Eye,
-  Search,
-  FileText,
   CheckCircle2,
   Clock,
-  AlertCircle,
+  Download,
+  Eye,
+  FileText,
+  Search,
 } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState } from "react"
+import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-
-import { listQuestionBank, downloadQuestionBank } from "../api"
 import type { QuestionBankItem } from "../api"
+import { downloadQuestionBank, listQuestionBank } from "../api"
 
 function formatDate(s: string): string {
   return new Date(s).toLocaleString("zh-CN", { hour12: false })
@@ -173,8 +172,14 @@ export function QuestionBankPage() {
     navigate({ to: `/question-bank/${examId}` })
   }
 
-  function handleDownload(examId: string) {
-    downloadQuestionBank(examId)
+  async function handleDownload(examId: string) {
+    try {
+      await downloadQuestionBank(examId)
+    } catch (error) {
+      toast.error("下载失败", {
+        description: error instanceof Error ? error.message : "请稍后重试",
+      })
+    }
   }
 
   return (

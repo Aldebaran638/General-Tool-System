@@ -3,22 +3,21 @@
  */
 
 import { useQuery } from "@tanstack/react-query"
-import { useParams, useNavigate } from "@tanstack/react-router"
+import { useNavigate } from "@tanstack/react-router"
 import {
-  Loader2,
-  Download,
+  AlertCircle,
   ArrowLeft,
   BookOpen,
   CheckCircle2,
-  AlertCircle,
+  Download,
+  Loader2,
 } from "lucide-react"
-
+import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-
-import { getQuestionBankDetail, downloadQuestionBank } from "../api"
 import type { QuestionPublic } from "../api"
+import { downloadQuestionBank, getQuestionBankDetail } from "../api"
 
 function QuestionTypeBadge({ type }: { type: string }) {
   switch (type) {
@@ -95,14 +94,13 @@ function QuestionCard({
 }
 
 export function QuestionBankPreviewPage() {
-  const { examId } = useParams({
-    from: "/_layout/question-bank/$examId",
-  })
+  const examId = window.location.pathname.split("/").filter(Boolean).pop() ?? ""
   const navigate = useNavigate()
 
   const detailQuery = useQuery({
     queryKey: ["questionBankDetail", examId],
     queryFn: () => getQuestionBankDetail(examId),
+    enabled: Boolean(examId),
   })
 
   const detail = detailQuery.data
@@ -111,8 +109,14 @@ export function QuestionBankPreviewPage() {
     navigate({ to: "/question-bank" })
   }
 
-  function handleDownload() {
-    downloadQuestionBank(examId)
+  async function handleDownload() {
+    try {
+      await downloadQuestionBank(examId)
+    } catch (error) {
+      toast.error("下载失败", {
+        description: error instanceof Error ? error.message : "请稍后重试",
+      })
+    }
   }
 
   // Loading state

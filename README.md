@@ -116,10 +116,10 @@ https://xxx.trycloudflare.com/
 配置完成后，可以访问以下地址验证域名校验文件是否正常：
 
 ```
-https://xxx.trycloudflare.com/WW_verify_HUz4rWBElVbwEoOX.txt
+https://xxx.trycloudflare.com/WW_verify_xxx.txt
 ```
 
-返回 `HUz4rWBElVbwEoOX` 即表示域名校验通过。
+返回企业微信后台下载的校验文件内容，即表示域名校验通过。真实 `WW_verify_*.txt` 文件只放在本地或部署环境，不提交到 Git。
 
 ## OAuth 登录流程
 

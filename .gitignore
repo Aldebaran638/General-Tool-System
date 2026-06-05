@@ -10,3 +10,6 @@ node_modules/
 cloudflared.deb.claude/
 backend/.claude/**
 .playwright-mcp/
+WW_verify_*.txt
+backend/app/WW_verify_*.txt
+docs/chartdb/schema.json

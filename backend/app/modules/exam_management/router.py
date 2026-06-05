@@ -34,7 +34,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlmodel import select
 
-from app.api.deps import SessionDep
+from app.api.deps import CurrentUser, SessionDep
 from app.modules.wecom_gateway.deps import RequireExamAdmin
 from app.modules.exam_management.models import Exam, ExamCategory, ExamPaper
 from app.modules.exam_management.schemas import (
@@ -251,7 +251,7 @@ def get_system_dashboard_stats(
 )
 def list_question_bank_endpoint(
     session: SessionDep,
-    current_user: RequireExamAdmin,
+    current_user: CurrentUser,
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
     category_id: int | None = Query(default=None),
@@ -269,7 +269,7 @@ def list_question_bank_endpoint(
 )
 def get_question_bank_detail_endpoint(
     session: SessionDep,
-    current_user: RequireExamAdmin,
+    current_user: CurrentUser,
     exam_id: uuid.UUID,
 ) -> QuestionBankDetail:
     detail = get_question_bank_detail(session, exam_id)
@@ -284,7 +284,7 @@ def get_question_bank_detail_endpoint(
 )
 def download_question_bank_endpoint(
     session: SessionDep,
-    current_user: RequireExamAdmin,
+    current_user: CurrentUser,
     exam_id: uuid.UUID,
 ):
     from fastapi.responses import FileResponse
@@ -300,7 +300,7 @@ def download_question_bank_endpoint(
 
     upload_dir = Path(settings.UPLOAD_DIR)
     if not upload_dir.is_absolute():
-        project_root = Path(__file__).resolve().parents[3]
+        project_root = Path(__file__).resolve().parents[4]
         upload_dir = (project_root / upload_dir).resolve()
 
     file_path = upload_dir / paper.docx_path

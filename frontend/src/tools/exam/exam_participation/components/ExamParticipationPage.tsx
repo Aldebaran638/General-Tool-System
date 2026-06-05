@@ -2,28 +2,28 @@
  * Exam Participation Page — for regular users to view and take exams
  */
 
-import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link as RouterLink, useNavigate } from "@tanstack/react-router"
 import {
-  FileText,
-  Clock,
-  Calendar,
-  CheckCircle2,
+  AlertCircle,
   ArrowRight,
   BookOpen,
-  Trophy,
-  AlertCircle,
-  Timer,
-  XCircle,
-  RotateCcw,
-  Lock,
-  Eye,
+  Calendar,
+  CheckCircle2,
+  Clock,
   Download,
+  Eye,
+  FileText,
+  Lock,
+  RotateCcw,
+  Timer,
+  Trophy,
+  XCircle,
 } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
+import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -32,9 +32,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-
-import { fetchMyExams, type MyExam, type MyExamsResponse } from "../api"
 import { downloadQuestionBank } from "@/tools/exam/question_bank/api"
+import { fetchMyExams, type MyExam, type MyExamsResponse } from "../api"
 
 function formatDate(s: string): string {
   return new Date(s).toLocaleString("zh-CN", { hour12: false })
@@ -93,6 +92,16 @@ function ExamCard({ exam }: { exam: MyExam }) {
   const end = new Date(exam.end_at)
   const canStart = now >= start && now <= end
   const isEnded = now > end
+
+  async function handleDownload() {
+    try {
+      await downloadQuestionBank(exam.id)
+    } catch (error) {
+      toast.error("下载失败", {
+        description: error instanceof Error ? error.message : "请稍后重试",
+      })
+    }
+  }
 
   // Calculate time remaining or until start
   const getTimeInfo = () => {
@@ -272,15 +281,13 @@ function ExamCard({ exam }: { exam: MyExam }) {
           )}
 
           {/* Question bank buttons — shown when exam has ended */}
-          {isEnded && exam.attempt_count > 0 && (
+          {isEnded && (
             <div className="mt-3 flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 className="flex-1"
-                onClick={() =>
-                  navigate({ to: `/question-bank/${exam.id}` })
-                }
+                onClick={() => navigate({ to: `/question-bank/${exam.id}` })}
               >
                 <Eye className="mr-2 h-4 w-4" />
                 浏览试题
@@ -289,7 +296,7 @@ function ExamCard({ exam }: { exam: MyExam }) {
                 variant="outline"
                 size="sm"
                 className="flex-1"
-                onClick={() => downloadQuestionBank(exam.id)}
+                onClick={handleDownload}
               >
                 <Download className="mr-2 h-4 w-4" />
                 下载
