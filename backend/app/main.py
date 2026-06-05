@@ -13,6 +13,7 @@ from pathlib import Path
 from app.api.main import api_router
 from app.api.routes import wecom_auth
 from app.core.config import settings
+from app.core.storage import ensure_upload_dir
 from app.modules.data_sync.scheduler import start_scheduler, stop_scheduler
 from app.modules.exam_management.scheduler import (
     start_paper_scheduler,
@@ -86,14 +87,6 @@ async def wecom_verify() -> str:
     raise HTTPException(status_code=404, detail="WeCom verify file is not configured")
 
 
-def _resolve_upload_root_dir() -> Path:
-    upload_dir = Path(settings.UPLOAD_DIR)
-    if upload_dir.is_absolute():
-        return upload_dir
-    project_root = Path(__file__).resolve().parents[2]
-    return (project_root / upload_dir).resolve()
-
-
-upload_root_dir = _resolve_upload_root_dir()
-upload_root_dir.mkdir(parents=True, exist_ok=True)
+# ── Storage setup (validate + mount /uploads) ─────────────────────────────────
+upload_root_dir = ensure_upload_dir()
 app.mount("/uploads", StaticFiles(directory=str(upload_root_dir)), name="uploads")

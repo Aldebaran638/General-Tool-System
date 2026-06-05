@@ -29,3 +29,14 @@ def test_email(email_to: EmailStr) -> Message:
 @router.get("/health-check/")
 async def health_check() -> bool:
     return True
+
+
+@router.get(
+    "/storage-info/",
+    dependencies=[Depends(get_current_active_superuser)],
+    summary="存储目录配置信息（需超管权限）",
+)
+def storage_info_endpoint() -> dict:
+    """Return current storage directory configuration and status."""
+    from app.core.storage import storage_info
+    return storage_info()

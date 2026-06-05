@@ -14,6 +14,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from sqlmodel import Session, select
 
 from app.core.config import settings
+from app.core.storage import resolve_papers_dir
 from app.modules.exam_management.models import (
     Exam,
     Question,
@@ -26,14 +27,6 @@ _TYPE_LABELS: dict[str, str] = {
     "MULTIPLE_CHOICE": "多选题",
     "TRUE_FALSE": "判断题",
 }
-
-
-def _resolve_upload_dir() -> Path:
-    upload_dir = Path(settings.UPLOAD_DIR)
-    if upload_dir.is_absolute():
-        return upload_dir
-    project_root = Path(__file__).resolve().parents[4]
-    return (project_root / upload_dir).resolve()
 
 
 def generate_exam_paper_docx(exam_id: uuid.UUID, session: Session) -> str:
@@ -103,7 +96,7 @@ def generate_exam_paper_docx(exam_id: uuid.UUID, session: Session) -> str:
         doc.add_paragraph("")  # separator
 
     # Save file
-    papers_dir = _resolve_upload_dir() / "papers"
+    papers_dir = resolve_papers_dir()
     papers_dir.mkdir(parents=True, exist_ok=True)
 
     filename = f"{exam_id}_{uuid.uuid4().hex[:8]}.docx"

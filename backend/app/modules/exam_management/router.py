@@ -289,6 +289,7 @@ def download_question_bank_endpoint(
     exam_id: uuid.UUID,
 ):
     from fastapi.responses import FileResponse
+    from app.core.storage import resolve_upload_dir
 
     paper = session.exec(
         select(ExamPaper).where(ExamPaper.exam_id == exam_id)
@@ -296,15 +297,7 @@ def download_question_bank_endpoint(
     if not paper or paper.status != "GENERATED" or not paper.docx_path:
         raise HTTPException(status_code=404, detail="试卷文件未生成")
 
-    from pathlib import Path
-    from app.core.config import settings
-
-    upload_dir = Path(settings.UPLOAD_DIR)
-    if not upload_dir.is_absolute():
-        project_root = Path(__file__).resolve().parents[4]
-        upload_dir = (project_root / upload_dir).resolve()
-
-    file_path = upload_dir / paper.docx_path
+    file_path = resolve_upload_dir() / paper.docx_path
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="试卷文件不存在")
 
