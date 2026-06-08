@@ -145,6 +145,18 @@ function DateRangeFilter({
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+function formatTrainerName(name: string): string {
+  if (!name) return "未知讲师"
+  // If it looks like a UUID (with or without hyphens), fallback
+  if (
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(name) ||
+    /^[0-9a-f]{32}$/i.test(name)
+  ) {
+    return "未知讲师"
+  }
+  return name
+}
+
 function formatDateTime(isoString: string): string {
   const date = new Date(isoString)
   return date.toLocaleString("zh-CN", {
@@ -168,7 +180,7 @@ function TrainerCard({ group }: { group: TrainerGroup }) {
               <GraduationCap className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-base">{group.trainer_name}</CardTitle>
+              <CardTitle className="text-base">{formatTrainerName(group.trainer_name)}</CardTitle>
               <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                 <span className="flex items-center gap-1">
                   <BookOpen className="h-3.5 w-3.5" />

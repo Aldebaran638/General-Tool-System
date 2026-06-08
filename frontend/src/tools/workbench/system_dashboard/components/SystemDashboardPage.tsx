@@ -309,8 +309,14 @@ export function SystemDashboardPage() {
           </CardHeader>
           <CardContent>
             {deviceSegments.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                暂无数据
+              <div className="flex flex-col items-center gap-3 py-10 text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="h-8 w-8 opacity-40" />
+                  <Monitor className="h-10 w-10 opacity-60" />
+                  <HelpCircle className="h-8 w-8 opacity-40" />
+                </div>
+                <p className="text-sm font-medium">暂无终端分布数据</p>
+                <p className="text-xs">请先创建考试并收集答题数据</p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-4">

@@ -57,7 +57,9 @@ import type { Exam } from "../types"
 
 function fmtDate(s: string | null): string {
   if (!s) return "—"
-  return new Date(s).toLocaleString("zh-CN", { hour12: false })
+  const d = new Date(s)
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 function ExamStatusBadge({ exam }: { exam: Exam }) {
@@ -240,11 +242,7 @@ export function ExamListPage() {
                   <ExamStatusBadge exam={exam} />
                 </TableCell>
                 <TableCell className="text-sm whitespace-nowrap">
-                  {fmtDate(exam.start_at)}
-                  <br />
-                  <span className="text-muted-foreground">
-                    ~ {fmtDate(exam.end_at)}
-                  </span>
+                  {fmtDate(exam.start_at)} ~ {fmtDate(exam.end_at)}
                 </TableCell>
                 <TableCell className="text-right">
                   {exam.duration_minutes}
