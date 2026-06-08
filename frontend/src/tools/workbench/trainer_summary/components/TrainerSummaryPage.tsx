@@ -1,8 +1,7 @@
-import { useState, useMemo } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { Suspense, useState, useMemo } from "react"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import {
-  Loader2,
   GraduationCap,
   Search,
   Calendar,
@@ -19,6 +18,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -168,6 +168,61 @@ function formatDateTime(isoString: string): string {
   })
 }
 
+// ─── Skeleton Components ────────────────────────────────────────────────────
+
+function PendingTrainerCard() {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-9 w-9 rounded-lg" />
+          <div className="flex-1">
+            <Skeleton className="h-5 w-32 mb-2" />
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="rounded-md border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead>课程名称</TableHead>
+                <TableHead>中心</TableHead>
+                <TableHead>考试时间</TableHead>
+                <TableHead className="text-right">培训人数</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-4 w-8 ml-auto" /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function PendingTrainerSummary() {
+  return (
+    <div className="flex flex-col gap-4">
+      {Array.from({ length: 2 }).map((_, i) => (
+        <PendingTrainerCard key={i} />
+      ))}
+    </div>
+  )
+}
+
 // ─── Trainer Card ───────────────────────────────────────────────────────────
 
 function TrainerCard({ group }: { group: TrainerGroup }) {
@@ -238,6 +293,39 @@ function TrainerCard({ group }: { group: TrainerGroup }) {
   )
 }
 
+// ─── Main Content ───────────────────────────────────────────────────────────
+
+function TrainerSummaryContent({
+  queryParams,
+}: {
+  queryParams: { q?: string; start_date?: string; end_date?: string }
+}) {
+  const summaryQuery = useSuspenseQuery({
+    queryKey: ["trainerSummary", queryParams],
+    queryFn: () => getTrainerSummary(queryParams),
+  })
+
+  const groups = summaryQuery.data?.data ?? []
+
+  return (
+    <>
+      {/* Trainer groups */}
+      {groups.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground border rounded-lg">
+          <GraduationCap className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+          <p>暂无培训讲师数据</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {groups.map((group) => (
+            <TrainerCard key={group.trainer_id} group={group} />
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
 export function TrainerSummaryPage() {
@@ -266,36 +354,13 @@ export function TrainerSummaryPage() {
     return params
   }, [searchQuery, dateFilter])
 
-  const summaryQuery = useQuery({
-    queryKey: ["trainerSummary", queryParams],
-    queryFn: () => getTrainerSummary(queryParams),
-  })
-
-  const groups = summaryQuery.data?.data ?? []
-
-  if (summaryQuery.isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
-
-  if (summaryQuery.isError) {
-    return (
-      <div className="text-center py-12 text-muted-foreground">
-        加载失败，请稍后重试
-      </div>
-    )
-  }
-
   return (
     <div className="flex flex-col gap-6">
       {/* Page header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">培训讲师汇总</h1>
         <p className="text-muted-foreground">
-          共 {summaryQuery.data?.count ?? 0} 位讲师
+          讲师授课数据统计
         </p>
       </div>
 
@@ -316,19 +381,9 @@ export function TrainerSummaryPage() {
         <DateRangeFilter value={dateFilter} onChange={setDateFilter} />
       </div>
 
-      {/* Trainer groups */}
-      {groups.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground border rounded-lg">
-          <GraduationCap className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-          <p>暂无培训讲师数据</p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {groups.map((group) => (
-            <TrainerCard key={group.trainer_id} group={group} />
-          ))}
-        </div>
-      )}
+      <Suspense fallback={<PendingTrainerSummary />}>
+        <TrainerSummaryContent queryParams={queryParams} />
+      </Suspense>
     </div>
   )
 }
