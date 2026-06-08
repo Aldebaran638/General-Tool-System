@@ -267,6 +267,20 @@ def get_trainer_summary_endpoint(
 # ─── Question Bank ───────────────────────────────────────────────────────────
 # NOTE: Question bank routes MUST be defined before /{exam_id} to avoid route conflicts.
 
+def _parse_category_ids(value: str | None) -> list[int] | None:
+    """Parse category_ids from query string.
+
+    Supports both comma-separated (?category_ids=1,2,3) and repeated
+    (?category_ids=1&category_ids=2) styles.
+    """
+    if not value:
+        return None
+    try:
+        return [int(v.strip()) for v in value.split(",") if v.strip()]
+    except ValueError:
+        return None
+
+
 @router.get(
     "/question-bank",
     response_model=QuestionBankPublic,
@@ -277,10 +291,14 @@ def list_question_bank_endpoint(
     current_user: CurrentUser,
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
-    category_id: int | None = Query(default=None),
+    category_ids: str | None = Query(default=None),
 ) -> QuestionBankPublic:
+    parsed_category_ids = _parse_category_ids(category_ids)
     data, count = list_question_bank(
-        session, page=page, limit=limit, category_id=category_id
+        session,
+        page=page,
+        limit=limit,
+        category_ids=parsed_category_ids,
     )
     return QuestionBankPublic(data=data, count=count)
 

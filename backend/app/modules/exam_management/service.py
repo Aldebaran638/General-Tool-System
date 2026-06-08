@@ -1109,7 +1109,7 @@ def list_question_bank(
     *,
     page: int = 1,
     limit: int = 20,
-    category_id: int | None = None,
+    category_ids: list[int] | None = None,
 ) -> tuple[list[dict], int]:
     """List exams that have generated papers (question bank)."""
     from app.modules.exam_management.schemas import QuestionBankItem
@@ -1130,9 +1130,9 @@ def list_question_bank(
         .where(Exam.status.in_(["PUBLISHED", "ARCHIVED"]))
     )
 
-    if category_id is not None:
-        base = base.where(Exam.category_id == category_id)
-        count_base = count_base.where(Exam.category_id == category_id)
+    if category_ids:
+        base = base.where(Exam.category_id.in_(category_ids))
+        count_base = count_base.where(Exam.category_id.in_(category_ids))
 
     count = session.exec(count_base).one()
     offset = (page - 1) * limit

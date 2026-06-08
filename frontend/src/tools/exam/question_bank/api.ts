@@ -76,12 +76,14 @@ export interface QuestionBankDetail {
 export function listQuestionBank(params?: {
   page?: number
   limit?: number
-  category_id?: number
+  category_ids?: number[]
 }): Promise<QuestionBankResponse> {
   const p = new URLSearchParams()
   if (params?.page) p.set("page", String(params.page))
   if (params?.limit) p.set("limit", String(params.limit))
-  if (params?.category_id) p.set("category_id", String(params.category_id))
+  if (params?.category_ids?.length) {
+    p.set("category_ids", params.category_ids.join(","))
+  }
   return apiFetch(`${BASE}/question-bank?${p}`)
 }
 

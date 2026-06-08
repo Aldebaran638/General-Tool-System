@@ -15,7 +15,7 @@ import {
   RefreshCw,
   Search,
 } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -23,6 +23,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import useAuth from "@/hooks/useAuth"
+import {
+  FilterPopover,
+  type FilterValues,
+} from "@/components/Common/FilterPopover"
+import type { ExamCategory } from "../../category_management/api"
+import { listExamCategories } from "../../category_management/api"
 import type { QuestionBankItem } from "../api"
 import { downloadQuestionBank, generatePaper, listQuestionBank } from "../api"
 
@@ -180,10 +186,25 @@ export function QuestionBankPage() {
 
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
+  const [filterValues, setFilterValues] = useState<FilterValues>({
+    categoryIds: [],
+  })
+  const [categories, setCategories] = useState<ExamCategory[]>([])
+
+  useEffect(() => {
+    listExamCategories()
+      .then((res) => setCategories(res.data))
+      .catch(() => toast.error("加载考试分类失败"))
+  }, [])
+
+  const selectedCategoryIds = (filterValues.categoryIds as string[])
+    .map((id) => Number(id))
+    .filter((id) => !Number.isNaN(id))
 
   const bankQuery = useQuery({
-    queryKey: ["questionBank", page],
-    queryFn: () => listQuestionBank({ page, limit: 20 }),
+    queryKey: ["questionBank", page, selectedCategoryIds],
+    queryFn: () =>
+      listQuestionBank({ page, limit: 20, category_ids: selectedCategoryIds }),
   })
 
   const regenerateMutation = useMutation({
@@ -242,8 +263,8 @@ export function QuestionBankPage() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="flex gap-4">
+      {/* Search and filter toolbar */}
+      <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -253,6 +274,24 @@ export function QuestionBankPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <FilterPopover
+          groups={[
+            {
+              key: "categoryIds",
+              label: "考试分类",
+              type: "multi",
+              options: categories.map((c) => ({
+                label: c.name,
+                value: String(c.id),
+              })),
+            },
+          ]}
+          values={filterValues}
+          onChange={(values) => {
+            setFilterValues(values)
+            setPage(1)
+          }}
+        />
       </div>
 
       {/* Loading state */}
