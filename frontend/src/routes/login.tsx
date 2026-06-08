@@ -108,8 +108,8 @@ function Login() {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">欢迎回来</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-3xl font-bold tracking-tight">欢迎回来</h1>
+            <p className="text-sm text-muted-foreground/80">
               登录您的账户以继续学习
             </p>
           </div>
@@ -137,7 +137,7 @@ function Login() {
                       data-testid="email-input"
                       placeholder="请输入邮箱地址"
                       type="email"
-                      className="h-11 transition-all focus-visible:ring-2 focus-visible:ring-primary/20"
+                      className="h-11 transition-all focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/50"
                       {...field}
                     />
                   </FormControl>
@@ -164,7 +164,7 @@ function Login() {
                     <PasswordInput
                       data-testid="password-input"
                       placeholder="请输入密码"
-                      className="h-11 transition-all focus-visible:ring-2 focus-visible:ring-primary/20"
+                      className="h-11 transition-all focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/50"
                       {...field}
                     />
                   </FormControl>
@@ -178,7 +178,7 @@ function Login() {
               loading={loginMutation.isPending}
               onClick={submitLogin}
               data-testid="login-submit"
-              className="h-11 font-medium transition-all hover:shadow-md"
+              className="h-11 font-medium transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
             >
               登录
             </LoadingButton>
