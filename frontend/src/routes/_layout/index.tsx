@@ -239,17 +239,17 @@ function Dashboard() {
       {/* Quick links */}
       <div>
         <h2 className="text-lg font-semibold mb-3">快捷入口</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(140px,1fr))]">
           {visibleLinks.map((link) => (
             <button
               key={link.label}
               onClick={() => navigate({ to: link.href })}
-              className="flex flex-col items-center gap-2 rounded-xl border bg-card p-4 text-center transition-all hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5"
+              className="flex flex-col items-center justify-center gap-2 rounded-xl border bg-card p-4 text-center transition-all hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5"
             >
               <div className={`rounded-xl p-3 ${link.color}`}>
                 <link.icon className="h-5 w-5" />
               </div>
-              <div>
+              <div className="w-full">
                 <p className="text-sm font-medium">{link.label}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {link.description}

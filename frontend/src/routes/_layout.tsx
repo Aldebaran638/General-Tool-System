@@ -37,6 +37,7 @@ function Layout() {
       <SidebarInset className="min-h-svh bg-gradient-to-b from-background to-muted/30">
         <header className="bg-background/95 supports-[backdrop-filter]:bg-background/85 sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
           <SidebarTrigger className="-ml-1 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">菜单</span>
         </header>
         <main className="relative z-0 flex-1 p-6 md:p-8">
           <div className="mx-auto max-w-7xl">
