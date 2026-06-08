@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Suspense, useState } from "react"
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { toast } from "sonner"
 import {
@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -79,15 +80,75 @@ function ExamStatusBadge({ exam }: { exam: Exam }) {
   return <Badge variant="success">进行中</Badge>
 }
 
-export function ExamListPage() {
-  const [page, setPage] = useState(1)
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [search, setSearch] = useState("")
-  const [deleteTarget, setDeleteTarget] = useState<Exam | null>(null)
+function PendingExamsTable() {
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>考试名称</TableHead>
+            <TableHead>状态</TableHead>
+            <TableHead>考试时间</TableHead>
+            <TableHead className="text-right">时长(分)</TableHead>
+            <TableHead className="text-right">及格分</TableHead>
+            <TableHead>创建时间</TableHead>
+            <TableHead className="w-12"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <TableRow key={index}>
+              <TableCell>
+                <Skeleton className="h-4 w-32" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-36" />
+              </TableCell>
+              <TableCell className="text-right">
+                <Skeleton className="h-4 w-8 ml-auto" />
+              </TableCell>
+              <TableCell className="text-right">
+                <Skeleton className="h-4 w-8 ml-auto" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-28" />
+              </TableCell>
+              <TableCell>
+                <div className="flex justify-end">
+                  <Skeleton className="size-8 rounded-md" />
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  )
+}
+
+function ExamListContent({
+  page,
+  statusFilter,
+  search,
+  onPageChange,
+  onStatusFilterChange,
+  onSearchChange,
+}: {
+  page: number
+  statusFilter: string
+  search: string
+  onPageChange: (p: number) => void
+  onStatusFilterChange: (v: string) => void
+  onSearchChange: (v: string) => void
+}) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [deleteTarget, setDeleteTarget] = useState<Exam | null>(null)
 
-  const examsQuery = useQuery({
+  const examsQuery = useSuspenseQuery({
     queryKey: ["exams", page, statusFilter, search],
     queryFn: () =>
       listExams({
@@ -135,20 +196,7 @@ export function ExamListPage() {
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">考试管理</h1>
-          <p className="text-muted-foreground">
-            创建和管理考试、编辑试卷、分配学员
-          </p>
-        </div>
-        <Button onClick={() => navigate({ to: "/exams/new" })}>
-          <Plus className="mr-2 h-4 w-4" />
-          新建考试
-        </Button>
-      </div>
-
+    <>
       {/* Filters */}
       <div className="flex items-center gap-3">
         <div className="relative max-w-sm flex-1">
@@ -157,8 +205,8 @@ export function ExamListPage() {
             placeholder="搜索考试名称…"
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value)
-              setPage(1)
+              onSearchChange(e.target.value)
+              onPageChange(1)
             }}
             className="pl-8"
           />
@@ -166,8 +214,8 @@ export function ExamListPage() {
         <Select
           value={statusFilter}
           onValueChange={(v) => {
-            setStatusFilter(v)
-            setPage(1)
+            onStatusFilterChange(v)
+            onPageChange(1)
           }}
         >
           <SelectTrigger className="w-36">
@@ -197,18 +245,7 @@ export function ExamListPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {examsQuery.isLoading && (
-              <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="text-center text-muted-foreground"
-                >
-                  <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
-                  加载中…
-                </TableCell>
-              </TableRow>
-            )}
-            {!examsQuery.isLoading && exams.length === 0 && (
+            {exams.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-12">
                   <div className="flex flex-col items-center gap-3">
@@ -308,7 +345,7 @@ export function ExamListPage() {
             variant="outline"
             size="sm"
             disabled={page <= 1}
-            onClick={() => setPage(page - 1)}
+            onClick={() => onPageChange(page - 1)}
           >
             上一页
           </Button>
@@ -319,7 +356,7 @@ export function ExamListPage() {
             variant="outline"
             size="sm"
             disabled={page >= totalPages}
-            onClick={() => setPage(page + 1)}
+            onClick={() => onPageChange(page + 1)}
           >
             下一页
           </Button>
@@ -354,6 +391,41 @@ export function ExamListPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
+  )
+}
+
+export function ExamListPage() {
+  const navigate = useNavigate()
+  const [page, setPage] = useState(1)
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [search, setSearch] = useState("")
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">考试管理</h1>
+          <p className="text-muted-foreground">
+            创建和管理考试、编辑试卷、分配学员
+          </p>
+        </div>
+        <Button onClick={() => navigate({ to: "/exams/new" })}>
+          <Plus className="mr-2 h-4 w-4" />
+          新建考试
+        </Button>
+      </div>
+
+      <Suspense fallback={<PendingExamsTable />}>
+        <ExamListContent
+          page={page}
+          statusFilter={statusFilter}
+          search={search}
+          onPageChange={setPage}
+          onStatusFilterChange={setStatusFilter}
+          onSearchChange={setSearch}
+        />
+      </Suspense>
     </div>
   )
 }
