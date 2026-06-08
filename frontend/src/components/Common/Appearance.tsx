@@ -31,9 +31,9 @@ export const SidebarAppearance = () => {
     <SidebarMenuItem>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
-          <SidebarMenuButton tooltip="Appearance" data-testid="theme-button">
+          <SidebarMenuButton tooltip="主题" data-testid="theme-button">
             <Icon className="size-4 text-muted-foreground" />
-            <span>Appearance</span>
+            <span>主题</span>
             <span className="sr-only">Toggle theme</span>
           </SidebarMenuButton>
         </DropdownMenuTrigger>
