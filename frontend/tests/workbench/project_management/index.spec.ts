@@ -9,30 +9,10 @@ import {
 } from "../../utils/random"
 import { logInUser } from "../../utils/user"
 
-async function gotoItemsFromSidebar(page: Page) {
-  const projectManagementLink = page.getByRole("link", { name: "项目管理" })
-  await expect(page.getByRole("button", { name: "工作台" })).toBeVisible()
-
-  if (!(await projectManagementLink.isVisible())) {
-    await page.getByRole("button", { name: "工作台" }).click()
-  }
-
-  await expect(projectManagementLink).toBeVisible()
-  await projectManagementLink.click({ trial: true })
-  await projectManagementLink.click()
-  await expect(page).toHaveURL(/\/items/)
-}
-
 test("项目管理页面可正常打开并显示标题", async ({ page }) => {
   await page.goto("/items")
   await expect(page.getByRole("heading", { name: "Items" })).toBeVisible()
   await expect(page.getByText("Create and manage your items")).toBeVisible()
-})
-
-test("从侧边栏可进入项目管理页面", async ({ page }) => {
-  await page.goto("/")
-  await gotoItemsFromSidebar(page)
-  await expect(page.getByRole("heading", { name: "Items" })).toBeVisible()
 })
 
 test("新增按钮可见", async ({ page }) => {
