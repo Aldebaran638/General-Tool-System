@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { Loader2, Smartphone, Monitor, HelpCircle, Calendar } from "lucide-react"
+import { Suspense, useState, useMemo } from "react"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { Smartphone, Monitor, HelpCircle, Calendar } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
 import { getSystemDashboardStats } from "../api"
 
 const TYPE_LABELS: Record<string, string> = {
@@ -153,45 +154,75 @@ function DateRangeFilter({
   )
 }
 
-export function SystemDashboardPage() {
-  const [dateFilter, setDateFilter] = useState<{
-    range: DateRange
-    customStart: string
-    customEnd: string
-  }>({
-    range: "all",
-    customStart: "",
-    customEnd: "",
-  })
+function PendingStatsCards() {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Card key={i} className="flex flex-col">
+          <CardHeader className="pb-2 flex-1">
+            <Skeleton className="h-4 w-16" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-8 w-12" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
 
-  const queryParams = useMemo(() => {
-    if (dateFilter.range === "custom") {
-      return {
-        start_date: dateFilter.customStart || undefined,
-        end_date: dateFilter.customEnd || undefined,
-      }
-    }
-    const range = getDateRange(dateFilter.range)
-    return {
-      start_date: range.start,
-      end_date: range.end,
-    }
-  }, [dateFilter])
+function PendingCharts() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-24" />
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <Skeleton className="h-40 w-40 rounded-full" />
+            <div className="flex flex-wrap gap-3 justify-center">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <Skeleton className="w-3 h-3 rounded-full" />
+                  <Skeleton className="h-4 w-12" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-24" />
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-end gap-4 h-48">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-2 flex-1">
+                <Skeleton className="h-4 w-8" />
+                <Skeleton className="w-full rounded-t-md" style={{ height: `${60 + i * 30}px` }} />
+                <Skeleton className="h-3 w-12" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
 
-  const statsQuery = useQuery({
+function SystemDashboardContent({
+  queryParams,
+}: {
+  queryParams: { start_date?: string; end_date?: string }
+}) {
+  const statsQuery = useSuspenseQuery({
     queryKey: ["systemDashboardStats", queryParams],
     queryFn: () => getSystemDashboardStats(queryParams),
   })
 
   const stats = statsQuery.data
-
-  if (statsQuery.isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
 
   if (!stats) {
     return (
@@ -204,7 +235,6 @@ export function SystemDashboardPage() {
     1,
   )
 
-  // Calculate pie chart segments for device distribution
   const deviceTotal = stats.device_type_distribution.reduce(
     (sum, d) => sum + d.count,
     0,
@@ -223,19 +253,7 @@ export function SystemDashboardPage() {
   })
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">系统总览</h1>
-        <p className="text-muted-foreground">考试系统累计数据统计</p>
-      </div>
-
-      {/* Date filter */}
-      <Card>
-        <CardContent className="pt-6">
-          <DateRangeFilter value={dateFilter} onChange={setDateFilter} />
-        </CardContent>
-      </Card>
-
+    <>
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="flex flex-col">
@@ -300,7 +318,7 @@ export function SystemDashboardPage() {
         </Card>
       </div>
 
-      {/* Charts row — 2 columns after removing difficulty chart */}
+      {/* Charts row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Device type distribution pie chart */}
         <Card>
@@ -399,6 +417,59 @@ export function SystemDashboardPage() {
           </CardContent>
         </Card>
       </div>
+    </>
+  )
+}
+
+export function SystemDashboardPage() {
+  const [dateFilter, setDateFilter] = useState<{
+    range: DateRange
+    customStart: string
+    customEnd: string
+  }>({
+    range: "all",
+    customStart: "",
+    customEnd: "",
+  })
+
+  const queryParams = useMemo(() => {
+    if (dateFilter.range === "custom") {
+      return {
+        start_date: dateFilter.customStart || undefined,
+        end_date: dateFilter.customEnd || undefined,
+      }
+    }
+    const range = getDateRange(dateFilter.range)
+    return {
+      start_date: range.start,
+      end_date: range.end,
+    }
+  }, [dateFilter])
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">系统总览</h1>
+        <p className="text-muted-foreground">考试系统累计数据统计</p>
+      </div>
+
+      {/* Date filter */}
+      <Card>
+        <CardContent className="pt-6">
+          <DateRangeFilter value={dateFilter} onChange={setDateFilter} />
+        </CardContent>
+      </Card>
+
+      <Suspense
+        fallback={
+          <>
+            <PendingStatsCards />
+            <PendingCharts />
+          </>
+        }
+      >
+        <SystemDashboardContent queryParams={queryParams} />
+      </Suspense>
     </div>
   )
 }
