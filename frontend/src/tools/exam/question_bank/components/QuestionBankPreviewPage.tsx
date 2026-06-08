@@ -3,7 +3,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
+// import { useNavigate } from "@tanstack/react-router"
 import {
   AlertCircle,
   ArrowLeft,
@@ -95,7 +95,6 @@ function QuestionCard({
 
 export function QuestionBankPreviewPage() {
   const examId = window.location.pathname.split("/").filter(Boolean).pop() ?? ""
-  const navigate = useNavigate()
 
   const detailQuery = useQuery({
     queryKey: ["questionBankDetail", examId],
