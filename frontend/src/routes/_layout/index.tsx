@@ -1,6 +1,7 @@
+import { Suspense } from "react"
 import { useNavigate, Link } from "@tanstack/react-router"
 import { createFileRoute } from "@tanstack/react-router"
-import { useQuery } from "@tanstack/react-query"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import {
   CalendarDays,
   ClipboardList,
@@ -13,12 +14,11 @@ import {
   GraduationCap,
   UserCog,
   RefreshCw,
-  Loader2,
-  AlertCircle,
 } from "lucide-react"
 
 import useAuth from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Card,
   CardContent,
@@ -70,6 +70,198 @@ function ExamStatusBadge({ status, startAt, endAt }: { status: string; startAt: 
   if (now > end) return <Badge variant="warning">已结束</Badge>
   return <Badge variant="success">进行中</Badge>
 }
+
+// ─── Skeletons ─────────────────────────────────────────────────────────────
+
+function PendingStats() {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Card key={i} className="border-none shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-8 w-12" />
+              </div>
+              <Skeleton className="h-10 w-10 rounded-xl" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
+function PendingRecentExams() {
+  return (
+    <Card className="border-none shadow-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-5 w-20" />
+          <Skeleton className="h-8 w-20" />
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between rounded-lg border px-4 py-3"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+                <div className="min-w-0 flex flex-col gap-1.5">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+              <Skeleton className="h-5 w-14 rounded-full shrink-0" />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// ─── Data Components ───────────────────────────────────────────────────────
+
+function StatsContent() {
+  const { data: stats } = useSuspenseQuery({
+    queryKey: ["dashboardStats"],
+    queryFn: () => getSystemDashboardStats({}),
+  })
+
+  const statCards = [
+    {
+      label: "考试场次",
+      value: stats?.exam_count ?? 0,
+      icon: ClipboardList,
+      color: "text-blue-600",
+      bg: "bg-blue-50 dark:bg-blue-950/30",
+    },
+    {
+      label: "试题数量",
+      value: stats?.question_count ?? 0,
+      icon: BookOpen,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50 dark:bg-emerald-950/30",
+    },
+    {
+      label: "参与人次",
+      value: stats?.total_participation ?? 0,
+      icon: Users,
+      color: "text-violet-600",
+      bg: "bg-violet-50 dark:bg-violet-950/30",
+    },
+    {
+      label: "及格率",
+      value: stats?.overall_pass_rate ?? 0,
+      suffix: "%",
+      icon: TrendingUp,
+      color: "text-amber-600",
+      bg: "bg-amber-50 dark:bg-amber-950/30",
+    },
+  ]
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {statCards.map((card) => (
+        <Card key={card.label} className="border-none shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">{card.label}</p>
+                <p className="text-2xl font-bold mt-1">
+                  {card.value.toLocaleString()}
+                  {card.suffix}
+                </p>
+              </div>
+              <div className={`rounded-xl p-3 ${card.bg}`}>
+                <card.icon className={`h-5 w-5 ${card.color}`} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
+function RecentExamsContent() {
+  const navigate = useNavigate()
+  const { data: examsData } = useSuspenseQuery({
+    queryKey: ["recentExams"],
+    queryFn: () => listExams({ page: 1, limit: 5 }),
+  })
+
+  const recentExams = examsData?.data ?? []
+
+  return (
+    <Card className="border-none shadow-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">最近考试</CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate({ to: "/exams" })}
+          >
+            查看全部
+            <ArrowRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {recentExams.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
+            <div className="rounded-full bg-muted p-4">
+              <FileText className="h-6 w-6" />
+            </div>
+            <p className="text-sm">暂无考试</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {recentExams.map((exam) => (
+              <div
+                key={exam.id}
+                className="flex items-center justify-between rounded-lg border px-4 py-3 transition-colors hover:bg-muted/50"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="rounded-lg bg-primary/10 p-2 shrink-0">
+                    <ClipboardList className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <Link
+                      to="/exams/$examId"
+                      params={{ examId: exam.id }}
+                      className="text-sm font-medium hover:text-primary hover:underline truncate block"
+                    >
+                      {exam.name}
+                    </Link>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {fmtTimeShort(exam.start_at)} ~ {fmtTimeShort(exam.end_at)}
+                    </p>
+                  </div>
+                </div>
+                <div className="shrink-0 ml-2">
+                  <ExamStatusBadge
+                    status={exam.status}
+                    startAt={exam.start_at}
+                    endAt={exam.end_at}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// ─── Main Dashboard ────────────────────────────────────────────────────────
 
 const QUICK_LINKS = [
   {
@@ -127,52 +319,7 @@ function Dashboard() {
   const navigate = useNavigate()
   const isAdmin = currentUser?.is_superuser ?? false
 
-  const statsQuery = useQuery({
-    queryKey: ["dashboardStats"],
-    queryFn: () => getSystemDashboardStats({}),
-  })
-
-  const recentExamsQuery = useQuery({
-    queryKey: ["recentExams"],
-    queryFn: () => listExams({ page: 1, limit: 5 }),
-  })
-
-  const stats = statsQuery.data
-  const recentExams = recentExamsQuery.data?.data ?? []
-
   const visibleLinks = QUICK_LINKS.filter((link) => !link.adminOnly || isAdmin)
-
-  const statCards = [
-    {
-      label: "考试场次",
-      value: stats?.exam_count ?? 0,
-      icon: ClipboardList,
-      color: "text-blue-600",
-      bg: "bg-blue-50 dark:bg-blue-950/30",
-    },
-    {
-      label: "试题数量",
-      value: stats?.question_count ?? 0,
-      icon: BookOpen,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50 dark:bg-emerald-950/30",
-    },
-    {
-      label: "参与人次",
-      value: stats?.total_participation ?? 0,
-      icon: Users,
-      color: "text-violet-600",
-      bg: "bg-violet-50 dark:bg-violet-950/30",
-    },
-    {
-      label: "及格率",
-      value: stats?.overall_pass_rate ?? 0,
-      suffix: "%",
-      icon: TrendingUp,
-      color: "text-amber-600",
-      bg: "bg-amber-50 dark:bg-amber-950/30",
-    },
-  ]
 
   return (
     <div className="flex flex-col gap-6">
@@ -202,39 +349,9 @@ function Dashboard() {
       </div>
 
       {/* Stat cards */}
-      {statsQuery.isError ? (
-        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-950/20 rounded-lg px-4 py-3">
-          <AlertCircle className="h-4 w-4" />
-          <span>统计数据加载失败，请稍后刷新页面重试</span>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {statCards.map((card) => (
-            <Card key={card.label} className="border-none shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{card.label}</p>
-                    <p className="text-2xl font-bold mt-1">
-                      {statsQuery.isLoading ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                      ) : (
-                        <>
-                          {card.value.toLocaleString()}
-                          {card.suffix}
-                        </>
-                      )}
-                    </p>
-                  </div>
-                  <div className={`rounded-xl p-3 ${card.bg}`}>
-                    <card.icon className={`h-5 w-5 ${card.color}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <Suspense fallback={<PendingStats />}>
+        <StatsContent />
+      </Suspense>
 
       {/* Quick links */}
       <div>
@@ -261,74 +378,9 @@ function Dashboard() {
       </div>
 
       {/* Recent exams */}
-      <Card className="border-none shadow-sm">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">最近考试</CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate({ to: "/exams" })}
-            >
-              查看全部
-              <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          {recentExamsQuery.isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : recentExamsQuery.isError ? (
-            <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
-              <AlertCircle className="h-8 w-8 text-red-500" />
-              <p className="text-sm">考试列表加载失败，请稍后刷新页面重试</p>
-            </div>
-          ) : recentExams.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
-              <div className="rounded-full bg-muted p-4">
-                <FileText className="h-6 w-6" />
-              </div>
-              <p className="text-sm">暂无考试</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {recentExams.map((exam) => (
-                <div
-                  key={exam.id}
-                  className="flex items-center justify-between rounded-lg border px-4 py-3 transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="rounded-lg bg-primary/10 p-2 shrink-0">
-                      <ClipboardList className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <Link
-                        to="/exams/$examId"
-                        params={{ examId: exam.id }}
-                        className="text-sm font-medium hover:text-primary hover:underline truncate block"
-                      >
-                        {exam.name}
-                      </Link>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {fmtTimeShort(exam.start_at)} ~ {fmtTimeShort(exam.end_at)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="shrink-0 ml-2">
-                    <ExamStatusBadge
-                      status={exam.status}
-                      startAt={exam.start_at}
-                      endAt={exam.end_at}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <Suspense fallback={<PendingRecentExams />}>
+        <RecentExamsContent />
+      </Suspense>
     </div>
   )
 }
