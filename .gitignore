@@ -7,5 +7,14 @@ node_modules/
 /playwright/.cache/
 .env
 .claude/
+.claude/**
+backend/.claude/**
+cloudflared.deb.claude/
+.playwright-mcp/
+question-bank-*.png
+WW_verify_*.txt
+backend/app/WW_verify_*.txt
 claude_err.txt
 .env.test
+docs/chartdb/schema.json
+backend/app/uploads

@@ -15,6 +15,22 @@ const isLoggedIn = () => {
   return localStorage.getItem("access_token") !== null
 }
 
+/**
+ * Returns true when the page is running inside the WeCom built-in browser.
+ * WeCom injects "wxwork" into the User-Agent string on both Android and iOS.
+ */
+const isWecomBrowser = (): boolean => /wxwork/i.test(navigator.userAgent)
+
+/**
+ * Perform a full-page navigation to the backend WeCom OAuth entry point.
+ * The backend will 302-redirect to WeCom OAuth; after authorisation WeCom
+ * redirects to /api/auth/wecom/callback, which issues a JWT and sends the
+ * browser to /auth/wecom/callback?token=<jwt>.
+ */
+const redirectToWecomOAuth = (): void => {
+  window.location.href = "/api/auth/wecom/login"
+}
+
 const useAuth = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -66,5 +82,5 @@ const useAuth = () => {
   }
 }
 
-export { isLoggedIn }
+export { isLoggedIn, isWecomBrowser, redirectToWecomOAuth }
 export default useAuth

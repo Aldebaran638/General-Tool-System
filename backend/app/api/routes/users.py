@@ -1,8 +1,8 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import col, delete, func, select
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlmodel import col, delete, func, or_, select
 
 from app import crud
 from app.api.deps import (
@@ -34,15 +34,31 @@ router = APIRouter(prefix="/users", tags=["users"])
     dependencies=[Depends(get_current_active_superuser)],
     response_model=UsersPublic,
 )
-def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
+def read_users(
+    session: SessionDep,
+    skip: int = 0,
+    limit: int = 100,
+    q: str | None = Query(default=None, description="Search by name, email, or wecom_userid"),
+) -> Any:
     """
-    Retrieve users.
+    Retrieve users, optionally filtered by search query.
     """
+    statement = select(User)
 
-    count_statement = select(func.count()).select_from(User)
+    if q:
+        pattern = f"%{q}%"
+        statement = statement.where(
+            or_(
+                col(User.full_name).ilike(pattern),
+                col(User.email).ilike(pattern),
+                col(User.wecom_userid).ilike(pattern),
+            )
+        )
+
+    count_statement = select(func.count()).select_from(statement.subquery())
     count = session.exec(count_statement).one()
 
-    statement = select(User).order_by(User.created_at.desc()).offset(skip).limit(limit)
+    statement = statement.order_by(User.created_at.desc()).offset(skip).limit(limit)
     users = session.exec(statement).all()
 
     return UsersPublic(data=users, count=count)

@@ -105,6 +105,13 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
+      - UPLOAD_DIR=${UPLOAD_DIR:-backend/app/uploads/}
+    # When UPLOAD_DIR is an absolute path on the host, bind-mount it into the
+    # container so the backend can read and write files.  Example:
+    #   UPLOAD_DIR=/data/exam-papers/   →  add below volume:
+    #     - ${UPLOAD_DIR}:${UPLOAD_DIR}
+    # volumes:
+    #   - ${UPLOAD_DIR:-./backend/app/uploads}:${UPLOAD_DIR:-/app/backend/app/uploads}
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]

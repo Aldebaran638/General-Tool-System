@@ -108,7 +108,14 @@ class ToolRegistry {
     return entries
   }
 
+  private readonly _groupTitles: Record<string, string> = {
+    data_sync: "数据同步",
+    workbench: "工作台",
+    exam: "考试管理",
+  }
+
   private _formatGroupName(name: string): string {
+    if (this._groupTitles[name]) return this._groupTitles[name]
     return name
       .split("_")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

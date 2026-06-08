@@ -99,6 +99,11 @@ $ bash ./scripts/test.sh
 
 The tests run with Pytest, modify and add tests to `./backend/tests/`.
 
+Tests use a separate PostgreSQL database named by `POSTGRES_TEST_DB` (`app_test`
+by default). The test database is recreated and migrated for each test session,
+so test data does not pollute the development database configured by
+`POSTGRES_DB`.
+
 If you use GitHub Actions the tests will run automatically.
 
 ### Test running stack
