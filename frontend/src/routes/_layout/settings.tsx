@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { User, Lock, AlertTriangle } from "lucide-react"
 
 import ChangePassword from "@/components/UserSettings/ChangePassword"
 import DeleteAccount from "@/components/UserSettings/DeleteAccount"
@@ -7,9 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import useAuth from "@/hooks/useAuth"
 
 const tabsConfig = [
-  { value: "my-profile", title: "My profile", component: UserInformation },
-  { value: "password", title: "Password", component: ChangePassword },
-  { value: "danger-zone", title: "Danger zone", component: DeleteAccount },
+  { value: "my-profile", title: "个人信息", component: UserInformation, icon: User },
+  { value: "password", title: "修改密码", component: ChangePassword, icon: Lock },
+  { value: "danger-zone", title: "危险区域", component: DeleteAccount, icon: AlertTriangle },
 ]
 
 export const Route = createFileRoute("/_layout/settings")({
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/_layout/settings")({
   head: () => ({
     meta: [
       {
-        title: "Settings - 通用工具系统",
+        title: "个人设置 - 通用工具系统",
       },
     ],
   }),
@@ -36,16 +37,17 @@ function UserSettings() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">User Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight">个人设置</h1>
         <p className="text-muted-foreground">
-          Manage your account settings and preferences
+          管理您的账户信息和偏好设置
         </p>
       </div>
 
       <Tabs defaultValue="my-profile">
         <TabsList>
           {finalTabs.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
+            <TabsTrigger key={tab.value} value={tab.value} className="gap-2">
+              <tab.icon className="h-4 w-4" />
               {tab.title}
             </TabsTrigger>
           ))}
