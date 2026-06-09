@@ -18,9 +18,9 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlmodel import Session, select
 
 from app.core.db import engine
+from app.core.user_resolver import resolve_user_id
 from app.modules.exam_management.models import Exam, ExamParticipant
-from app.modules.notification.service import bulk_create_notifications, has_notification
-from app.models_core import User
+from app.modules.notification.service import bulk_create_notifications, bulk_has_notification
 
 logger = logging.getLogger(__name__)
 
@@ -31,20 +31,61 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _resolve_user_id(session: Session, userid: str) -> uuid.UUID | None:
-    """Map ExamParticipant.userid (wecom_userid or user UUID string) to User.id (UUID).
+def _send_reminders(
+    session: Session,
+    exam: Exam,
+    notification_type: str,
+    participant_filter: str | None,
+    title: str,
+    content: str,
+) -> int:
+    """Build and send reminders for an exam's participants. Returns count sent."""
+    query = select(ExamParticipant).where(ExamParticipant.exam_id == exam.id)
+    if participant_filter:
+        query = query.where(ExamParticipant.completion_status == participant_filter)
+    else:
+        query = query.where(ExamParticipant.completion_status != "COMPLETED")
 
-    First try parsing userid as a UUID (for direct user.id references).
-    If that fails, look up by wecom_userid.
-    """
-    try:
-        return uuid.UUID(userid)
-    except ValueError:
-        # userid is a wecom_userid, look up the User
-        user = session.exec(
-            select(User).where(User.wecom_userid == userid)
-        ).first()
-        return user.id if user else None
+    participants = session.exec(query).all()
+
+    # Resolve user_ids (individual lookup needed: may be UUID or wecom_userid)
+    user_id_map: dict[str, uuid.UUID | None] = {}
+    for p in participants:
+        user_id = resolve_user_id(session, p.userid)
+        if user_id is None:
+            logger.warning(
+                "[notification-scheduler] cannot resolve user_id for userid=%s, skipping",
+                p.userid,
+            )
+            continue
+        user_id_map[p.userid] = user_id
+
+    # Batch deduplication check
+    resolved_ids = [uid for uid in user_id_map.values() if uid is not None]
+    already_notified = bulk_has_notification(
+        session, notification_type, exam.id, resolved_ids
+    )
+
+    notifications_data = []
+    for p in participants:
+        user_id = user_id_map.get(p.userid)
+        if user_id is None or user_id in already_notified:
+            continue
+
+        notifications_data.append(
+            {
+                "user_id": user_id,
+                "title": title,
+                "content": content,
+                "notification_type": notification_type,
+                "exam_id": exam.id,
+                "exam_name": exam.name,
+            }
+        )
+
+    if notifications_data:
+        return bulk_create_notifications(session, notifications_data)
+    return 0
 
 
 # ─── Upcoming reminder (1 hour before exam start) ────────────────────────────
@@ -67,52 +108,24 @@ async def _run_upcoming_reminders() -> None:
             ).all()
 
             for exam in exams:
-                participants = session.exec(
-                    select(ExamParticipant)
-                    .where(ExamParticipant.exam_id == exam.id)
-                    .where(ExamParticipant.completion_status == "NOT_STARTED")
-                ).all()
-
-                notifications_data = []
-                for p in participants:
-                    user_id = _resolve_user_id(session, p.userid)
-                    if user_id is None:
-                        logger.warning(
-                            "[notification-scheduler] cannot resolve user_id for userid=%s, skipping",
-                            p.userid,
-                        )
-                        continue
-
-                    # Deduplication: skip if already sent for this exam + user + type
-                    if has_notification(
-                        session,
-                        user_id=user_id,
-                        notification_type="EXAM_UPCOMING",
-                        exam_id=exam.id,
-                    ):
-                        continue
-
-                    notifications_data.append(
-                        {
-                            "user_id": user_id,
-                            "title": f"考试提醒：{exam.name}",
-                            "content": (
-                                f"您参与的考试「{exam.name}」将在约1小时后开始，"
-                                f"开始时间：{exam.start_at.strftime('%Y-%m-%d %H:%M')}，"
-                                f"请做好准备。"
-                            ),
-                            "notification_type": "EXAM_UPCOMING",
-                            "exam_id": exam.id,
-                            "exam_name": exam.name,
-                        }
-                    )
-
-                if notifications_data:
-                    count = bulk_create_notifications(session, notifications_data)
+                count = _send_reminders(
+                    session,
+                    exam,
+                    "EXAM_UPCOMING",
+                    "NOT_STARTED",
+                    title=f"考试提醒：{exam.name}",
+                    content=(
+                        f"您参与的考试「{exam.name}」将在约1小时后开始，"
+                        f"开始时间：{exam.start_at.strftime('%Y-%m-%d %H:%M')}，"
+                        f"请做好准备。"
+                    ),
+                )
+                if count:
                     logger.info(
-                        "[notification-scheduler] sent %d upcoming reminders for exam %s",
+                        "[notification-scheduler] sent %d upcoming reminders for exam %s (%s)",
                         count,
                         exam.id,
+                        exam.name,
                     )
 
     except Exception:
@@ -124,8 +137,8 @@ async def _run_upcoming_reminders() -> None:
 async def _run_started_reminders() -> None:
     """Send reminders when exams start."""
     now = _now()
-    window_start = now - timedelta(minutes=1)
-    window_end = now + timedelta(minutes=1)
+    window_start = now - timedelta(minutes=3)
+    window_end = now + timedelta(minutes=3)
 
     logger.info("[notification-scheduler] checking started exam reminders")
 
@@ -139,51 +152,24 @@ async def _run_started_reminders() -> None:
             ).all()
 
             for exam in exams:
-                participants = session.exec(
-                    select(ExamParticipant)
-                    .where(ExamParticipant.exam_id == exam.id)
-                    .where(ExamParticipant.completion_status == "NOT_STARTED")
-                ).all()
-
-                notifications_data = []
-                for p in participants:
-                    user_id = _resolve_user_id(session, p.userid)
-                    if user_id is None:
-                        logger.warning(
-                            "[notification-scheduler] cannot resolve user_id for userid=%s, skipping",
-                            p.userid,
-                        )
-                        continue
-
-                    if has_notification(
-                        session,
-                        user_id=user_id,
-                        notification_type="EXAM_STARTED",
-                        exam_id=exam.id,
-                    ):
-                        continue
-
-                    notifications_data.append(
-                        {
-                            "user_id": user_id,
-                            "title": f"考试已开始：{exam.name}",
-                            "content": (
-                                f"您参与的考试「{exam.name}」已经开始，"
-                                f"结束时间：{exam.end_at.strftime('%Y-%m-%d %H:%M')}，"
-                                f"请尽快进入考试。"
-                            ),
-                            "notification_type": "EXAM_STARTED",
-                            "exam_id": exam.id,
-                            "exam_name": exam.name,
-                        }
-                    )
-
-                if notifications_data:
-                    count = bulk_create_notifications(session, notifications_data)
+                count = _send_reminders(
+                    session,
+                    exam,
+                    "EXAM_STARTED",
+                    "NOT_STARTED",
+                    title=f"考试已开始：{exam.name}",
+                    content=(
+                        f"您参与的考试「{exam.name}」已经开始，"
+                        f"结束时间：{exam.end_at.strftime('%Y-%m-%d %H:%M')}，"
+                        f"请尽快进入考试。"
+                    ),
+                )
+                if count:
                     logger.info(
-                        "[notification-scheduler] sent %d started reminders for exam %s",
+                        "[notification-scheduler] sent %d started reminders for exam %s (%s)",
                         count,
                         exam.id,
+                        exam.name,
                     )
 
     except Exception:
@@ -216,52 +202,24 @@ async def _run_incomplete_reminders() -> None:
                 if elapsed < half_duration:
                     continue
 
-                # Find participants who haven't completed
-                participants = session.exec(
-                    select(ExamParticipant)
-                    .where(ExamParticipant.exam_id == exam.id)
-                    .where(ExamParticipant.completion_status != "COMPLETED")
-                ).all()
-
-                notifications_data = []
-                for p in participants:
-                    user_id = _resolve_user_id(session, p.userid)
-                    if user_id is None:
-                        logger.warning(
-                            "[notification-scheduler] cannot resolve user_id for userid=%s, skipping",
-                            p.userid,
-                        )
-                        continue
-
-                    if has_notification(
-                        session,
-                        user_id=user_id,
-                        notification_type="EXAM_INCOMPLETE",
-                        exam_id=exam.id,
-                    ):
-                        continue
-
-                    notifications_data.append(
-                        {
-                            "user_id": user_id,
-                            "title": f"考试进行中：请尽快完成「{exam.name}」",
-                            "content": (
-                                f"您参与的考试「{exam.name}」已进行超过50%，"
-                                f"结束时间：{exam.end_at.strftime('%Y-%m-%d %H:%M')}，"
-                                f"请尽快完成考试。"
-                            ),
-                            "notification_type": "EXAM_INCOMPLETE",
-                            "exam_id": exam.id,
-                            "exam_name": exam.name,
-                        }
-                    )
-
-                if notifications_data:
-                    count = bulk_create_notifications(session, notifications_data)
+                count = _send_reminders(
+                    session,
+                    exam,
+                    "EXAM_INCOMPLETE",
+                    None,  # filter: completion_status != "COMPLETED"
+                    title=f"考试进行中：请尽快完成「{exam.name}」",
+                    content=(
+                        f"您参与的考试「{exam.name}」已进行超过50%，"
+                        f"结束时间：{exam.end_at.strftime('%Y-%m-%d %H:%M')}，"
+                        f"请尽快完成考试。"
+                    ),
+                )
+                if count:
                     logger.info(
-                        "[notification-scheduler] sent %d incomplete reminders for exam %s",
+                        "[notification-scheduler] sent %d incomplete reminders for exam %s (%s)",
                         count,
                         exam.id,
+                        exam.name,
                     )
 
     except Exception:

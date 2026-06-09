@@ -1,5 +1,7 @@
 /** Shared API calls for data_sync tool modules */
 
+import { apiFetch } from "@/lib/api"
+
 import type {
   SyncStatusResponse,
   SyncTasksResponse,
@@ -10,23 +12,6 @@ import type {
 } from "./types"
 
 const BASE = "/api/v1/data-sync"
-
-function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem("access_token")
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
-
-async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...authHeaders(), ...init?.headers },
-  })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body?.detail ?? `HTTP ${res.status}`)
-  }
-  return res.json() as Promise<T>
-}
 
 // ─── Department ───────────────────────────────────────────────────────────────
 

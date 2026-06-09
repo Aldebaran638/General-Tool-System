@@ -166,7 +166,7 @@ def bulk_create_notifications(
     return len(notifications)
 
 
-# ─── Deduplication helper ───────────────────────────────────────────────────
+# ─── Deduplication helpers ──────────────────────────────────────────────────
 
 def has_notification(
     session: Session,
@@ -182,3 +182,24 @@ def has_notification(
     if exam_id is not None:
         stmt = stmt.where(Notification.exam_id == exam_id)
     return session.exec(stmt).first() is not None
+
+
+def bulk_has_notification(
+    session: Session,
+    notification_type: str,
+    exam_id: uuid.UUID | None,
+    user_ids: list[uuid.UUID],
+) -> set[uuid.UUID]:
+    """Return the set of user_ids that already have notifications of the given type for the exam."""
+    if not user_ids:
+        return set()
+
+    stmt = select(Notification.user_id).where(
+        Notification.notification_type == notification_type,
+        Notification.user_id.in_(user_ids),
+    )
+    if exam_id is not None:
+        stmt = stmt.where(Notification.exam_id == exam_id)
+
+    results = session.exec(stmt).all()
+    return set(results)

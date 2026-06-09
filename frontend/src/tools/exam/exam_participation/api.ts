@@ -2,28 +2,9 @@
  * Exam Participation API — for regular users
  */
 
+import { apiFetch } from "@/lib/api"
+
 const API_BASE = "/api/v1/my-exams"
-
-function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem("access_token")
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
-
-async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeaders(),
-      ...init?.headers,
-    },
-  })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body?.detail ?? `HTTP ${res.status}`)
-  }
-  return res.json() as Promise<T>
-}
 
 export interface MyExam {
   id: string

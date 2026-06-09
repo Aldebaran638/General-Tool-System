@@ -95,8 +95,8 @@ from app.modules.exam_management.service import (
     update_exam,
     validate_publish,
 )
+from app.core.user_resolver import resolve_user_id
 from app.modules.notification.service import bulk_create_notifications, has_notification
-from app.models_core import User
 
 router = APIRouter(prefix="/exams", tags=["exams"])
 
@@ -148,17 +148,6 @@ def _get_exam_or_404(session: SessionDep, exam_id: uuid.UUID) -> Exam:
     if not exam:
         raise HTTPException(status_code=404, detail="考试不存在")
     return exam
-
-
-def _resolve_user_id(session: SessionDep, userid: str) -> uuid.UUID | None:
-    """Map ExamParticipant.userid (wecom_userid or user UUID string) to User.id (UUID)."""
-    try:
-        return uuid.UUID(userid)
-    except ValueError:
-        user = session.exec(
-            select(User).where(User.wecom_userid == userid)
-        ).first()
-        return user.id if user else None
 
 
 # ─── Exam Category ───────────────────────────────────────────────────────────
@@ -762,7 +751,7 @@ def remind_incomplete_endpoint(
 
     notifications_data = []
     for p in participants:
-        user_id = _resolve_user_id(session, p.userid)
+        user_id = resolve_user_id(session, p.userid)
         if user_id is None:
             continue
 
@@ -816,7 +805,7 @@ def remind_failed_endpoint(
 
     notifications_data = []
     for p in participants:
-        user_id = _resolve_user_id(session, p.userid)
+        user_id = resolve_user_id(session, p.userid)
         if user_id is None:
             continue
 

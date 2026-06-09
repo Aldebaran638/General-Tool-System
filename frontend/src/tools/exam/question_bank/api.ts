@@ -2,28 +2,9 @@
  * Question Bank API — browse and download exam papers
  */
 
+import { apiFetch } from "@/lib/api"
+
 const BASE = "/api/v1/exams"
-
-function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem("access_token")
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
-
-async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeaders(),
-      ...init?.headers,
-    },
-  })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body?.detail ?? `HTTP ${res.status}`)
-  }
-  return res.json() as Promise<T>
-}
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

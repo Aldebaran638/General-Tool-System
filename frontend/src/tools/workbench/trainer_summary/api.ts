@@ -1,20 +1,8 @@
 /** API calls for the trainer summary tool module */
 
+import { apiFetch } from "@/lib/api"
+
 const BASE = "/api/v1/exams"
-
-function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem("access_token")
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
-
-async function apiFetch<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: authHeaders() })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body?.detail ?? `HTTP ${res.status}`)
-  }
-  return res.json()
-}
 
 export interface TrainerExamItem {
   exam_id: string

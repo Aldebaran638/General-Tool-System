@@ -2,7 +2,6 @@
 
 export interface Notification {
   id: string
-  user_id: string
   title: string
   content: string
   notification_type: "EXAM_UPCOMING" | "EXAM_STARTED" | "EXAM_INCOMPLETE" | "EXAM_FAILED" | "ADMIN_BROADCAST"
