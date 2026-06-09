@@ -14,6 +14,8 @@ import {
   GraduationCap,
   UserCog,
   RefreshCw,
+  Clock,
+  ClipboardCheck,
 } from "lucide-react"
 
 import useAuth from "@/hooks/useAuth"
@@ -26,7 +28,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { listExams } from "@/tools/exam/exam_management/api"
+import { listExams, getMyPendingExams } from "@/tools/exam/exam_management/api"
+import type { MyPendingExam } from "@/tools/exam/exam_management/types"
 import { getSystemDashboardStats } from "@/tools/workbench/system_dashboard/api"
 
 export const Route = createFileRoute("/_layout/")({
@@ -105,6 +108,35 @@ function PendingRecentExams() {
       <CardContent className="pt-0">
         <div className="flex flex-col gap-2">
           {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between rounded-lg border px-4 py-3"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+                <div className="min-w-0 flex flex-col gap-1.5">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+              <Skeleton className="h-5 w-14 rounded-full shrink-0" />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function PendingMyExams() {
+  return (
+    <Card className="border-none shadow-sm">
+      <CardHeader className="pb-3">
+        <Skeleton className="h-5 w-20" />
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
               className="flex items-center justify-between rounded-lg border px-4 py-3"
@@ -261,6 +293,71 @@ function RecentExamsContent() {
   )
 }
 
+function MyPendingExamsContent() {
+  const navigate = useNavigate()
+  const { data: response } = useSuspenseQuery({
+    queryKey: ["myPendingExams"],
+    queryFn: () => getMyPendingExams(),
+  })
+
+  const exams = response?.data ?? []
+
+  return (
+    <Card className="border-none shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">我的待考</CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {exams.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
+            <div className="rounded-full bg-muted p-4">
+              <ClipboardCheck className="h-6 w-6" />
+            </div>
+            <p className="text-sm">暂无待考考试</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {exams.map((exam: MyPendingExam) => (
+              <div
+                key={exam.id}
+                className="flex items-center justify-between rounded-lg border px-4 py-3 transition-colors hover:bg-muted/50"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`rounded-lg p-2 shrink-0 ${exam.is_in_progress ? "bg-green-50 dark:bg-green-950/30" : "bg-primary/10"}`}>
+                    {exam.is_in_progress ? (
+                      <Clock className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <CalendarDays className="h-4 w-4 text-primary" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <button
+                      onClick={() => navigate({ to: `/exams/${exam.id}` })}
+                      className="text-sm font-medium hover:text-primary hover:underline truncate block text-left"
+                    >
+                      {exam.name}
+                    </button>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      截止 {fmtTimeShort(exam.end_at)}
+                    </p>
+                  </div>
+                </div>
+                <div className="shrink-0 ml-2">
+                  {exam.is_in_progress ? (
+                    <Badge variant="success">进行中</Badge>
+                  ) : (
+                    <Badge variant="info">未开始</Badge>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 // ─── Main Dashboard ────────────────────────────────────────────────────────
 
 const QUICK_LINKS = [
@@ -348,10 +445,12 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Stat cards */}
-      <Suspense fallback={<PendingStats />}>
-        <StatsContent />
-      </Suspense>
+      {/* Stat cards — admin only */}
+      {isAdmin && (
+        <Suspense fallback={<PendingStats />}>
+          <StatsContent />
+        </Suspense>
+      )}
 
       {/* Quick links */}
       <div>
@@ -377,10 +476,19 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Recent exams */}
-      <Suspense fallback={<PendingRecentExams />}>
-        <RecentExamsContent />
-      </Suspense>
+      {/* Recent exams — admin only */}
+      {isAdmin && (
+        <Suspense fallback={<PendingRecentExams />}>
+          <RecentExamsContent />
+        </Suspense>
+      )}
+
+      {/* My pending exams — non-admin only */}
+      {!isAdmin && (
+        <Suspense fallback={<PendingMyExams />}>
+          <MyPendingExamsContent />
+        </Suspense>
+      )}
     </div>
   )
 }

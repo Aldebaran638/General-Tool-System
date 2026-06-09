@@ -852,6 +852,79 @@ class TestTrainerSummary:
         assert r.status_code == 403
 
 
+# ─── Clone Exam Tests ─────────────────────────────────────────────────────────
+
+class TestCloneExam:
+
+    def test_clone_exam_success(
+        self, client: TestClient, superuser_token_headers: dict[str, str],
+        normal_user_token_headers: dict[str, str], db: Session,
+    ) -> None:
+        """Clone an exam copies questions, options, and participants."""
+        exam = _create_exam(client, superuser_token_headers)
+        exam_id = exam["id"]
+
+        # Save paper
+        client.put(f"{API}/{exam_id}/paper", headers=superuser_token_headers, json=_paper_payload())
+
+        # Add participant (request normal_user_token_headers to ensure user exists)
+        from app.core.config import settings as cfg
+        from app.crud import get_user_by_email
+        test_user = get_user_by_email(session=db, email=cfg.EMAIL_TEST_USER)
+        assert test_user is not None, "Test user should exist - ensure normal_user_token_headers fixture is requested"
+        client.post(
+            f"{API}/{exam_id}/participants/by-users",
+            headers=superuser_token_headers,
+            json={"userids": [str(test_user.id)]},
+        )
+
+        # Clone
+        r = client.post(f"{API}/{exam_id}/clone", headers=superuser_token_headers)
+        assert r.status_code == 200, r.text
+        cloned = r.json()
+
+        # Verify new exam is DRAFT
+        assert cloned["id"] != exam_id
+        assert cloned["status"] == "DRAFT"
+        assert "副本" in cloned["name"]
+
+        # Verify paper was copied
+        r = client.get(f"{API}/{cloned['id']}/paper", headers=superuser_token_headers)
+        assert r.status_code == 200, r.text
+        paper = r.json()
+        assert paper["question_count"] == 2
+        assert paper["total_score"] == 100.0
+
+        # Verify participants were copied
+        r = client.get(f"{API}/{cloned['id']}/participants", headers=superuser_token_headers)
+        assert r.status_code == 200, r.text
+        participants = r.json()
+        assert participants["count"] == 1
+
+    def test_clone_exam_not_found(
+        self, client: TestClient, superuser_token_headers: dict[str, str]
+    ) -> None:
+        """Cloning a non-existent exam returns 400."""
+        fake_id = str(uuid.uuid4())
+        r = client.post(f"{API}/{fake_id}/clone", headers=superuser_token_headers)
+        assert r.status_code == 400
+        assert "不存在" in r.json()["detail"]
+
+    def test_clone_exam_no_auth(self, client: TestClient) -> None:
+        """Clone endpoint requires auth."""
+        fake_id = str(uuid.uuid4())
+        r = client.post(f"{API}/{fake_id}/clone")
+        assert r.status_code == 401
+
+    def test_clone_exam_normal_user_forbidden(
+        self, client: TestClient, normal_user_token_headers: dict[str, str]
+    ) -> None:
+        """Normal users cannot clone exams."""
+        fake_id = str(uuid.uuid4())
+        r = client.post(f"{API}/{fake_id}/clone", headers=normal_user_token_headers)
+        assert r.status_code == 403
+
+
 # ─── Auth Tests ───────────────────────────────────────────────────────────────
 
 class TestAuth:

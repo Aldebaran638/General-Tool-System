@@ -51,6 +51,7 @@ from app.modules.exam_management.schemas import (
     ExamStatistics,
     ExamUpdate,
     ExamsPublic,
+    MyPendingExamsResponse,
     PaperPublic,
     PaperSaveRequest,
     ParticipantDetail,
@@ -69,6 +70,7 @@ from app.modules.exam_management.service import (
     add_participants_by_departments,
     add_participants_by_users,
     archive_exam,
+    clone_exam,
     create_category,
     create_exam,
     delete_category,
@@ -77,6 +79,7 @@ from app.modules.exam_management.service import (
     get_category,
     get_exam,
     get_exam_statistics,
+    get_my_pending_exams,
     get_paper,
     get_question_bank_detail,
     get_system_stats,
@@ -392,6 +395,21 @@ def list_exams_endpoint(
     )
 
 
+@router.get("/my-pending", response_model=MyPendingExamsResponse, summary="我的待考")
+def get_my_pending_exams_endpoint(
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> MyPendingExamsResponse:
+    """Get pending exams for the current user.
+
+    Returns published exams where the user is a participant,
+    completion_status is not COMPLETED, and the exam has not ended.
+    In-progress exams are sorted first.
+    """
+    userid = current_user.wecom_userid or str(current_user.id)
+    return get_my_pending_exams(session, userid=userid)
+
+
 @router.post("", response_model=ExamPublic, status_code=201, summary="创建考试")
 def create_exam_endpoint(
     session: SessionDep,
@@ -412,6 +430,25 @@ def get_exam_endpoint(
     exam = _get_exam_or_404(session, exam_id)
     cat_name = _resolve_category_name(session, exam.category_id)
     return _to_public(exam, category_name=cat_name, session=session)
+
+
+@router.post("/{exam_id}/clone", response_model=ExamPublic, summary="复制考试")
+def clone_exam_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+    exam_id: uuid.UUID,
+) -> ExamPublic:
+    """Clone an exam with all questions, options, and participants.
+
+    The new exam will be in DRAFT status. Original exam attempts,
+    answers, paper snapshots, and exam papers are not copied.
+    """
+    try:
+        cloned = clone_exam(session, exam_id, created_by=current_user.id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    cat_name = _resolve_category_name(session, cloned.category_id)
+    return _to_public(cloned, category_name=cat_name, session=session)
 
 
 @router.put("/{exam_id}", response_model=ExamPublic, summary="编辑考试")

@@ -9,6 +9,7 @@ import type {
   PaperSaveRequest,
   ParticipantsResponse,
   PublishValidation,
+  MyPendingExam,
 } from "./types"
 
 const BASE = "/api/v1/exams"
@@ -73,6 +74,10 @@ export function archiveExam(examId: string): Promise<Exam> {
   return apiFetch(`${BASE}/${examId}/archive`, { method: "POST" })
 }
 
+export function cloneExam(examId: string): Promise<Exam> {
+  return apiFetch(`${BASE}/${examId}/clone`, { method: "POST" })
+}
+
 export function validateExam(examId: string): Promise<PublishValidation> {
   return apiFetch(`${BASE}/${examId}/validate`, { method: "POST" })
 }
@@ -106,6 +111,10 @@ export interface ExamStatistics {
   max_score: number | null
   min_score: number | null
   score_distribution: ScoreDistribution[]
+}
+
+export function getMyPendingExams(): Promise<{ data: MyPendingExam[]; count: number }> {
+  return apiFetch(`${BASE}/my-pending`)
 }
 
 export function getExamStatistics(examId: string): Promise<ExamStatistics> {

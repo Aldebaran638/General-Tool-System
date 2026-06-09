@@ -771,6 +771,167 @@ class TestAttemptAnswers:
         assert r.status_code == 404
 
 
+# ─── My Pending Exams ─────────────────────────────────────────────────────────
+
+PENDING_API = f"{settings.API_V1_STR}/exams/my-pending"
+
+
+class TestMyPendingExams:
+
+    def test_my_pending_exams_empty(
+        self, client: TestClient, normal_user_token_headers: dict[str, str]
+    ) -> None:
+        """Pending exams endpoint returns valid structure."""
+        r = client.get(PENDING_API, headers=normal_user_token_headers)
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert "data" in data
+        assert "count" in data
+        assert isinstance(data["data"], list)
+        assert isinstance(data["count"], int)
+        assert data["count"] == len(data["data"])
+
+    def test_my_pending_exams_shows_published_not_completed(
+        self, client: TestClient,
+        superuser_token_headers: dict[str, str],
+        normal_user_token_headers: dict[str, str],
+        db: Session,
+    ) -> None:
+        """Pending exams include published exams where user is enrolled and not completed."""
+        test_user = get_user_by_email(session=db, email=settings.EMAIL_TEST_USER)
+        assert test_user is not None
+
+        _create_published_exam_for_user(
+            client, superuser_token_headers, str(test_user.id)
+        )
+
+        r = client.get(PENDING_API, headers=normal_user_token_headers)
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data["count"] >= 1
+        assert len(data["data"]) >= 1
+        # Verify fields
+        exam = data["data"][0]
+        assert "id" in exam
+        assert "name" in exam
+        assert "start_at" in exam
+        assert "end_at" in exam
+        assert "is_in_progress" in exam
+
+    def test_my_pending_exams_excludes_completed(
+        self, client: TestClient,
+        superuser_token_headers: dict[str, str],
+        normal_user_token_headers: dict[str, str],
+        db: Session,
+    ) -> None:
+        """Completed exams should not appear in pending list."""
+        test_user = get_user_by_email(session=db, email=settings.EMAIL_TEST_USER)
+        assert test_user is not None
+        user_id = str(test_user.id)
+
+        exam, questions = _create_published_exam_for_user(
+            client, superuser_token_headers, user_id
+        )
+
+        # Start and submit all correct to complete the exam
+        r = client.post(f"{API}/{exam['id']}/start", headers=normal_user_token_headers)
+        attempt_id = r.json()["attempt_id"]
+
+        answers = []
+        for q in questions:
+            correct_ids = [o["id"] for o in q["options"] if o.get("is_correct")]
+            answers.append({"question_id": q["id"], "selected_option_ids": correct_ids})
+
+        client.post(
+            f"{API}/{exam['id']}/submit",
+            headers=normal_user_token_headers,
+            json={"attempt_id": attempt_id, "answers": answers},
+        )
+
+        # Now the exam should NOT be in pending
+        r = client.get(PENDING_API, headers=normal_user_token_headers)
+        assert r.status_code == 200, r.text
+        data = r.json()
+        pending_ids = [e["id"] for e in data["data"]]
+        assert exam["id"] not in pending_ids
+
+    def test_my_pending_exams_excludes_ended(
+        self, client: TestClient,
+        superuser_token_headers: dict[str, str],
+        normal_user_token_headers: dict[str, str],
+        db: Session,
+    ) -> None:
+        """Exams that have already ended should not appear in pending list."""
+        test_user = get_user_by_email(session=db, email=settings.EMAIL_TEST_USER)
+        assert test_user is not None
+
+        # Create an exam that ended in the past
+        ended_exam, _ = _create_published_exam_for_user(
+            client, superuser_token_headers, str(test_user.id),
+            name="Ended Exam For Pending Test",
+            start_at=(datetime.now(timezone.utc) - timedelta(days=2)).isoformat(),
+            end_at=(datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
+        )
+
+        r = client.get(PENDING_API, headers=normal_user_token_headers)
+        assert r.status_code == 200, r.text
+        data = r.json()
+        # The ended exam should NOT be in the pending list
+        pending_ids = [e["id"] for e in data["data"]]
+        assert ended_exam["id"] not in pending_ids
+
+    def test_my_pending_exams_sorts_in_progress_first(
+        self, client: TestClient,
+        superuser_token_headers: dict[str, str],
+        normal_user_token_headers: dict[str, str],
+        db: Session,
+    ) -> None:
+        """In-progress exams should be sorted before upcoming exams."""
+        test_user = get_user_by_email(session=db, email=settings.EMAIL_TEST_USER)
+        assert test_user is not None
+
+        # Create an upcoming exam (starts tomorrow)
+        upcoming_exam, _ = _create_published_exam_for_user(
+            client, superuser_token_headers, str(test_user.id),
+            name="Upcoming Exam For Sort Test",
+            start_at=(datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+            end_at=(datetime.now(timezone.utc) + timedelta(days=2)).isoformat(),
+        )
+
+        # Create an in-progress exam (started 1 hour ago)
+        active_exam, _ = _create_published_exam_for_user(
+            client, superuser_token_headers, str(test_user.id),
+            name="Active Exam For Sort Test",
+            start_at=(datetime.now(timezone.utc) - timedelta(hours=1)).isoformat(),
+            end_at=(datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+        )
+
+        r = client.get(PENDING_API, headers=normal_user_token_headers)
+        assert r.status_code == 200, r.text
+        data = r.json()
+
+        # Find our exams in the results
+        pending_ids = [e["id"] for e in data["data"]]
+        assert upcoming_exam["id"] in pending_ids
+        assert active_exam["id"] in pending_ids
+
+        # Active exam should come before upcoming exam in the sorted list
+        active_idx = pending_ids.index(active_exam["id"])
+        upcoming_idx = pending_ids.index(upcoming_exam["id"])
+        assert active_idx < upcoming_idx
+
+        # Verify is_in_progress flags
+        active_entry = next(e for e in data["data"] if e["id"] == active_exam["id"])
+        upcoming_entry = next(e for e in data["data"] if e["id"] == upcoming_exam["id"])
+        assert active_entry["is_in_progress"] is True
+        assert upcoming_entry["is_in_progress"] is False
+
+    def test_my_pending_exams_no_auth(self, client: TestClient) -> None:
+        """Pending endpoint requires auth."""
+        r = client.get(PENDING_API)
+        assert r.status_code == 401
+
+
 # ─── Auth Tests ───────────────────────────────────────────────────────────────
 
 class TestAuth:

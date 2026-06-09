@@ -10,6 +10,15 @@ node_modules/
 .claude/**
 backend/.claude/**
 cloudflared.deb.claude/
+bin/cloudflared
+bin/*.deb
+bin/*.exe
+bin/*.zip
+# Cloudflare tunnel runtime
+.cloudflared/
+*.trycloudflare.com
+tunnel-logs/
+
 .playwright-mcp/
 question-bank-*.png
 WW_verify_*.txt

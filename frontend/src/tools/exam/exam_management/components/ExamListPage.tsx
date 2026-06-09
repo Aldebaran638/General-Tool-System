@@ -11,6 +11,7 @@ import {
   Trash2,
   Send,
   Loader2,
+  Copy,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -53,6 +54,7 @@ import {
   publishExam,
   archiveExam,
   validateExam,
+  cloneExam,
 } from "../api"
 import type { Exam } from "../types"
 
@@ -190,6 +192,19 @@ function ExamListContent({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["exams"] }),
   })
 
+  const cloneMutation = useMutation({
+    mutationFn: (id: string) => cloneExam(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["exams"] })
+      toast.success("复制成功")
+    },
+    onError: (error: Error) => {
+      toast.error("复制失败", {
+        description: error.message,
+      })
+    },
+  })
+
   const exams = examsQuery.data?.data ?? []
   const total = examsQuery.data?.count ?? 0
   const pageSize = 20
@@ -301,6 +316,13 @@ function ExamListContent({
                       >
                         <FileText className="mr-2 h-4 w-4" />
                         编辑
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => cloneMutation.mutate(exam.id)}
+                        disabled={cloneMutation.isPending}
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        复制
                       </DropdownMenuItem>
                       {exam.status === "DRAFT" && (
                         <DropdownMenuItem

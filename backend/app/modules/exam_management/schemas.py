@@ -299,3 +299,18 @@ class TrainerGroup(BaseModel):
 class TrainerSummaryResponse(BaseModel):
     data: list[TrainerGroup]
     count: int
+
+
+# ─── My Pending Exams ────────────────────────────────────────────────────────
+
+class MyPendingExam(BaseModel):
+    id: uuid.UUID
+    name: str
+    start_at: datetime
+    end_at: datetime
+    is_in_progress: bool
+
+
+class MyPendingExamsResponse(BaseModel):
+    data: list[MyPendingExam]
+    count: int

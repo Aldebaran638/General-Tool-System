@@ -133,3 +133,11 @@ export interface PublishValidation {
   valid: boolean
   errors: string[]
 }
+
+export interface MyPendingExam {
+  id: string
+  name: string
+  start_at: string
+  end_at: string
+  is_in_progress: boolean
+}

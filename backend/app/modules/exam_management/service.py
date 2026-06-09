@@ -31,6 +31,8 @@ from app.modules.exam_management.schemas import (
     ExamCreate,
     ExamStatistics,
     ExamUpdate,
+    MyPendingExam,
+    MyPendingExamsResponse,
     PaperSaveRequest,
     PublishValidation,
     QuestionTypeCount,
@@ -129,6 +131,158 @@ def create_exam(
 
 def get_exam(session: Session, exam_id: uuid.UUID) -> Exam | None:
     return session.get(Exam, exam_id)
+
+
+def clone_exam(
+    session: Session,
+    exam_id: uuid.UUID,
+    created_by: uuid.UUID,
+) -> Exam:
+    """Clone an exam including its questions, options, and participants.
+
+    The new exam will be in DRAFT status. Exam attempts, answers,
+    paper snapshots, and exam papers are NOT copied.
+    """
+    original = session.get(Exam, exam_id)
+    if not original:
+        raise ValueError("考试不存在")
+
+    now = _now()
+
+    # 1. Create new Exam
+    new_exam = Exam(
+        id=uuid.uuid4(),
+        name=f"{original.name}（副本）",
+        trainer_ids=original.trainer_ids,
+        status="DRAFT",
+        category_id=original.category_id,
+        start_at=original.start_at,
+        end_at=original.end_at,
+        duration_minutes=original.duration_minutes,
+        attempt_limit_type=original.attempt_limit_type,
+        attempt_limit_count=original.attempt_limit_count,
+        pass_score=original.pass_score,
+        submit_rule=original.submit_rule,
+        show_answer=original.show_answer,
+        random_question_order=original.random_question_order,
+        random_option_order=original.random_option_order,
+        created_by=created_by,
+        published_at=None,
+        created_at=now,
+        updated_at=now,
+    )
+    session.add(new_exam)
+    session.flush()  # get new_exam.id
+
+    # 2. Copy Questions and QuestionOptions
+    original_questions = session.exec(
+        select(Question).where(Question.exam_id == exam_id)
+    ).all()
+
+    for q in original_questions:
+        new_question = Question(
+            id=uuid.uuid4(),
+            exam_id=new_exam.id,
+            question_type=q.question_type,
+            stem=q.stem,
+            score=q.score,
+            difficulty=q.difficulty,
+            sort_no=q.sort_no,
+            analysis=q.analysis,
+            created_at=now,
+            updated_at=now,
+        )
+        session.add(new_question)
+        session.flush()  # get new_question.id
+
+        # Copy options for this question
+        options = session.exec(
+            select(QuestionOption).where(QuestionOption.question_id == q.id)
+        ).all()
+        for o in options:
+            new_option = QuestionOption(
+                id=uuid.uuid4(),
+                question_id=new_question.id,
+                option_key=o.option_key,
+                option_text=o.option_text,
+                is_correct=o.is_correct,
+                sort_no=o.sort_no,
+                created_at=now,
+                updated_at=now,
+            )
+            session.add(new_option)
+
+    # 3. Copy ExamParticipants (reset completion status)
+    original_participants = session.exec(
+        select(ExamParticipant).where(ExamParticipant.exam_id == exam_id)
+    ).all()
+
+    for p in original_participants:
+        new_participant = ExamParticipant(
+            id=uuid.uuid4(),
+            exam_id=new_exam.id,
+            userid=p.userid,
+            name_snapshot=p.name_snapshot,
+            center_snapshot=p.center_snapshot,
+            department_snapshot=p.department_snapshot,
+            position_snapshot=p.position_snapshot,
+            wecom_status_snapshot=p.wecom_status_snapshot,
+            completion_status="NOT_STARTED",
+            final_score=None,
+            final_passed=None,
+            final_attempt_id=None,
+            completed_at=None,
+            created_at=now,
+            updated_at=now,
+        )
+        session.add(new_participant)
+
+    session.commit()
+    session.refresh(new_exam)
+    return new_exam
+
+
+def get_my_pending_exams(
+    session: Session,
+    userid: str,
+) -> MyPendingExamsResponse:
+    """Get pending exams for a user.
+
+    Returns published exams where the user is a participant,
+    completion_status is not COMPLETED, and the exam has not ended.
+    In-progress exams are sorted first, then by start_at ascending.
+    """
+    now = _now()
+
+    # Join ExamParticipant with Exam, filter by conditions
+    stmt = (
+        select(ExamParticipant, Exam)
+        .join(Exam, ExamParticipant.exam_id == Exam.id)
+        .where(ExamParticipant.userid == userid)
+        .where(Exam.status == "PUBLISHED")
+        .where(ExamParticipant.completion_status != "COMPLETED")
+        .where(Exam.end_at > now)
+    )
+
+    rows = session.exec(stmt).all()
+
+    result = []
+    for participant, exam in rows:
+        is_in_progress = exam.start_at <= now
+        result.append(
+            MyPendingExam(
+                id=exam.id,
+                name=exam.name,
+                start_at=exam.start_at,
+                end_at=exam.end_at,
+                is_in_progress=is_in_progress,
+            )
+        )
+
+    # Sort: in-progress first, then by start_at ascending
+    result.sort(key=lambda e: (not e.is_in_progress, e.start_at))
+
+    return MyPendingExamsResponse(data=result, count=len(result))
 
 
 def list_exams(
