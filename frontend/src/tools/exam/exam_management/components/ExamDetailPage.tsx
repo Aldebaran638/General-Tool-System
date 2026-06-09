@@ -17,6 +17,8 @@ import {
   Search,
   X,
   Users,
+  Bell,
+  BellRing,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -73,6 +75,8 @@ import {
   getDepartmentsOnly,
   getExamStatistics,
   getParticipantsByStatus,
+  remindIncomplete,
+  remindFailed,
 } from "../api"
 // ParticipantDetail type is used implicitly via API return types
 import { apiDatetimeToLocal, datetimeLocalToApi } from "../datetime"
@@ -1458,6 +1462,26 @@ function ExamStatisticsTab({ exam }: { exam: Exam }) {
   const [dialogStatus, setDialogStatus] = useState<string | null>(null)
   const [dialogLabel, setDialogLabel] = useState("")
 
+  const remindIncompleteMutation = useMutation({
+    mutationFn: () => remindIncomplete(exam.id),
+    onSuccess: (data) => {
+      toast.success(`已提醒 ${data.sent} 位未完成人员`)
+    },
+    onError: (error: Error) => {
+      toast.error("提醒发送失败", { description: error.message })
+    },
+  })
+
+  const remindFailedMutation = useMutation({
+    mutationFn: () => remindFailed(exam.id),
+    onSuccess: (data) => {
+      toast.success(`已提醒 ${data.sent} 位未及格人员`)
+    },
+    onError: (error: Error) => {
+      toast.error("提醒发送失败", { description: error.message })
+    },
+  })
+
   const stats = statsQuery.data
 
   if (statsQuery.isLoading) {
@@ -1611,8 +1635,42 @@ function ExamStatisticsTab({ exam }: { exam: Exam }) {
 
       {/* 状态统计 */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">完成状态</CardTitle>
+          {exam.status === "PUBLISHED" && new Date(exam.end_at) < new Date() && (
+            <div className="flex items-center gap-2">
+              {stats.not_started_count + stats.in_progress_count > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => remindIncompleteMutation.mutate()}
+                  disabled={remindIncompleteMutation.isPending}
+                >
+                  {remindIncompleteMutation.isPending ? (
+                    <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Bell className="mr-1 h-3.5 w-3.5" />
+                  )}
+                  提醒未完成人员
+                </Button>
+              )}
+              {stats.failed_count > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => remindFailedMutation.mutate()}
+                  disabled={remindFailedMutation.isPending}
+                >
+                  {remindFailedMutation.isPending ? (
+                    <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <BellRing className="mr-1 h-3.5 w-3.5" />
+                  )}
+                  提醒未及格人员
+                </Button>
+              )}
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">

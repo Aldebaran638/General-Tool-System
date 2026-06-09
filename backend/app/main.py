@@ -19,6 +19,10 @@ from app.modules.exam_management.scheduler import (
     start_paper_scheduler,
     stop_paper_scheduler,
 )
+from app.modules.notification.scheduler import (
+    start_notification_scheduler,
+    stop_notification_scheduler,
+)
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -33,7 +37,9 @@ if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     start_scheduler()
     start_paper_scheduler()
+    start_notification_scheduler()
     yield
+    stop_notification_scheduler()
     stop_paper_scheduler()
     stop_scheduler()
 

@@ -78,6 +78,14 @@ export function cloneExam(examId: string): Promise<Exam> {
   return apiFetch(`${BASE}/${examId}/clone`, { method: "POST" })
 }
 
+export function remindIncomplete(examId: string): Promise<{ sent: number }> {
+  return apiFetch(`${BASE}/${examId}/remind-incomplete`, { method: "POST" })
+}
+
+export function remindFailed(examId: string): Promise<{ sent: number }> {
+  return apiFetch(`${BASE}/${examId}/remind-failed`, { method: "POST" })
+}
+
 export function validateExam(examId: string): Promise<PublishValidation> {
   return apiFetch(`${BASE}/${examId}/validate`, { method: "POST" })
 }
