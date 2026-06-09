@@ -95,6 +95,8 @@ from app.modules.exam_management.service import (
     update_exam,
     validate_publish,
 )
+from app.modules.notification.service import bulk_create_notifications, has_notification
+from app.models_core import User
 
 router = APIRouter(prefix="/exams", tags=["exams"])
 
@@ -148,13 +150,24 @@ def _get_exam_or_404(session: SessionDep, exam_id: uuid.UUID) -> Exam:
     return exam
 
 
+def _resolve_user_id(session: SessionDep, userid: str) -> uuid.UUID | None:
+    """Map ExamParticipant.userid (wecom_userid or user UUID string) to User.id (UUID)."""
+    try:
+        return uuid.UUID(userid)
+    except ValueError:
+        user = session.exec(
+            select(User).where(User.wecom_userid == userid)
+        ).first()
+        return user.id if user else None
+
+
 # ─── Exam Category ───────────────────────────────────────────────────────────
 # NOTE: Category routes MUST be defined before /{exam_id} to avoid route conflicts.
 
 @router.get("/categories", response_model=ExamCategoriesPublic, summary="分类列表")
 def list_categories_endpoint(
     session: SessionDep,
-    current_user: RequireExamAdmin,
+    current_user: CurrentUser,
 ) -> ExamCategoriesPublic:
     categories, count = list_categories(session)
     return ExamCategoriesPublic(
@@ -722,3 +735,112 @@ def remove_participant_endpoint(
     removed = remove_participant(session, exam_id, userid)
     if not removed:
         raise HTTPException(status_code=404, detail="学员不存在")
+
+
+# ─── Manual Reminders ────────────────────────────────────────────────────────
+
+@router.post(
+    "/{exam_id}/remind-incomplete",
+    summary="手动提醒未完成考试的人员",
+)
+def remind_incomplete_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+    exam_id: uuid.UUID,
+) -> dict:
+    """Send EXAM_INCOMPLETE reminder to all participants who haven't completed the exam."""
+    exam = _get_exam_or_404(session, exam_id)
+
+    if exam.status == "DRAFT":
+        raise HTTPException(status_code=400, detail="草稿状态的考试不能发送提醒")
+
+    participants = session.exec(
+        select(ExamParticipant)
+        .where(ExamParticipant.exam_id == exam_id)
+        .where(ExamParticipant.completion_status != "COMPLETED")
+    ).all()
+
+    notifications_data = []
+    for p in participants:
+        user_id = _resolve_user_id(session, p.userid)
+        if user_id is None:
+            continue
+
+        # Deduplication: skip if already notified for this exam + type
+        if has_notification(session, user_id, "EXAM_INCOMPLETE", exam.id):
+            continue
+
+        notifications_data.append(
+            {
+                "user_id": user_id,
+                "title": f"考试提醒：请尽快完成「{exam.name}」",
+                "content": (
+                    f"管理员提醒您：您尚未完成考试「{exam.name}」，"
+                    f"结束时间：{exam.end_at.strftime('%Y-%m-%d %H:%M')}，"
+                    f"请尽快完成。"
+                ),
+                "notification_type": "EXAM_INCOMPLETE",
+                "exam_id": exam.id,
+                "exam_name": exam.name,
+            }
+        )
+
+    count = 0
+    if notifications_data:
+        count = bulk_create_notifications(session, notifications_data)
+
+    return {"sent": count}
+
+
+@router.post(
+    "/{exam_id}/remind-failed",
+    summary="手动提醒未及格人员",
+)
+def remind_failed_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+    exam_id: uuid.UUID,
+) -> dict:
+    """Send EXAM_FAILED reminder to all participants who failed the exam."""
+    exam = _get_exam_or_404(session, exam_id)
+
+    if exam.status == "DRAFT":
+        raise HTTPException(status_code=400, detail="草稿状态的考试不能发送提醒")
+
+    participants = session.exec(
+        select(ExamParticipant)
+        .where(ExamParticipant.exam_id == exam_id)
+        .where(ExamParticipant.completion_status == "COMPLETED")
+        .where(ExamParticipant.final_passed == False)  # noqa: E712
+    ).all()
+
+    notifications_data = []
+    for p in participants:
+        user_id = _resolve_user_id(session, p.userid)
+        if user_id is None:
+            continue
+
+        # Deduplication: skip if already notified for this exam + type
+        if has_notification(session, user_id, "EXAM_FAILED", exam.id):
+            continue
+
+        notifications_data.append(
+            {
+                "user_id": user_id,
+                "title": f"考试结果：「{exam.name}」未及格",
+                "content": (
+                    f"您参与的考试「{exam.name}」未及格，"
+                    f"得分：{p.final_score}，及格线：{exam.pass_score}，"
+                    f"请留意后续安排。"
+                ),
+                "notification_type": "EXAM_FAILED",
+                "exam_id": exam.id,
+                "exam_name": exam.name,
+            }
+        )
+
+    count = 0
+    if notifications_data:
+        count = bulk_create_notifications(session, notifications_data)
+
+    return {"sent": count}
