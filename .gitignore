@@ -10,3 +10,4 @@ node_modules/
 cloudflared.deb.claude/
 backend/.claude/**
 .playwright-mcp/
+backend/app/uploads/papers/**
