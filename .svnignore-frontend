@@ -1,0 +1,12 @@
+node_modules
+.env
+.vite
+.vite-temp
+.tanstack
+dist
+.claude
+.copilot-playwright-run.ps1
+test-results
+test-results-temp
+blob-report
+playwright-report
