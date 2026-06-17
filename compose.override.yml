@@ -110,14 +110,17 @@ services:
       context: .
       dockerfile: frontend/Dockerfile.dev
     command:
-      - bun
+      - npm
       - run
       - dev
+      - --
       - --host
       - 0.0.0.0
       - --port
       - "5173"
     environment:
+      # Vite dev 模式需要 NODE_ENV=development，否则 JSX 自动运行时会找不到 _jsxDEV
+      NODE_ENV: "development"
       # 空字符串 → OpenAPI.BASE="" → 前端使用相对路径
       # /api/* 由 Vite proxy 转发到 backend 容器，无需跨域
       VITE_API_URL: ""
@@ -126,6 +129,7 @@ services:
       CHOKIDAR_USEPOLLING: "true"
     volumes:
       - ./frontend:/app/frontend
+      - ./node_modules:/app/node_modules
       - frontend-node_modules:/app/frontend/node_modules
     labels:
       - traefik.http.services.${STACK_NAME?Variable not set}-frontend.loadbalancer.server.port=5173

@@ -1,14 +1,12 @@
-FROM oven/bun:1
+FROM node:20-bookworm
 
 WORKDIR /app
 
-COPY package.json bun.lock /app/
+# node_modules 通过 compose volume 从宿主机挂载，避免在容器内重复安装
+COPY package.json /app/
 COPY frontend/package.json /app/frontend/package.json
+COPY ./frontend /app/frontend
 
 WORKDIR /app/frontend
 
-RUN bun install --no-verify
-
-COPY ./frontend /app/frontend
-
-CMD ["bun", "run", "dev", "--host", "0.0.0.0", "--port", "5173"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
