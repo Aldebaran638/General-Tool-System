@@ -114,3 +114,31 @@ def download_contract_filler_file(
         filename=version.output_filename,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
+
+
+# =============================================================================
+# Equipment Purchase Contract Filler DOCX Files
+# =============================================================================
+
+@router.get("/equipment-purchase-filler/{version_id}")
+def download_equipment_purchase_filler_file(
+    session: SessionDep,
+    current_user: CurrentUser,
+    version_id: uuid.UUID,
+) -> FileResponse:
+    from app.modules.contracts.equipment_purchase_filler import service as ep_service
+    from app.modules.contracts.equipment_purchase_filler.storage import get_filled_path
+
+    version = ep_service.read_version(
+        session, current_user=current_user, version_id=version_id
+    )
+    if not version.output_file_path or not version.output_filename:
+        raise HTTPException(status_code=404, detail="Export file not found")
+    file_path = get_filled_path(relative_path=version.output_file_path)
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Export file missing on disk")
+    return FileResponse(
+        path=str(file_path),
+        filename=version.output_filename,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
