@@ -4,6 +4,7 @@ import admin from "./admin"
 import settings from "./settings"
 import auth from "./auth"
 import finance from "./finance"
+import contracts from "./contracts"
 
 const dict = {
   common,
@@ -12,6 +13,7 @@ const dict = {
   settings,
   auth,
   finance,
+  contracts,
 }
 
 export default dict

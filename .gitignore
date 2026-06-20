@@ -14,4 +14,7 @@ backend/test_data/
 # Claude Code local configuration
 .claude/
 
+# Claude Code temporary working files
+.tmp/
+
 /scripts/start-kimi-claude.ps1

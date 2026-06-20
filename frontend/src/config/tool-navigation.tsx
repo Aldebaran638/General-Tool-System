@@ -15,6 +15,7 @@ import "@/tools/finance/invoice_files"
 import "@/tools/finance/invoice_matching"
 import "@/tools/finance/invoice_match_audit"
 import "@/tools/finance/reimbursement_exports"
+import "@/tools/contracts/contract_filler"
 
 /**
  * Platform-level navigation entries.

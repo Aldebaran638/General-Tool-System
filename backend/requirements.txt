@@ -44,6 +44,7 @@ pytest==7.4.4
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 python-multipart==0.0.26
+python-docx==1.2.0
 requests==2.33.1
 sentry-sdk==1.45.1
 six==1.17.0

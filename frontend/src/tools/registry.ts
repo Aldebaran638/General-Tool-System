@@ -121,6 +121,7 @@ class ToolRegistry {
 
   private _groupNameMap: Record<string, string> = {
     finance: "finance.groupName",
+    contracts: "contracts.groupName",
   }
 
   private _formatGroupName(name: string, t?: (key: string) => string): string {

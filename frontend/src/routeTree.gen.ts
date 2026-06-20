@@ -22,6 +22,7 @@ import { Route as LayoutFinancePurchaseRecordsRouteImport } from './routes/_layo
 import { Route as LayoutFinanceInvoiceMatchingRouteImport } from './routes/_layout/finance.invoice-matching'
 import { Route as LayoutFinanceInvoiceMatchAuditRouteImport } from './routes/_layout/finance.invoice-match-audit'
 import { Route as LayoutFinanceInvoiceFilesRouteImport } from './routes/_layout/finance.invoice-files'
+import { Route as LayoutContractsContractFillerRouteImport } from './routes/_layout/contracts.contract-filler'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -92,6 +93,12 @@ const LayoutFinanceInvoiceFilesRoute =
     path: '/finance/invoice-files',
     getParentRoute: () => LayoutRoute,
   } as any)
+const LayoutContractsContractFillerRoute =
+  LayoutContractsContractFillerRouteImport.update({
+    id: '/contracts/contract-filler',
+    path: '/contracts/contract-filler',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/settings': typeof LayoutSettingsRoute
+  '/contracts/contract-filler': typeof LayoutContractsContractFillerRoute
   '/finance/invoice-files': typeof LayoutFinanceInvoiceFilesRoute
   '/finance/invoice-match-audit': typeof LayoutFinanceInvoiceMatchAuditRoute
   '/finance/invoice-matching': typeof LayoutFinanceInvoiceMatchingRoute
@@ -115,6 +123,7 @@ export interface FileRoutesByTo {
   '/admin': typeof LayoutAdminRoute
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
+  '/contracts/contract-filler': typeof LayoutContractsContractFillerRoute
   '/finance/invoice-files': typeof LayoutFinanceInvoiceFilesRoute
   '/finance/invoice-match-audit': typeof LayoutFinanceInvoiceMatchAuditRoute
   '/finance/invoice-matching': typeof LayoutFinanceInvoiceMatchingRoute
@@ -131,6 +140,7 @@ export interface FileRoutesById {
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/contracts/contract-filler': typeof LayoutContractsContractFillerRoute
   '/_layout/finance/invoice-files': typeof LayoutFinanceInvoiceFilesRoute
   '/_layout/finance/invoice-match-audit': typeof LayoutFinanceInvoiceMatchAuditRoute
   '/_layout/finance/invoice-matching': typeof LayoutFinanceInvoiceMatchingRoute
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/settings'
+    | '/contracts/contract-filler'
     | '/finance/invoice-files'
     | '/finance/invoice-match-audit'
     | '/finance/invoice-matching'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/settings'
     | '/'
+    | '/contracts/contract-filler'
     | '/finance/invoice-files'
     | '/finance/invoice-match-audit'
     | '/finance/invoice-matching'
@@ -176,6 +188,7 @@ export interface FileRouteTypes {
     | '/_layout/admin'
     | '/_layout/settings'
     | '/_layout/'
+    | '/_layout/contracts/contract-filler'
     | '/_layout/finance/invoice-files'
     | '/_layout/finance/invoice-match-audit'
     | '/_layout/finance/invoice-matching'
@@ -284,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutFinanceInvoiceFilesRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/contracts/contract-filler': {
+      id: '/_layout/contracts/contract-filler'
+      path: '/contracts/contract-filler'
+      fullPath: '/contracts/contract-filler'
+      preLoaderRoute: typeof LayoutContractsContractFillerRouteImport
+      parentRoute: typeof LayoutRoute
+    }
   }
 }
 
@@ -291,6 +311,7 @@ interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
+  LayoutContractsContractFillerRoute: typeof LayoutContractsContractFillerRoute
   LayoutFinanceInvoiceFilesRoute: typeof LayoutFinanceInvoiceFilesRoute
   LayoutFinanceInvoiceMatchAuditRoute: typeof LayoutFinanceInvoiceMatchAuditRoute
   LayoutFinanceInvoiceMatchingRoute: typeof LayoutFinanceInvoiceMatchingRoute
@@ -302,6 +323,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
+  LayoutContractsContractFillerRoute: LayoutContractsContractFillerRoute,
   LayoutFinanceInvoiceFilesRoute: LayoutFinanceInvoiceFilesRoute,
   LayoutFinanceInvoiceMatchAuditRoute: LayoutFinanceInvoiceMatchAuditRoute,
   LayoutFinanceInvoiceMatchingRoute: LayoutFinanceInvoiceMatchingRoute,
