@@ -213,6 +213,7 @@ async def sync_members(
         for m in members:
             userid: str = m["userid"]
             api_userids.add(userid)
+            mobile: str | None = m.get("mobile")
 
             # --- Sync User ---
             existing_user = session.exec(
@@ -220,8 +221,10 @@ async def sync_members(
             ).first()
 
             if existing_user is None:
+                # 优先用手机号作为系统账号；企微未返回手机号时 fallback 到旧格式
+                account = mobile if mobile else f"wecom_{userid}@wechat.work"
                 session.add(User(
-                    email=f"wecom_{userid}@wechat.work",
+                    email=account,
                     full_name=m.get("name") or userid,
                     wecom_userid=userid,
                     hashed_password=get_password_hash("123456"),
@@ -245,6 +248,7 @@ async def sync_members(
                 session.add(WecomMember(
                     userid=userid,
                     name=m.get("name") or userid,
+                    mobile=mobile,
                     department=filtered_depts,
                     avatar=m.get("avatar"),
                     status=m.get("status", 1),
@@ -253,6 +257,7 @@ async def sync_members(
                 ))
             else:
                 existing_member.name = m.get("name") or existing_member.name
+                existing_member.mobile = mobile
                 existing_member.department = filtered_depts
                 existing_member.avatar = m.get("avatar")
                 existing_member.status = m.get("status", 1)

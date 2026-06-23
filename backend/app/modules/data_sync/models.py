@@ -55,6 +55,7 @@ class WecomMember(SQLModel, table=True):
     # WeCom native fields
     userid: str = Field(primary_key=True, max_length=64)
     name: str = Field(max_length=64)
+    mobile: str | None = Field(default=None, max_length=32)
     department: list[int] = Field(
         default_factory=list,
         sa_column=Column(JSON, nullable=False, server_default="[]"),
