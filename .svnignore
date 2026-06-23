@@ -29,3 +29,4 @@ img/
 backend/app/uploads/
 frontend/test-results/
 frontend/blob-report/
+test/
