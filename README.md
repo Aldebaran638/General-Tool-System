@@ -59,14 +59,14 @@
 
 | 服务 | 地址 |
 |------|------|
-| 前端 (Vite) | http://localhost:10106 |
-| 后端 (FastAPI) | http://localhost:10105 |
-| Swagger 文档 | http://localhost:10105/api/v1/docs |
-| Adminer (数据库管理) | http://localhost:10104 |
-| ChartDB | http://localhost:10107 |
-| MailCatcher (邮件) | http://localhost:10108 |
-| PostgreSQL | localhost:10103 |
-| Traefik UI | http://localhost:10102 |
+| 前端 (Vite) | http://localhost:10206 |
+| 后端 (FastAPI) | http://localhost:10205 |
+| Swagger 文档 | http://localhost:10205/api/v1/docs |
+| Adminer (数据库管理) | http://localhost:10204 |
+| ChartDB | http://localhost:10207 |
+| MailCatcher (邮件) | http://localhost:10208 |
+| PostgreSQL | localhost:10203 |
+| Traefik UI | http://localhost:10202 |
 
 > 每次运行 `./dev-start.sh` 都会生成新的 Cloudflare 临时域名，企业微信后台需要重新配置。
 
@@ -80,10 +80,10 @@
 
 **端口冲突排查**
 
-如果其他项目的容器占用了 10101~10109 端口，启动会失败：
+如果其他项目的容器占用了 10201~10209 端口，启动会失败：
 
 ```bash
-docker ps --format '{{.Names}}\t{{.Ports}}' | grep -E '1010[0-9]'
+docker ps --format '{{.Names}}\t{{.Ports}}' | grep -E '1020[0-9]'
 ```
 
 停掉冲突的容器：
@@ -135,13 +135,13 @@ bash /tmp/deploy-remote.sh
 
 | 服务 | 地址 |
 |------|------|
-| 前端 | http://192.168.3.109:10106 |
-| 后端 | http://192.168.3.109:10105 |
-| Swagger | http://192.168.3.109:10105/api/v1/docs |
-| Adminer | http://192.168.3.109:10104 |
-| ChartDB | http://192.168.3.109:10107 |
-| MailCatcher | http://192.168.3.109:10108 |
-| Traefik Dashboard | http://192.168.3.109:10102 |
+| 前端 | http://192.168.3.109:10206 |
+| 后端 | http://192.168.3.109:10205 |
+| Swagger | http://192.168.3.109:10205/api/v1/docs |
+| Adminer | http://192.168.3.109:10204 |
+| ChartDB | http://192.168.3.109:10207 |
+| MailCatcher | http://192.168.3.109:10208 |
+| Traefik Dashboard | http://192.168.3.109:10202 |
 
 ---
 
@@ -228,15 +228,15 @@ bash /tmp/deploy-remote.sh
 
 | 端口 | 服务 | 说明 |
 |------|------|------|
-| 10101 | Traefik HTTP | 反向代理入口 |
-| 10102 | Traefik Dashboard | 路由监控面板 |
-| 10103 | PostgreSQL | 数据库 |
-| 10104 | Adminer | 数据库管理 |
-| 10105 | FastAPI 后端 | API 服务 |
-| 10106 | Vite 前端 | 开发服务器 |
-| 10107 | ChartDB | 数据库图表 |
-| 10108 | MailCatcher Web | 邮件查看 |
-| 10109 | MailCatcher SMTP | 邮件发送 |
+| 10201 | Traefik HTTP | 反向代理入口 |
+| 10202 | Traefik Dashboard | 路由监控面板 |
+| 10203 | PostgreSQL | 数据库 |
+| 10204 | Adminer | 数据库管理 |
+| 10205 | FastAPI 后端 | API 服务 |
+| 10206 | Vite 前端 | 开发服务器 |
+| 10207 | ChartDB | 数据库图表 |
+| 10208 | MailCatcher Web | 邮件查看 |
+| 10209 | MailCatcher SMTP | 邮件发送 |
 
 ---
 
@@ -336,7 +336,7 @@ docker compose ps -a
 
 验证后端健康：
 ```bash
-curl http://localhost:10105/api/v1/utils/health-check/
+curl http://localhost:10205/api/v1/utils/health-check/
 ```
 
 远程部署：
