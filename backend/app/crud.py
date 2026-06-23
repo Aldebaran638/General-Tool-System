@@ -37,9 +37,9 @@ def get_user_by_email(*, session: Session, email: str) -> User | None:
     return session_user
 
 
-# Dummy hash to use for timing attack prevention when user is not found
-# This is an Argon2 hash of a random password, used to ensure constant-time comparison
-DUMMY_HASH = "$argon2id$v=19$m=65536,t=3,p=4$MjQyZWE1MzBjYjJlZTI0Yw$YTU4NGM5ZTZmYjE2NzZlZjY0ZWY3ZGRkY2U2OWFjNjk"
+# Dummy password to use for timing attack prevention when user is not found.
+# Keeps response time similar whether the email exists or not.
+DUMMY_HASH = "123456"
 
 
 def authenticate(*, session: Session, email: str, password: str) -> User | None:

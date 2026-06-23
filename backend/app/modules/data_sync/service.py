@@ -224,7 +224,7 @@ async def sync_members(
                     email=f"wecom_{userid}@wechat.work",
                     full_name=m.get("name") or userid,
                     wecom_userid=userid,
-                    hashed_password=get_password_hash(uuid.uuid4().hex),
+                    hashed_password=get_password_hash("123456"),
                     is_active=True,
                     is_superuser=False,
                 ))

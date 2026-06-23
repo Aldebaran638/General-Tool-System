@@ -123,8 +123,8 @@ async def _code_to_jwt(code: str, session: Any) -> str:
                 email=email,
                 full_name=name,
                 wecom_userid=wecom_userid,
-                # Password is random and unusable; login is WeCom-only
-                hashed_password=get_password_hash(secrets.token_urlsafe(32)),
+                # 本项目无隐私要求，初始密码统一为 123456
+                hashed_password=get_password_hash("123456"),
                 is_active=True,
                 is_superuser=False,
             )
