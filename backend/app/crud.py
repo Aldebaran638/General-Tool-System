@@ -37,16 +37,24 @@ def get_user_by_email(*, session: Session, email: str) -> User | None:
     return session_user
 
 
+def get_user_by_mobile(*, session: Session, mobile: str) -> User | None:
+    statement = select(User).where(User.mobile == mobile)
+    session_user = session.exec(statement).first()
+    return session_user
+
+
 # Dummy password to use for timing attack prevention when user is not found.
-# Keeps response time similar whether the email exists or not.
+# Keeps response time similar whether the username exists or not.
 DUMMY_HASH = "123456"
 
 
 def authenticate(*, session: Session, email: str, password: str) -> User | None:
-    db_user = get_user_by_email(session=session, email=email)
+    # Try mobile first, then email
+    db_user = get_user_by_mobile(session=session, mobile=email)
+    if not db_user:
+        db_user = get_user_by_email(session=session, email=email)
     if not db_user:
         # Prevent timing attacks by running password verification even when user doesn't exist
-        # This ensures the response time is similar whether or not the email exists
         verify_password(password, DUMMY_HASH)
         return None
     verified, updated_password_hash = verify_password(password, db_user.hashed_password)

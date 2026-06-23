@@ -214,6 +214,7 @@ async def sync_members(
             userid: str = m["userid"]
             api_userids.add(userid)
             mobile: str | None = m.get("mobile")
+            email: str | None = m.get("email")
 
             # --- Sync User ---
             existing_user = session.exec(
@@ -221,10 +222,11 @@ async def sync_members(
             ).first()
 
             if existing_user is None:
-                # 优先用手机号作为系统账号；企微未返回手机号时 fallback 到旧格式
-                account = mobile if mobile else f"wecom_{userid}@wechat.work"
+                # 企微未返回邮箱时 fallback 到占位邮箱（email 字段非空约束）
+                account_email = email if email else f"wecom_{userid}@wechat.work"
                 session.add(User(
-                    email=account,
+                    email=account_email,
+                    mobile=mobile,
                     full_name=m.get("name") or userid,
                     wecom_userid=userid,
                     hashed_password=get_password_hash("123456"),
@@ -234,6 +236,11 @@ async def sync_members(
                 created += 1
             else:
                 existing_user.full_name = m.get("name") or existing_user.full_name
+                # 只有之前是占位邮箱或空时才覆盖；用户手动修改过的邮箱保留
+                if email and (not existing_user.email or existing_user.email.startswith("wecom_")):
+                    existing_user.email = email
+                if mobile:
+                    existing_user.mobile = mobile
                 if not existing_user.is_active:
                     existing_user.is_active = True
                 session.add(existing_user)

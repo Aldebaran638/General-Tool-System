@@ -29,6 +29,7 @@ def get_datetime_utc() -> datetime:
 
 class UserBase(SQLModel):
     email: str = Field(unique=True, index=True, max_length=255)
+    mobile: str | None = Field(default=None, unique=True, index=True, max_length=32)
     is_active: bool = True
     is_superuser: bool = False
     full_name: str | None = Field(default=None, max_length=255)
