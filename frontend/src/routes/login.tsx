@@ -26,7 +26,7 @@ import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn, redirectToWecomOAuth } from "@/hooks/useAuth"
 
 const formSchema = z.object({
-  username: z.string().min(1, { message: "手机号或邮箱不能为空" }),
+  username: z.string().min(1, { message: "企微账号不能为空" }),
   password: z
     .string()
     .min(1, { message: "Password is required" }),
@@ -130,11 +130,11 @@ function Login() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>手机号或邮箱</FormLabel>
+                  <FormLabel>企微账号</FormLabel>
                   <FormControl>
                     <Input
                       data-testid="email-input"
-                      placeholder="请输入手机号或邮箱"
+                      placeholder="请输入企微账号"
                       type="text"
                       className="h-11 transition-all focus-visible:ring-2 focus-visible:ring-primary/20"
                       {...field}

@@ -222,10 +222,9 @@ async def sync_members(
             ).first()
 
             if existing_user is None:
-                # 企微未返回邮箱时 fallback 到占位邮箱（email 字段非空约束）
-                account_email = email if email else f"wecom_{userid}@wechat.work"
+                # 直接用企微 userid 作为系统登录账号
                 session.add(User(
-                    email=account_email,
+                    email=userid,
                     mobile=mobile,
                     full_name=m.get("name") or userid,
                     wecom_userid=userid,
@@ -236,9 +235,9 @@ async def sync_members(
                 created += 1
             else:
                 existing_user.full_name = m.get("name") or existing_user.full_name
-                # 只有之前是占位邮箱或空时才覆盖；用户手动修改过的邮箱保留
-                if email and (not existing_user.email or existing_user.email.startswith("wecom_")):
-                    existing_user.email = email
+                # 如果老账号还是 wecom_xxx@wechat.work 占位格式，更新为纯 userid
+                if existing_user.email and existing_user.email.startswith("wecom_") and existing_user.email.endswith("@wechat.work"):
+                    existing_user.email = userid
                 if mobile:
                     existing_user.mobile = mobile
                 if not existing_user.is_active:
