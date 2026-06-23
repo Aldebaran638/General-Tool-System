@@ -31,14 +31,8 @@ def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> Any:
     return db_user
 
 
-def get_user_by_email(*, session: Session, email: str) -> User | None:
-    statement = select(User).where(User.email == email)
-    session_user = session.exec(statement).first()
-    return session_user
-
-
-def get_user_by_mobile(*, session: Session, mobile: str) -> User | None:
-    statement = select(User).where(User.mobile == mobile)
+def get_user_by_wecom_userid(*, session: Session, wecom_userid: str) -> User | None:
+    statement = select(User).where(User.wecom_userid == wecom_userid)
     session_user = session.exec(statement).first()
     return session_user
 
@@ -48,11 +42,8 @@ def get_user_by_mobile(*, session: Session, mobile: str) -> User | None:
 DUMMY_HASH = "123456"
 
 
-def authenticate(*, session: Session, email: str, password: str) -> User | None:
-    # Try mobile first, then email
-    db_user = get_user_by_mobile(session=session, mobile=email)
-    if not db_user:
-        db_user = get_user_by_email(session=session, email=email)
+def authenticate(*, session: Session, wecom_userid: str, password: str) -> User | None:
+    db_user = get_user_by_wecom_userid(session=session, wecom_userid=wecom_userid)
     if not db_user:
         # Prevent timing attacks by running password verification even when user doesn't exist
         verify_password(password, DUMMY_HASH)

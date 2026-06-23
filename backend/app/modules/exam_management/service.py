@@ -1007,7 +1007,7 @@ def get_trainer_summary(
                 select(User).where(User.id.in_(trainer_uuids))  # type: ignore[union-attr]
             ).all()
             for user in users:
-                trainer_name_map[str(user.id)] = user.full_name or user.email or str(user.id)
+                trainer_name_map[str(user.id)] = user.full_name or user.wecom_userid or str(user.id)
 
     # Batch-load participant counts per exam
     exam_ids = [exam.id for exam in exams]

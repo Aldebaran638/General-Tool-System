@@ -33,7 +33,7 @@ import { handleError } from "@/utils"
 
 const formSchema = z
   .object({
-    email: z.email({ message: "Invalid email address" }),
+    wecom_userid: z.string().min(1, { message: "企微账号不能为空" }),
     full_name: z.string().optional(),
     password: z
       .string()
@@ -75,7 +75,7 @@ async function createUser(requestBody: UserCreate) {
 
     return response.json()
   } catch (error) {
-    const createdUser = await findUserByEmail(requestBody.email, headers)
+    const createdUser = await findUserByWecomUserId(requestBody.wecom_userid, headers)
     if (createdUser) {
       return createdUser
     }
@@ -85,9 +85,9 @@ async function createUser(requestBody: UserCreate) {
   }
 }
 
-async function findUserByEmail(email: string, headers: Record<string, string>) {
+async function findUserByWecomUserId(wecom_userid: string, headers: Record<string, string>) {
   const response = await fetch(
-    `/api/v1/users/?q=${encodeURIComponent(email)}&limit=20`,
+    `/api/v1/users/?q=${encodeURIComponent(wecom_userid)}&limit=20`,
     { headers },
   )
 
@@ -96,7 +96,7 @@ async function findUserByEmail(email: string, headers: Record<string, string>) {
   }
 
   const body = await response.json()
-  return body.data?.find((user: { email: string }) => user.email === email)
+  return body.data?.find((user: { wecom_userid: string }) => user.wecom_userid === wecom_userid)
 }
 
 const AddUser = () => {
@@ -109,7 +109,7 @@ const AddUser = () => {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      email: "",
+      wecom_userid: "",
       full_name: "",
       password: "",
       confirm_password: "",
@@ -157,16 +157,16 @@ const AddUser = () => {
             <div className="grid gap-4 py-4">
               <FormField
                 control={form.control}
-                name="email"
+                name="wecom_userid"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Email <span className="text-destructive">*</span>
+                      企微账号 <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Email"
-                        type="email"
+                        placeholder="企微账号"
+                        type="text"
                         {...field}
                         required
                       />

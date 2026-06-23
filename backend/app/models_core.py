@@ -28,12 +28,11 @@ def get_datetime_utc() -> datetime:
 # =============================================================================
 
 class UserBase(SQLModel):
-    email: str = Field(unique=True, index=True, max_length=255)
+    wecom_userid: str = Field(unique=True, index=True, max_length=64)
     mobile: str | None = Field(default=None, unique=True, index=True, max_length=32)
+    full_name: str | None = Field(default=None, max_length=255)
     is_active: bool = True
     is_superuser: bool = False
-    full_name: str | None = Field(default=None, max_length=255)
-    wecom_userid: str | None = Field(default=None, unique=True, index=True, max_length=64)
 
 
 class UserCreate(UserBase):
@@ -41,19 +40,24 @@ class UserCreate(UserBase):
 
 
 class UserRegister(SQLModel):
-    email: str = Field(max_length=255)
+    wecom_userid: str = Field(max_length=64)
     password: str = Field(min_length=1, max_length=128)
     full_name: str | None = Field(default=None, max_length=255)
+    mobile: str | None = Field(default=None, max_length=32)
 
 
-class UserUpdate(UserBase):
-    email: str | None = Field(default=None, max_length=255)
+class UserUpdate(SQLModel):
+    wecom_userid: str | None = Field(default=None, max_length=64)
+    mobile: str | None = Field(default=None, max_length=32)
+    full_name: str | None = Field(default=None, max_length=255)
+    is_active: bool | None = Field(default=None)
+    is_superuser: bool | None = Field(default=None)
     password: str | None = Field(default=None, min_length=1, max_length=128)
 
 
 class UserUpdateMe(SQLModel):
     full_name: str | None = Field(default=None, max_length=255)
-    email: str | None = Field(default=None, max_length=255)
+    mobile: str | None = Field(default=None, max_length=32)
 
 
 class UpdatePassword(SQLModel):

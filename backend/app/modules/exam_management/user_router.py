@@ -35,12 +35,10 @@ router = APIRouter(prefix="/my-exams", tags=["my-exams"])
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
 def _get_user_identifiers(user: CurrentUser) -> list[str]:
-    """Get all possible user identifiers for matching (wecom_userid, email, UUID)."""
+    """Get all possible user identifiers for matching (wecom_userid, UUID)."""
     ids = []
     if user.wecom_userid:
         ids.append(user.wecom_userid)
-    if user.email:
-        ids.append(user.email)
     ids.append(str(user.id))  # Always include UUID
     return ids
 

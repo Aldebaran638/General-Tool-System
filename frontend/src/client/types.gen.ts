@@ -46,7 +46,7 @@ export type NewPassword = {
 };
 
 export type PrivateUserCreate = {
-    email: string;
+    wecom_userid: string;
     password: string;
     full_name: string;
     is_verified?: boolean;
@@ -63,26 +63,29 @@ export type UpdatePassword = {
 };
 
 export type UserCreate = {
-    email: string;
+    wecom_userid: string;
     is_active?: boolean;
     is_superuser?: boolean;
     full_name?: (string | null);
+    mobile?: (string | null);
     password: string;
 };
 
 export type UserPublic = {
-    email: string;
+    wecom_userid: string;
     is_active?: boolean;
     is_superuser?: boolean;
     full_name?: (string | null);
+    mobile?: (string | null);
     id: string;
     created_at?: (string | null);
 };
 
 export type UserRegister = {
-    email: string;
+    wecom_userid: string;
     password: string;
     full_name?: (string | null);
+    mobile?: (string | null);
 };
 
 export type UsersPublic = {
@@ -91,16 +94,17 @@ export type UsersPublic = {
 };
 
 export type UserUpdate = {
-    email?: (string | null);
+    wecom_userid?: (string | null);
     is_active?: boolean;
     is_superuser?: boolean;
     full_name?: (string | null);
+    mobile?: (string | null);
     password?: (string | null);
 };
 
 export type UserUpdateMe = {
     full_name?: (string | null);
-    email?: (string | null);
+    mobile?: (string | null);
 };
 
 export type ValidationError = {
@@ -150,7 +154,7 @@ export type LoginLoginAccessTokenResponse = (Token);
 export type LoginTestTokenResponse = (UserPublic);
 
 export type LoginRecoverPasswordData = {
-    email: string;
+    wecomUserid: string;
 };
 
 export type LoginRecoverPasswordResponse = (Message);
@@ -162,7 +166,7 @@ export type LoginResetPasswordData = {
 export type LoginResetPasswordResponse = (Message);
 
 export type LoginRecoverPasswordHtmlContentData = {
-    email: string;
+    wecomUserid: string;
 };
 
 export type LoginRecoverPasswordHtmlContentResponse = (string);

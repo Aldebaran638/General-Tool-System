@@ -110,7 +110,7 @@ def _to_public(
             try:
                 user = session.get(User, uuid.UUID(uid))
                 if user:
-                    trainers.append(TrainerInfo(id=uid, name=user.full_name or user.email))
+                    trainers.append(TrainerInfo(id=uid, name=user.full_name or user.wecom_userid))
             except (ValueError, AttributeError):
                 pass
     return ExamPublic(

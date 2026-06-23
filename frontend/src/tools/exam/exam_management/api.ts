@@ -225,7 +225,7 @@ export async function searchUsers(params: {
   return {
     data: res.data.map((u) => ({
       userid: u.wecom_userid || u.id,
-      name: u.full_name || u.email,
+      name: u.full_name || u.wecom_userid || u.id,
       is_active: u.is_active,
       created_at: u.created_at,
     })),

@@ -24,7 +24,7 @@ import { handleError } from "@/utils"
 
 const formSchema = z.object({
   full_name: z.string().max(30).optional(),
-  email: z.email({ message: "Invalid email address" }),
+  mobile: z.string().max(32).optional(),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -41,16 +41,16 @@ const UserInformation = () => {
     criteriaMode: "all",
     defaultValues: {
       full_name: currentUser?.full_name ?? undefined,
-      email: currentUser?.email,
+      mobile: currentUser?.mobile ?? undefined,
     },
   })
 
   useEffect(() => {
     form.reset({
       full_name: currentUser?.full_name ?? "",
-      email: currentUser?.email ?? "",
+      mobile: currentUser?.mobile ?? "",
     })
-  }, [currentUser?.email, currentUser?.full_name, form])
+  }, [currentUser?.mobile, currentUser?.full_name, form])
 
   const toggleEditMode = () => {
     setEditMode(!editMode)
@@ -76,8 +76,8 @@ const UserInformation = () => {
     if (data.full_name !== currentUser?.full_name) {
       updateData.full_name = data.full_name
     }
-    if (data.email !== currentUser?.email) {
-      updateData.email = data.email
+    if (data.mobile !== currentUser?.mobile) {
+      updateData.mobile = data.mobile
     }
 
     mutation.mutate(updateData)
@@ -126,20 +126,20 @@ const UserInformation = () => {
 
           <FormField
             control={form.control}
-            name="email"
+            name="mobile"
             render={({ field }) =>
               editMode ? (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Mobile</FormLabel>
                   <FormControl>
-                    <Input type="email" {...field} />
+                    <Input type="text" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               ) : (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <p className="py-2 truncate max-w-sm">{field.value}</p>
+                  <FormLabel>Mobile</FormLabel>
+                  <p className="py-2 truncate max-w-sm">{field.value || "N/A"}</p>
                 </FormItem>
               )
             }
