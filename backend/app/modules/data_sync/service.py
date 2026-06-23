@@ -196,16 +196,35 @@ async def sync_members(
 
     try:
         client = get_wecom_client()
-        members = await client.list_department_users(department_id=1, fetch_child=1)
-        task.fetched_count = len(members)
 
-        # Load valid department IDs (level 1 or 2) for filtering
+        # Load valid department IDs (level 1 or 2) for filtering and fetching
         valid_dept_rows = session.exec(
             select(WecomDepartment.id).where(
                 WecomDepartment.level.in_([1, 2])  # type: ignore[union-attr]
             )
         ).all()
         valid_dept_ids: set[int] = set(valid_dept_rows)
+
+        if not valid_dept_ids:
+            raise WecomNotConfiguredError(
+                "No valid departments (level 1/2) found. Please sync departments first."
+            )
+
+        # Fetch members from each valid department instead of root department 1.
+        # This keeps the requested scope within the WeCom app's visible range.
+        seen_userids: set[str] = set()
+        members: list[dict[str, Any]] = []
+        for dept_id in sorted(valid_dept_ids):
+            dept_members = await client.list_department_users(
+                department_id=dept_id, fetch_child=1
+            )
+            for m in dept_members:
+                userid = m["userid"]
+                if userid not in seen_userids:
+                    seen_userids.add(userid)
+                    members.append(m)
+
+        task.fetched_count = len(members)
 
         now = _now()
         api_userids: set[str] = set()
@@ -266,12 +285,15 @@ async def sync_members(
                 existing_member.removed_at = None
                 session.add(existing_member)
 
-        # Full sync only: deactivate WeCom users no longer in API
+        # Full sync only: deactivate WeCom users no longer in API.
+        # Superusers (e.g. adminUser) are local accounts and must never be
+        # deactivated by the WeCom sync.
         if mode == "full":
             active_wecom = session.exec(
                 select(User).where(
                     User.wecom_userid.is_not(None),  # type: ignore[union-attr]
                     User.is_active == True,  # noqa: E712
+                    User.is_superuser == False,  # noqa: E712
                 )
             ).all()
             for user in active_wecom:
