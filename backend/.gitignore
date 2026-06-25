@@ -6,3 +6,5 @@ app.egg-info
 htmlcov
 .cache
 .venv
+fastapi.log
+restart_backend_8000.sh

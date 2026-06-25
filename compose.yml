@@ -1,7 +1,7 @@
 services:
 
   db:
-    image: postgres:18
+    image: postgres:16
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
@@ -48,9 +48,10 @@ services:
       - traefik-public
       - default
     depends_on:
-      db:
-        condition: service_healthy
-        restart: true
+      - db
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     command: bash scripts/prestart.sh
     env_file:
       - .env
@@ -80,11 +81,8 @@ services:
       - traefik-public
       - default
     depends_on:
-      db:
-        condition: service_healthy
-        restart: true
-      prestart:
-        condition: service_completed_successfully
+      - db
+      - prestart
     env_file:
       - .env
     environment:

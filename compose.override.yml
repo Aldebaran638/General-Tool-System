@@ -78,19 +78,7 @@ services:
       SMTP_TLS: "false"
       EMAILS_FROM_EMAIL: "noreply@example.com"
       WATCHFILES_FORCE_POLLING: "true"
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./backend/app
-          target: /app/backend/app
-          ignore:
-            - __pycache__/
-        - action: rebuild
-          path: ./backend/pyproject.toml
-        - action: rebuild
-          path: ./pyproject.toml
-        - action: rebuild
-          path: ./uv.lock
+    # develop section removed for docker-compose v1 compatibility
 
   prestart:
     volumes:
@@ -127,26 +115,10 @@ services:
       # Vite proxy 在容器内使用 Docker 内部服务名到达 backend
       BACKEND_URL: "http://backend:8000"
       CHOKIDAR_USEPOLLING: "true"
-    volumes:
-      - ./frontend:/app/frontend
-      - ./node_modules:/app/node_modules
-      - frontend-node_modules:/app/frontend/node_modules
+    # volumes removed for remote deployment - node_modules installed in image
     labels:
       - traefik.http.services.${STACK_NAME?Variable not set}-frontend.loadbalancer.server.port=5173
-    develop:
-      watch:
-        - action: sync
-          path: ./frontend/src
-          target: /app/frontend/src
-        - action: sync
-          path: ./frontend/public
-          target: /app/frontend/public
-        - action: rebuild
-          path: ./frontend/package.json
-        - action: rebuild
-          path: ./package.json
-        - action: rebuild
-          path: ./bun.lock
+    # develop section removed for docker-compose v1 compatibility
 
   chartdb:
     image: ghcr.io/chartdb/chartdb:latest
