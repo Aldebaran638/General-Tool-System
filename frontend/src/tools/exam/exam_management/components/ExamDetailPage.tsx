@@ -1726,9 +1726,10 @@ export function ExamDetailPage() {
   const showAIAssistant = currentUser?.is_superuser ?? false
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
+    <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex-1 min-w-0 flex flex-col gap-6">
+        {/* Header */}
+        <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -1760,12 +1761,6 @@ export function ExamDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          {showAIAssistant && (
-            <Button variant="outline" onClick={() => setAiOpen(true)}>
-              <Bot className="mr-2 h-4 w-4" />
-              AI 助手
-            </Button>
-          )}
           {exam.status === "DRAFT" && (
             <Button
               onClick={() => publishMutation.mutate()}
@@ -1825,15 +1820,38 @@ export function ExamDetailPage() {
           <ExamStatisticsTab exam={exam} />
         </TabsContent>
       </Tabs>
+      </div>
 
       {showAIAssistant && (
-        <AIAssistantPanel
-          examId={examId}
-          open={aiOpen}
-          onOpenChange={setAiOpen}
-          questions={questions}
-          onQuestionsChange={setQuestions}
-        />
+        <aside className="w-full lg:w-auto shrink-0">
+          <div className="lg:sticky lg:top-6">
+            {aiOpen ? (
+              <AIAssistantPanel
+                examId={examId}
+                open={aiOpen}
+                onOpenChange={setAiOpen}
+                questions={questions}
+                onQuestionsChange={setQuestions}
+                className="lg:w-96"
+              />
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setAiOpen(true)}
+                className="w-full lg:w-12 lg:h-40 lg:flex-col lg:items-center lg:justify-center lg:gap-2 lg:rounded-l-xl lg:rounded-r-none lg:border-r-0 shadow-sm"
+              >
+                <Bot className="h-4 w-4 lg:mb-2" />
+                <span className="lg:hidden">AI 助手</span>
+                <span
+                  className="hidden lg:inline"
+                  style={{ writingMode: "vertical-rl" }}
+                >
+                  AI 助手
+                </span>
+              </Button>
+            )}
+          </div>
+        </aside>
       )}
     </div>
   )

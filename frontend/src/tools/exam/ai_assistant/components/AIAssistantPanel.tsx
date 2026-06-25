@@ -1,16 +1,11 @@
 import { useRef, useState } from "react"
-import { Bot, Loader2, Trash2, X } from "lucide-react"
+import { Bot, Trash2, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
 import { ChatInput } from "./ChatInput"
 import { ChatMessageList } from "./ChatMessageList"
+import { ThinkingIndicator } from "./ThinkingIndicator"
 import { chat, clearThread, submitToolResults } from "../api"
 import type {
   AIToolCall,
@@ -29,6 +24,7 @@ interface AIAssistantPanelProps {
   onOpenChange: (open: boolean) => void
   questions: QuestionCreate[]
   onQuestionsChange: (questions: QuestionCreate[]) => void
+  className?: string
 }
 
 const CHAT_TIMEOUT_MS = 35000
@@ -171,10 +167,10 @@ function applyToolCalls(
 
 export function AIAssistantPanel({
   examId,
-  open,
   onOpenChange,
   questions,
   onQuestionsChange,
+  className,
 }: AIAssistantPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -270,54 +266,58 @@ export function AIAssistantPanel({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md flex flex-col p-0">
-        <SheetHeader className="p-4 border-b">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-primary" />
-              <SheetTitle className="text-base">AI 组卷助手</SheetTitle>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleClear}
-                title="清空上下文"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => {
-                  cancelCurrentRequest()
-                  onOpenChange(false)
-                }}
-                title="关闭"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </SheetHeader>
+    <div
+      className={`flex flex-col h-[calc(100vh-8rem)] border rounded-xl bg-background shadow-sm overflow-hidden ${className ?? ""}`}
+    >
+      <div className="p-4 border-b flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <Bot className="h-5 w-5 text-primary" />
+          <span className="text-base font-semibold">AI 组卷助手</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleClear}
+            title="清空上下文"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => {
+              cancelCurrentRequest()
+              onOpenChange(false)
+            }}
+            title="关闭"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
 
-        {isLoading && messages.length === 0 && (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        )}
-
+      {isLoading && messages.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center">
+          <ThinkingIndicator />
+        </div>
+      ) : (
         <ChatMessageList messages={messages} />
+      )}
 
-        <ChatInput
-          onSend={handleSend}
-          onCancel={isLoading ? cancelCurrentRequest : undefined}
-          disabled={isLoading}
-        />
-      </SheetContent>
-    </Sheet>
+      {isLoading && messages.length > 0 && (
+        <div className="px-4 shrink-0">
+          <ThinkingIndicator />
+        </div>
+      )}
+
+      <ChatInput
+        onSend={handleSend}
+        onCancel={isLoading ? cancelCurrentRequest : undefined}
+        disabled={isLoading}
+      />
+    </div>
   )
 }

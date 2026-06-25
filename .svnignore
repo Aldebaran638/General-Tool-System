@@ -4,6 +4,8 @@
 backend/.env
 frontend/.env
 backend/.venv
+backend/.venv312
+.playwright-mcp
 node_modules
 frontend/node_modules
 frontend/.vite
