@@ -99,6 +99,10 @@ class Settings(BaseSettings):
     WECOM_AGENT_ID: str | None = None
     WECOM_SECRET: str | None = None
 
+    LLM_BASE_URL: str = "http://192.168.3.242:1995/v1"
+    LLM_MODEL: str = "Qwen3.6-27B-FP8"
+    LLM_API_KEY: str = "sk-anything"
+
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (

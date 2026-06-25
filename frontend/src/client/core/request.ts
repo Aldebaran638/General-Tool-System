@@ -90,7 +90,7 @@ export const getFormData = (options: ApiRequestOptions): FormData | URLSearchPar
 
 			const process = (key: string, value: unknown) => {
 				if (isString(value) || isBlob(value)) {
-					formData.append(key, value);
+					formData.append(key, value as string);
 				} else {
 					formData.append(key, JSON.stringify(value));
 				}

@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
 import { toast } from "sonner"
 import {
   ArrowLeft,
@@ -16,9 +15,8 @@ import {
   AlertCircle,
   Search,
   X,
-  Check,
   Users,
-  Eye,
+  Bot,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -57,6 +55,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+import useAuth from "@/hooks/useAuth"
+import { AIAssistantPanel } from "../../ai_assistant/components/AIAssistantPanel"
+
 import {
   getExam,
   updateExam,
@@ -71,13 +72,11 @@ import {
   addParticipantsByUsers,
   removeParticipant,
   searchUsers,
-  searchDepartments,
   getCenters,
   getDepartmentsOnly,
   getExamStatistics,
   getParticipantsByStatus,
 } from "../api"
-import type { ParticipantDetail } from "../api"
 import { apiDatetimeToLocal, datetimeLocalToApi } from "../datetime"
 import type { WecomUser, WecomDepartment } from "../api"
 import type { Exam, ExamUpdate, QuestionCreate } from "../types"
@@ -367,36 +366,16 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
 
 // ─── Paper Editor Tab ───────────────────────────────────────────────────────
 
-function PaperEditorTab({ exam }: { exam: Exam }) {
+function PaperEditorTab({
+  exam,
+  questions,
+  setQuestions,
+}: {
+  exam: Exam
+  questions: QuestionCreate[]
+  setQuestions: React.Dispatch<React.SetStateAction<QuestionCreate[]>>
+}) {
   const queryClient = useQueryClient()
-  const [questions, setQuestions] = useState<QuestionCreate[]>([])
-  const [loaded, setLoaded] = useState(false)
-
-  const paperQuery = useQuery({
-    queryKey: ["paper", exam.id],
-    queryFn: () => getPaper(exam.id),
-    enabled: !loaded,
-  })
-
-  // Load existing paper data
-  if (paperQuery.data && !loaded) {
-    setQuestions(
-      paperQuery.data.questions.map((q) => ({
-        question_type: q.question_type,
-        stem: q.stem,
-        score: q.score,
-        sort_no: q.sort_no,
-        analysis: q.analysis ?? undefined,
-        options: q.options.map((o) => ({
-          option_key: o.option_key,
-          option_text: o.option_text,
-          is_correct: o.is_correct,
-          sort_no: o.sort_no,
-        })),
-      })),
-    )
-    setLoaded(true)
-  }
 
   const saveMutation = useMutation({
     mutationFn: () => savePaper(exam.id, { questions }),
@@ -904,167 +883,6 @@ function UserSearchSelect({
               </div>
             )
           })}
-      </div>
-    </div>
-  )
-}
-
-// ─── Department Search Select Component ─────────────────────────────────────
-
-interface DepartmentSearchSelectProps {
-  selectedDepartments: WecomDepartment[]
-  onSelectionChange: (departments: WecomDepartment[]) => void
-  disabled?: boolean
-  placeholder?: string
-}
-
-function DepartmentSearchSelect({
-  selectedDepartments,
-  onSelectionChange,
-  disabled,
-  placeholder = "输入部门名称搜索...",
-}: DepartmentSearchSelectProps) {
-  const [open, setOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-  const containerRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const searchQuery_ = useQuery({
-    queryKey: ["departmentSearch", searchQuery],
-    queryFn: () => searchDepartments({ q: searchQuery || undefined, limit: 20 }),
-    enabled: open && searchQuery.length >= 0,
-  })
-
-  const departments = searchQuery_?.data?.data ?? []
-  const isLoading = searchQuery_?.isLoading ?? false
-
-  // Filter out already selected departments from search results
-  const selectedIds = new Set(selectedDepartments.map((d) => d.id))
-  const availableDepartments = departments.filter((d) => !selectedIds.has(d.id))
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
-
-  function handleSelect(dept: WecomDepartment) {
-    onSelectionChange([...selectedDepartments, dept])
-    setSearchQuery("")
-    inputRef.current?.focus()
-  }
-
-  function handleRemove(id: number) {
-    onSelectionChange(selectedDepartments.filter((d) => d.id !== id))
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Escape") {
-      setOpen(false)
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      {/* Selected departments tags */}
-      {selectedDepartments.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {selectedDepartments.map((dept) => (
-            <Badge key={dept.id} variant="secondary" className="pr-1">
-              <span className="mr-1">{dept.name}</span>
-              <span className="text-[10px] text-muted-foreground/60">
-                ID: {dept.id}
-              </span>
-              {!disabled && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-4 w-4 ml-1 hover:bg-destructive/20"
-                  onClick={() => handleRemove(dept.id)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              )}
-            </Badge>
-          ))}
-        </div>
-      )}
-
-      {/* Search input with dropdown */}
-      <div ref={containerRef} className="relative">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            ref={inputRef}
-            placeholder={placeholder}
-            value={searchQuery}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setSearchQuery(e.target.value)
-              if (!open) setOpen(true)
-            }}
-            onFocus={() => setOpen(true)}
-            onKeyDown={handleKeyDown}
-            className="pl-8"
-            disabled={disabled}
-          />
-          {searchQuery && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1 h-7 w-7"
-              onClick={() => {
-                setSearchQuery("")
-                inputRef.current?.focus()
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-
-        {/* Dropdown */}
-        {open && (
-          <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
-            <div className="max-h-[300px] overflow-auto p-1">
-              {isLoading && (
-                <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  搜索中...
-                </div>
-              )}
-              {!isLoading && availableDepartments.length === 0 && (
-                <div className="py-6 text-center text-sm text-muted-foreground">
-                  {searchQuery ? "未找到匹配的部门" : "请输入关键词搜索"}
-                </div>
-              )}
-              {!isLoading &&
-                availableDepartments.map((dept) => (
-                  <div
-                    key={dept.id}
-                    className="flex cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                    onClick={() => handleSelect(dept)}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{dept.name}</span>
-                      <span className="text-[10px] text-muted-foreground/60">
-                        ID: {dept.id}
-                        {dept.name_en && ` · ${dept.name_en}`}
-                      </span>
-                    </div>
-                    <Check className="h-4 w-4 opacity-0" />
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -1817,14 +1635,45 @@ function ExamStatisticsTab({ exam }: { exam: Exam }) {
 // ─── Main Detail Page ───────────────────────────────────────────────────────
 
 export function ExamDetailPage() {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const examId = window.location.pathname.split("/").filter(Boolean).pop() ?? ""
+  const { user: currentUser } = useAuth()
+
+  const [questions, setQuestions] = useState<QuestionCreate[]>([])
+  const [paperLoaded, setPaperLoaded] = useState(false)
+  const [aiOpen, setAiOpen] = useState(false)
 
   const examQuery = useQuery({
     queryKey: ["exam", examId],
     queryFn: () => getExam(examId),
   })
+
+  const paperQuery = useQuery({
+    queryKey: ["paper", examId],
+    queryFn: () => getPaper(examId),
+    enabled: examQuery.isSuccess && !paperLoaded,
+  })
+
+  useEffect(() => {
+    if (paperQuery.data && !paperLoaded) {
+      setQuestions(
+        paperQuery.data.questions.map((q) => ({
+          question_type: q.question_type,
+          stem: q.stem,
+          score: q.score,
+          sort_no: q.sort_no,
+          analysis: q.analysis ?? undefined,
+          options: q.options.map((o) => ({
+            option_key: o.option_key,
+            option_text: o.option_text,
+            is_correct: o.is_correct,
+            sort_no: o.sort_no,
+          })),
+        })),
+      )
+      setPaperLoaded(true)
+    }
+  }, [paperQuery.data, paperLoaded])
 
   const publishMutation = useMutation({
     mutationFn: async () => {
@@ -1874,6 +1723,8 @@ export function ExamDetailPage() {
     )
   }
 
+  const showAIAssistant = currentUser?.is_superuser ?? false
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
@@ -1909,6 +1760,12 @@ export function ExamDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          {showAIAssistant && (
+            <Button variant="outline" onClick={() => setAiOpen(true)}>
+              <Bot className="mr-2 h-4 w-4" />
+              AI 助手
+            </Button>
+          )}
           {exam.status === "DRAFT" && (
             <Button
               onClick={() => publishMutation.mutate()}
@@ -1953,7 +1810,11 @@ export function ExamDetailPage() {
         </TabsContent>
 
         <TabsContent value="paper" className="mt-4">
-          <PaperEditorTab exam={exam} />
+          <PaperEditorTab
+            exam={exam}
+            questions={questions}
+            setQuestions={setQuestions}
+          />
         </TabsContent>
 
         <TabsContent value="participants" className="mt-4">
@@ -1964,6 +1825,16 @@ export function ExamDetailPage() {
           <ExamStatisticsTab exam={exam} />
         </TabsContent>
       </Tabs>
+
+      {showAIAssistant && (
+        <AIAssistantPanel
+          examId={examId}
+          open={aiOpen}
+          onOpenChange={setAiOpen}
+          questions={questions}
+          onQuestionsChange={setQuestions}
+        />
+      )}
     </div>
   )
 }
