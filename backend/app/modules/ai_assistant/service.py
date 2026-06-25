@@ -19,6 +19,7 @@ from typing import Annotated, Any, TypedDict
 
 import httpx
 import psycopg
+from fastapi import UploadFile
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
@@ -30,6 +31,7 @@ from sqlmodel import Session, delete, select
 
 from app.core.config import settings
 from app.modules.ai_assistant.models import AIAssistantThread
+from app.modules.ai_assistant.parser import parse_upload_files
 from app.modules.ai_assistant.schemas import (
     BatchCreateQuestionsArgs,
     CreateQuestionArgs,
@@ -316,6 +318,36 @@ def chat(
         "tool_calls": pending,
         "thread_id": thread_id,
     }
+
+
+def chat_with_files(
+    session: Session,
+    user_id: uuid.UUID,
+    exam_id: str,
+    message: str,
+    files: list[UploadFile],
+    current_questions: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Parse uploaded files in memory and send their contents to the agent as context.
+
+    The actual file side-effects (creating questions) are still executed by the
+    frontend via the returned tool_calls, keeping the pause/resume flow consistent
+    with the regular chat endpoint.
+    """
+    file_context = parse_upload_files(files)
+    user_prompt = message.strip() if message.strip() else "请根据上传的文件内容生成相关考试题目。"
+    combined_message = (
+        f"{user_prompt}\n\n"
+        f"以下是从上传文件中提取到的参考内容（文件未保存，仅用于本次出题）：\n\n"
+        f"{file_context}"
+    )
+    return chat(
+        session=session,
+        user_id=user_id,
+        exam_id=exam_id,
+        message=combined_message,
+        current_questions=current_questions,
+    )
 
 
 def submit_tool_results(

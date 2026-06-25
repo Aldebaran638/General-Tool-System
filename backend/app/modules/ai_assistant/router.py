@@ -12,10 +12,14 @@ All endpoints require exam admin or superuser.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+import json
+from typing import Annotated
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from app.api.deps import SessionDep
 from app.modules.ai_assistant.deps import RequireAIAssistantAccess
+from app.modules.ai_assistant.parser import FileContentTooLargeError, FileParseError
 from app.modules.ai_assistant.schemas import (
     ChatRequest,
     ChatResponse,
@@ -27,6 +31,7 @@ from app.modules.ai_assistant.schemas import (
 from app.modules.ai_assistant.service import (
     LLMUnavailableError,
     chat,
+    chat_with_files,
     clear_thread,
     get_thread_status,
     submit_tool_results,
@@ -49,6 +54,44 @@ def chat_endpoint(
             message=request.message,
             current_questions=request.current_questions,
         )
+    except LLMUnavailableError as exc:
+        raise HTTPException(status_code=504, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"AI 助手调用失败: {exc}") from exc
+    session.commit()
+    return ChatResponse(**result)
+
+
+@router.post("/chat-with-files", response_model=ChatResponse)
+def chat_with_files_endpoint(
+    exam_id: Annotated[str, Form()],
+    files: Annotated[list[UploadFile], File(...)],
+    session: SessionDep,
+    current_user: RequireAIAssistantAccess,
+    message: Annotated[str, Form()] = "",
+    current_questions: Annotated[str, Form()] = "[]",
+) -> ChatResponse:
+    try:
+        questions = json.loads(current_questions)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail="current_questions 格式错误") from exc
+
+    if not files:
+        raise HTTPException(status_code=400, detail="至少上传一个文件")
+
+    try:
+        result = chat_with_files(
+            session=session,
+            user_id=current_user.id,
+            exam_id=exam_id,
+            message=message,
+            files=files,
+            current_questions=questions,
+        )
+    except FileParseError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileContentTooLargeError as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
     except LLMUnavailableError as exc:
         raise HTTPException(status_code=504, detail=str(exc)) from exc
     except Exception as exc:
