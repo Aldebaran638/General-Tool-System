@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useId, useRef, useState } from "react"
 import { Loader2, Paperclip, Send, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -24,6 +24,7 @@ export function ChatInput({
 }: ChatInputProps) {
   const [text, setText] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const inputId = useId()
 
   function handleSend() {
     const trimmed = text.trim()
@@ -77,6 +78,7 @@ export function ChatInput({
 
       <div className="flex gap-2 items-end">
         <input
+          id={inputId}
           ref={fileInputRef}
           type="file"
           multiple
@@ -86,15 +88,16 @@ export function ChatInput({
           disabled={disabled}
         />
         <Button
-          type="button"
+          asChild
           variant="ghost"
           size="icon"
-          onClick={() => fileInputRef.current?.click()}
           disabled={disabled}
-          className="shrink-0 h-10 w-10"
+          className="shrink-0 h-10 w-10 cursor-pointer"
           title="上传文件"
         >
-          <Paperclip className="h-4 w-4" />
+          <label htmlFor={inputId} className="flex items-center justify-center">
+            <Paperclip className="h-4 w-4" />
+          </label>
         </Button>
 
         <textarea
