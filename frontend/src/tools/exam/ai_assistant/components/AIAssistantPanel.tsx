@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { ChatInput } from "./ChatInput"
 import { ChatMessageList } from "./ChatMessageList"
 import { ThinkingIndicator } from "./ThinkingIndicator"
-import { chat, clearThread, submitToolResults } from "../api"
+import { chat, chatWithFiles, clearThread, submitToolResults } from "../api"
 import type {
   AIToolCall,
   ChatMessage,
@@ -174,6 +174,7 @@ export function AIAssistantPanel({
 }: AIAssistantPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const abortControllerRef = useRef<AbortController | null>(null)
 
   function cancelCurrentRequest() {
@@ -183,10 +184,10 @@ export function AIAssistantPanel({
     }
   }
 
-  async function handleSend(message: string) {
+  async function handleSend(message: string, files: File[]) {
     if (isLoading) return
 
-    const userMsg: ChatMessage = { role: "user", content: message }
+    const userMsg: ChatMessage = { role: "user", content: message || `已上传 ${files.length} 个文件` }
     setMessages((prev) => [...prev, userMsg])
     setIsLoading(true)
 
@@ -196,15 +197,17 @@ export function AIAssistantPanel({
       controller.abort()
     }, CHAT_TIMEOUT_MS)
 
+    const request = {
+      exam_id: examId,
+      message: message || "请根据上传的文件内容生成相关考试题目。",
+      current_questions: questions,
+    }
+
     try {
-      const response = await chat(
-        {
-          exam_id: examId,
-          message,
-          current_questions: questions,
-        },
-        controller.signal,
-      )
+      const response =
+        files.length > 0
+          ? await chatWithFiles(request, files, controller.signal)
+          : await chat(request, controller.signal)
 
       if (response.tool_calls && response.tool_calls.length > 0) {
         const assistantMsg: ChatMessage = {
@@ -259,6 +262,7 @@ export function AIAssistantPanel({
     try {
       await clearThread({ exam_id: examId })
       setMessages([])
+      setAttachedFiles([])
       toast.success("上下文已清空")
     } catch (e) {
       toast.error("清空失败", { description: (e as Error).message })
@@ -317,6 +321,9 @@ export function AIAssistantPanel({
         onSend={handleSend}
         onCancel={isLoading ? cancelCurrentRequest : undefined}
         disabled={isLoading}
+        files={attachedFiles}
+        onFilesChange={setAttachedFiles}
+        accept=".pdf,.docx,.txt,.md,.csv,.xlsx"
       />
     </div>
   )

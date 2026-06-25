@@ -1,13 +1,16 @@
-import { useState } from "react"
-import { Loader2, Send, X } from "lucide-react"
+import { useRef, useState } from "react"
+import { Loader2, Paperclip, Send, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
 interface ChatInputProps {
-  onSend: (message: string) => void
+  onSend: (message: string, files: File[]) => void
   onCancel?: () => void
   disabled?: boolean
   placeholder?: string
+  files?: File[]
+  onFilesChange?: (files: File[]) => void
+  accept?: string
 }
 
 export function ChatInput({
@@ -15,14 +18,19 @@ export function ChatInput({
   onCancel,
   disabled = false,
   placeholder = "输入消息...",
+  files = [],
+  onFilesChange,
+  accept,
 }: ChatInputProps) {
   const [text, setText] = useState("")
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   function handleSend() {
     const trimmed = text.trim()
-    if (!trimmed || disabled) return
-    onSend(trimmed)
+    if ((!trimmed && files.length === 0) || disabled) return
+    onSend(trimmed, files)
     setText("")
+    onFilesChange?.([])
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -32,32 +40,88 @@ export function ChatInput({
     }
   }
 
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files
+    if (!selected || selected.length === 0) return
+    const newFiles = [...files, ...Array.from(selected)]
+    onFilesChange?.(newFiles)
+    e.target.value = ""
+  }
+
+  function removeFile(index: number) {
+    onFilesChange?.(files.filter((_, i) => i !== index))
+  }
+
   return (
-    <div className="p-4 border-t flex gap-2 items-end">
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        disabled={disabled}
-        className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-      />
-      <Button
-        size="icon"
-        onClick={disabled ? onCancel : handleSend}
-        disabled={disabled ? !onCancel : !text.trim()}
-        className="shrink-0 h-10 w-10"
-      >
-        {disabled ? (
-          onCancel ? (
-            <X className="h-4 w-4" />
+    <div className="p-4 border-t flex flex-col gap-2">
+      {files.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {files.map((file, idx) => (
+            <div
+              key={`${file.name}-${idx}`}
+              className="flex items-center gap-1.5 text-xs bg-muted px-2 py-1 rounded-md border"
+            >
+              <span className="truncate max-w-[150px]">{file.name}</span>
+              <button
+                type="button"
+                onClick={() => removeFile(idx)}
+                className="text-muted-foreground hover:text-foreground"
+                disabled={disabled}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex gap-2 items-end">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          accept={accept}
+          onChange={handleFileSelect}
+          disabled={disabled}
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled}
+          className="shrink-0 h-10 w-10"
+          title="上传文件"
+        >
+          <Paperclip className="h-4 w-4" />
+        </Button>
+
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={disabled}
+          className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+        />
+        <Button
+          size="icon"
+          onClick={disabled ? onCancel : handleSend}
+          disabled={disabled ? !onCancel : !text.trim() && files.length === 0}
+          className="shrink-0 h-10 w-10"
+        >
+          {disabled ? (
+            onCancel ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )
           ) : (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          )
-        ) : (
-          <Send className="h-4 w-4" />
-        )}
-      </Button>
+            <Send className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
     </div>
   )
 }
