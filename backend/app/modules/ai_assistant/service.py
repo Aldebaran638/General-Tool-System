@@ -164,7 +164,7 @@ class AgentState(TypedDict):
     pending_tool_calls: list[dict[str, Any]] | None
 
 
-_LLM_TIMEOUT = httpx.Timeout(30.0, connect=10.0)
+_LLM_TIMEOUT = httpx.Timeout(120.0, connect=10.0)
 
 
 def _get_model() -> ChatOpenAI:

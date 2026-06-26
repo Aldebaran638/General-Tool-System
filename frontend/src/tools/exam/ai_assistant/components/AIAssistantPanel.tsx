@@ -27,7 +27,7 @@ interface AIAssistantPanelProps {
   className?: string
 }
 
-const CHAT_TIMEOUT_MS = 35000
+const CHAT_TIMEOUT_MS = 130000
 
 function buildQuestionCreate(args: CreateQuestionArgs, sortNo: number): QuestionCreate {
   const options = args.options.map((o, i) => ({
