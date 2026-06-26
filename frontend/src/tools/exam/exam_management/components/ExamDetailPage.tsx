@@ -16,7 +16,6 @@ import {
   Search,
   X,
   Users,
-  Bot,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -55,10 +54,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-
-import useAuth from "@/hooks/useAuth"
-import { cn } from "@/lib/utils"
-import { AIAssistantPanel } from "../../ai_assistant/components/AIAssistantPanel"
 
 import {
   getExam,
@@ -139,12 +134,12 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
   }
 
   return (
-    <div className="flex flex-col gap-6 h-full">
-      <Card className="flex-1 flex flex-col">
+    <div className="flex flex-col gap-6">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">基本信息</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4 flex-1">
+        <CardContent className="flex flex-col gap-4">
           <div className="grid gap-2">
             <Label>考试名称</Label>
             <Input
@@ -1638,11 +1633,9 @@ function ExamStatisticsTab({ exam }: { exam: Exam }) {
 export function ExamDetailPage() {
   const queryClient = useQueryClient()
   const examId = window.location.pathname.split("/").filter(Boolean).pop() ?? ""
-  const { user: currentUser } = useAuth()
 
   const [questions, setQuestions] = useState<QuestionCreate[]>([])
   const [paperLoaded, setPaperLoaded] = useState(false)
-  const [aiOpen, setAiOpen] = useState(false)
 
   const examQuery = useQuery({
     queryKey: ["exam", examId],
@@ -1724,13 +1717,10 @@ export function ExamDetailPage() {
     )
   }
 
-  const showAIAssistant = currentUser?.is_superuser ?? false
-
   return (
-    <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-4rem)] lg:-mt-6 lg:-mt-8 lg:overflow-hidden">
-      <div className="flex-1 min-w-0 flex flex-col gap-6 lg:overflow-y-auto">
-        {/* Header */}
-        <div className={cn("flex items-start justify-between", aiOpen && "lg:pr-4")}>
+    <div className="flex flex-col gap-6">
+      {/* Header */}
+      <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -1793,7 +1783,7 @@ export function ExamDetailPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="settings" className="flex-1 min-h-0">
+      <Tabs defaultValue="settings">
         <TabsList>
           <TabsTrigger value="settings">考试设置</TabsTrigger>
           <TabsTrigger value="paper">试卷编辑</TabsTrigger>
@@ -1821,36 +1811,6 @@ export function ExamDetailPage() {
           <ExamStatisticsTab exam={exam} />
         </TabsContent>
       </Tabs>
-      </div>
-
-      {showAIAssistant && !aiOpen && (
-        <button
-          type="button"
-          onClick={() => setAiOpen(true)}
-          className="fixed right-4 bottom-4 z-30 flex items-center justify-center gap-2 p-3 text-sm text-muted-foreground bg-background/95 border rounded-full shadow-sm hover:bg-muted/60 hover:text-foreground transition-colors lg:right-0 lg:top-24 lg:bottom-auto lg:rounded-l-xl lg:rounded-r-none lg:px-3 lg:py-4 lg:flex-col"
-        >
-          <Bot className="h-5 w-5" />
-          <span className="hidden lg:inline [writing-mode:vertical-rl]">AI 助手</span>
-        </button>
-      )}
-
-      {showAIAssistant && aiOpen && (
-        <aside
-          className={cn(
-            "shrink-0 flex flex-col transition-all duration-300 bg-background overflow-hidden",
-            "fixed inset-0 top-16 z-30 lg:static lg:w-96 lg:h-full lg:border-l lg:pl-4",
-          )}
-        >
-          <AIAssistantPanel
-            examId={examId}
-            open={aiOpen}
-            onOpenChange={setAiOpen}
-            questions={questions}
-            onQuestionsChange={setQuestions}
-            className="h-full"
-          />
-        </aside>
-      )}
     </div>
   )
 }
