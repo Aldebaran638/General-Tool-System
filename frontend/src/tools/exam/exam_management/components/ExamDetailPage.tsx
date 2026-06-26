@@ -16,13 +16,13 @@ import {
   Search,
   X,
   Users,
-  Sparkles,
+  Bot,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -377,6 +377,9 @@ function PaperEditorTab({
 }) {
   const queryClient = useQueryClient()
 
+  const [aiOpen, setAiOpen] = useState(false)
+  const { user } = useAuth()
+  const isAdmin = user?.is_superuser === true
   const saveMutation = useMutation({
     mutationFn: () => savePaper(exam.id, { questions }),
     onSuccess: () => {
@@ -554,6 +557,18 @@ function PaperEditorTab({
             <Plus className="mr-1 h-3 w-3" />
             判断题
           </Button>
+          {isAdmin && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setAiOpen(true)}
+              title="AI 组卷助手"
+              className="bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 text-primary-foreground shadow-sm transition-all hover:shadow-md"
+            >
+              <Bot className="mr-1 h-3 w-3" />
+              AI 组卷
+            </Button>
+          )}
         </div>
         <div className="flex items-center gap-x-4 gap-y-2 text-sm text-muted-foreground flex-wrap">
           <span>共 {questions.length} 题</span>
@@ -754,6 +769,21 @@ function PaperEditorTab({
           </CardContent>
         </Card>
       ))}
+
+      {/* AI 组卷助手 — 仅管理员可见 */}
+      {isAdmin && (
+        <Sheet open={aiOpen} onOpenChange={setAiOpen}>
+          <SheetContent side="right" className="w-[480px] sm:max-w-[480px] p-0">
+            <SheetTitle className="sr-only">AI 组卷助手</SheetTitle>
+            <AIAssistantPanel
+              examId={exam.id}
+              questions={questions}
+              onQuestionsChange={setQuestions}
+              className="h-full"
+            />
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   )
 }
@@ -1636,13 +1666,10 @@ function ExamStatisticsTab({ exam }: { exam: Exam }) {
 
 export function ExamDetailPage() {
   const queryClient = useQueryClient()
-  const { user } = useAuth()
   const examId = window.location.pathname.split("/").filter(Boolean).pop() ?? ""
 
   const [questions, setQuestions] = useState<QuestionCreate[]>([])
   const [paperLoaded, setPaperLoaded] = useState(false)
-  const [aiOpen, setAiOpen] = useState(false)
-  const isAdmin = user?.is_superuser === true
 
   const examQuery = useQuery({
     queryKey: ["exam", examId],
@@ -1818,32 +1845,6 @@ export function ExamDetailPage() {
           <ExamStatisticsTab exam={exam} />
         </TabsContent>
       </Tabs>
-
-      {/* AI 助手入口 — 仅管理员可见，右侧悬浮 */}
-      {isAdmin && (
-        <Sheet open={aiOpen} onOpenChange={setAiOpen}>
-          <SheetTrigger asChild>
-            <Button
-              size="icon"
-              className="fixed right-6 bottom-6 h-14 w-14 rounded-full shadow-lg z-50"
-              title="AI 组卷助手"
-            >
-              <Sparkles className="h-6 w-6" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-full sm:max-w-[420px] p-0">
-            <SheetTitle className="sr-only">AI 组卷助手</SheetTitle>
-            <AIAssistantPanel
-              examId={examId}
-              open={aiOpen}
-              onOpenChange={setAiOpen}
-              questions={questions}
-              onQuestionsChange={setQuestions}
-              className="h-full"
-            />
-          </SheetContent>
-        </Sheet>
-      )}
     </div>
   )
 }

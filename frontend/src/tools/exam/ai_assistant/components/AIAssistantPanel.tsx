@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { Trash2, X } from "lucide-react"
+import { Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -22,8 +22,6 @@ import type { QuestionCreate } from "../../exam_management/types"
 
 interface AIAssistantPanelProps {
   examId: string
-  open: boolean
-  onOpenChange: (open: boolean) => void
   questions: QuestionCreate[]
   onQuestionsChange: (questions: QuestionCreate[]) => void
   className?: string
@@ -169,7 +167,6 @@ function applyToolCalls(
 
 export function AIAssistantPanel({
   examId,
-  onOpenChange,
   questions,
   onQuestionsChange,
   className,
@@ -312,33 +309,28 @@ export function AIAssistantPanel({
         <div className="flex items-center gap-3">
           <AetherSpectrum
             state={aiStatus ?? (isLoading ? "thinking" : "idle")}
-            size={56}
+            size={44}
           />
-          <span className="text-base font-semibold">AI 组卷助手</span>
+          <div className="flex flex-col">
+            <span className="text-base font-semibold">AI 组卷助手</span>
+            <span className="text-xs text-muted-foreground">
+              {isLoading
+                ? aiStatus === "tool-calling"
+                  ? "正在调用工具…"
+                  : "正在思考…"
+                : "随时问我关于试卷的事"}
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={handleClear}
-            title="清空上下文"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => {
-              cancelCurrentRequest()
-              onOpenChange(false)
-            }}
-            title="关闭"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={handleClear}
+          title="清空上下文"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
 
       <ChatMessageList messages={messages} isLoading={isLoading} status={aiStatus} />
@@ -347,6 +339,7 @@ export function AIAssistantPanel({
         onSend={handleSend}
         onCancel={isLoading ? cancelCurrentRequest : undefined}
         disabled={isLoading}
+        placeholder="输入指令，例如：添加一道单选题，问 Python 的创始人是谁"
         files={attachedFiles}
         onFilesChange={setAttachedFiles}
         accept=".pdf,.docx,.txt,.md,.csv,.xlsx"

@@ -76,7 +76,7 @@ export function ChatInput({
         </div>
       )}
 
-      <div className="flex items-end gap-2 rounded-2xl border bg-muted/50 p-2 focus-within:ring-1 focus-within:ring-ring">
+      <div className="flex items-end gap-2 rounded-2xl border bg-muted/50 p-2 transition-all focus-within:ring-1 focus-within:ring-ring focus-within:bg-muted">
         <input
           id={inputId}
           ref={fileInputRef}

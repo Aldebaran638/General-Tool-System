@@ -1,6 +1,6 @@
-import { useMemo, useRef, useEffect } from "react"
+import { useRef, useEffect } from "react"
 
-import { AetherSpectrum } from "./AetherSpectrum"
+import { Bot } from "lucide-react"
 import { CollapsibleToolBlock } from "./CollapsibleToolBlock"
 import { MarkdownContent } from "./MarkdownContent"
 import type { AIStatus, ChatMessage } from "../types"
@@ -11,15 +11,12 @@ interface ChatMessageListProps {
   status?: AIStatus | null
 }
 
-export function ChatMessageList({ messages, isLoading = false, status = null }: ChatMessageListProps) {
+export function ChatMessageList({
+  messages,
+  isLoading = false,
+  status = null,
+}: ChatMessageListProps) {
   const endRef = useRef<HTMLDivElement>(null)
-
-  const lastAiIndex = useMemo(() => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === "assistant") return i
-    }
-    return -1
-  }, [messages])
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -36,7 +33,7 @@ export function ChatMessageList({ messages, isLoading = false, status = null }: 
         [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30"
     >
       {messages.length === 0 && !isLoading && (
-        <div className="text-center text-sm text-muted-foreground py-8">
+        <div className="animate-fade-in-up text-center text-sm text-muted-foreground py-8">
           我是 AI 组卷助手，可以帮你出题、改题、查题。
           <br />
           试试说：「添加一道单选题，问 Python 的创始人是谁」。
@@ -44,11 +41,9 @@ export function ChatMessageList({ messages, isLoading = false, status = null }: 
       )}
 
       {messages.map((msg, idx) => {
-        const isLastAi = idx === lastAiIndex
-
         if (msg.role === "user") {
           return (
-            <div key={idx} className="flex justify-end">
+            <div key={idx} className="flex justify-end animate-fade-in-up">
               <div className="bg-primary text-primary-foreground font-medium text-sm px-4 py-3 rounded-2xl rounded-tr-none max-w-[85%] shadow-sm leading-relaxed text-left">
                 {msg.content}
               </div>
@@ -57,14 +52,17 @@ export function ChatMessageList({ messages, isLoading = false, status = null }: 
         }
 
         return (
-          <div key={idx} className="space-y-1.5">
-            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-              {msg.role === "tool" ? "外部扩展工具 (Tool Call)" : "AI 智能输出"}
+          <div key={idx} className="flex gap-3 animate-fade-in-up">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Bot className="h-4 w-4" />
             </div>
+            <div className="flex-1 min-w-0 space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">
+                AI 组卷助手
+              </div>
 
-            <div className="pl-1 space-y-3 py-1">
               {msg.content && (
-                <div className="text-sm leading-relaxed">
+                <div className="rounded-2xl rounded-tl-none border bg-muted/40 px-4 py-3 text-sm leading-relaxed shadow-sm">
                   <MarkdownContent text={msg.content} />
                 </div>
               )}
@@ -72,30 +70,30 @@ export function ChatMessageList({ messages, isLoading = false, status = null }: 
               {msg.tool_calls?.map((tc) => (
                 <CollapsibleToolBlock key={tc.id} toolCall={tc} />
               ))}
-
-              {isLastAi && !isLoading && (
-                <div className="flex items-center gap-2 -ml-2 pt-1">
-                  <AetherSpectrum state="idle" size={56} />
-                  <span className="text-[10px] font-mono text-muted-foreground tracking-wider">
-                    AETHER_IDLE
-                  </span>
-                </div>
-              )}
             </div>
           </div>
         )
       })}
 
       {isLoading && (
-        <div className="space-y-1.5">
-          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            AI 智能输出
+        <div className="flex gap-3 animate-fade-in-up">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Bot className="h-4 w-4 animate-pulse" />
           </div>
-          <div className="pl-1 flex items-center gap-3 py-1">
-            <AetherSpectrum state={status ?? "thinking"} size={56} />
-            <span className="text-xs text-muted-foreground">
-              {status === "tool-calling" ? "AI 正在调用工具…" : "AI 正在思考…"}
-            </span>
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className="text-xs font-medium text-muted-foreground">
+              AI 组卷助手
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-2xl rounded-tl-none border bg-muted/40 px-4 py-3 text-sm text-muted-foreground shadow-sm">
+              <span>
+                {status === "tool-calling" ? "正在调用工具…" : "AI 正在思考…"}
+              </span>
+              <span className="flex gap-0.5">
+                <span className="h-1 w-1 rounded-full bg-current animate-bounce [animation-delay:-0.2s]" />
+                <span className="h-1 w-1 rounded-full bg-current animate-bounce [animation-delay:-0.1s]" />
+                <span className="h-1 w-1 rounded-full bg-current animate-bounce" />
+              </span>
+            </div>
           </div>
         </div>
       )}
