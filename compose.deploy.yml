@@ -1,0 +1,45 @@
+# 生产/部署模式覆盖：
+# 不挂载本地源码，直接构建镜像运行，因此工作目录中的代码变更不会影响已部署容器。
+# 使用方式：
+#   docker compose -f compose.yml -f compose.deploy.yml up -d --build
+#
+# 前端通过 http://192.168.3.109:10206 直接访问
+# 后端通过 http://192.168.3.109:10205 直接访问
+
+services:
+  backend:
+    ports:
+      - "10205:8000"
+    restart: always
+    # 取消开发模式下的源码挂载
+    volumes: []
+
+  prestart:
+    # 取消开发模式下的源码挂载
+    volumes: []
+
+  frontend:
+    ports:
+      - "10206:80"
+    restart: always
+    build:
+      args:
+        # 前端打包时把 API 指向后端直接访问地址
+        - VITE_API_URL=http://192.168.3.109:10205
+        - NODE_ENV=production
+    environment: []
+    labels: []
+
+  adminer:
+    ports:
+      - "10204:8080"
+    restart: always
+    labels: []
+
+  db:
+    restart: always
+
+networks:
+  traefik-public:
+    # 内部部署不需要外部 Traefik 网络
+    external: false

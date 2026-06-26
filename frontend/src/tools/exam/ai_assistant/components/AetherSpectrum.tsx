@@ -168,10 +168,7 @@ export function AetherSpectrum({
       }
       info.centerPulse += (info.targetCenterPulse - info.centerPulse) * heightLerpFactor
 
-      const dpr = window.devicePixelRatio || 1
       const logicalSize = 80
-      const width = logicalSize
-      const height = logicalSize
       const cx = logicalSize / 2
       const cy = logicalSize / 2
 
