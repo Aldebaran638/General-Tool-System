@@ -1727,8 +1727,8 @@ export function ExamDetailPage() {
   const showAIAssistant = currentUser?.is_superuser ?? false
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 lg:gap-0">
-      <div className="flex-1 min-w-0 flex flex-col gap-6">
+    <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-4rem)] lg:-mt-6 lg:-mt-8 lg:overflow-hidden lg:gap-4">
+      <div className="flex-1 min-w-0 flex flex-col gap-6 p-6 md:p-8 lg:overflow-y-auto">
         {/* Header */}
         <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
@@ -1823,34 +1823,32 @@ export function ExamDetailPage() {
       </Tabs>
       </div>
 
-      {showAIAssistant && (
+      {showAIAssistant && !aiOpen && (
+        <button
+          type="button"
+          onClick={() => setAiOpen(true)}
+          className="fixed right-4 bottom-4 z-30 flex items-center justify-center gap-2 p-3 text-sm text-muted-foreground bg-background/95 border rounded-full shadow-sm hover:bg-muted/60 hover:text-foreground transition-colors lg:right-0 lg:top-24 lg:bottom-auto lg:rounded-l-xl lg:rounded-r-none lg:px-3 lg:py-4 lg:flex-col"
+        >
+          <Bot className="h-5 w-5" />
+          <span className="hidden lg:inline [writing-mode:vertical-rl]">AI 助手</span>
+        </button>
+      )}
+
+      {showAIAssistant && aiOpen && (
         <aside
           className={cn(
-            "shrink-0 flex flex-col transition-all duration-300",
-            "lg:sticky lg:top-16 lg:self-start lg:h-[calc(100vh-4rem)] lg:border-l lg:bg-background lg:z-10",
-            "-mt-6 md:-mt-8",
-            aiOpen ? "lg:w-96" : "lg:w-12"
+            "shrink-0 flex flex-col transition-all duration-300 bg-background overflow-hidden",
+            "fixed inset-0 top-16 z-30 lg:static lg:w-96 lg:h-full lg:border-l",
           )}
         >
-          {aiOpen ? (
-            <AIAssistantPanel
-              examId={examId}
-              open={aiOpen}
-              onOpenChange={setAiOpen}
-              questions={questions}
-              onQuestionsChange={setQuestions}
-              className="h-full"
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setAiOpen(true)}
-              className="flex items-center justify-center gap-2 p-3 text-sm text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors lg:flex-col lg:h-full lg:py-6 lg:gap-3"
-            >
-              <Bot className="h-5 w-5" />
-              <span className="lg:[writing-mode:vertical-rl]">AI 助手</span>
-            </button>
-          )}
+          <AIAssistantPanel
+            examId={examId}
+            open={aiOpen}
+            onOpenChange={setAiOpen}
+            questions={questions}
+            onQuestionsChange={setQuestions}
+            className="h-full"
+          />
         </aside>
       )}
     </div>
