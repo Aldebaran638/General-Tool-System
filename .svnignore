@@ -32,3 +32,5 @@ backend/app/uploads/
 frontend/test-results/
 frontend/blob-report/
 test/
+backend/restart_backend_8000.sh
+backend/fastapi.log

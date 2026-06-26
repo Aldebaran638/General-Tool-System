@@ -54,7 +54,7 @@ export function ChatInput({
   }
 
   return (
-    <div className="p-4 border-t flex flex-col gap-2">
+    <div className="p-4 border-t bg-background flex flex-col gap-2">
       {files.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {files.map((file, idx) => (
@@ -76,7 +76,7 @@ export function ChatInput({
         </div>
       )}
 
-      <div className="flex gap-2 items-end">
+      <div className="flex items-end gap-2 rounded-2xl border bg-muted/50 p-2 focus-within:ring-1 focus-within:ring-ring">
         <input
           id={inputId}
           ref={fileInputRef}
@@ -92,7 +92,7 @@ export function ChatInput({
           variant="ghost"
           size="icon"
           disabled={disabled}
-          className="shrink-0 h-10 w-10 cursor-pointer"
+          className="shrink-0 h-9 w-9 cursor-pointer rounded-full"
           title="上传文件"
         >
           <label htmlFor={inputId} className="flex items-center justify-center">
@@ -106,13 +106,14 @@ export function ChatInput({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+          rows={1}
+          className="flex min-h-[36px] max-h-[120px] w-full bg-transparent px-2 py-2 text-sm ring-0 border-0 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
         />
         <Button
           size="icon"
           onClick={disabled ? onCancel : handleSend}
           disabled={disabled ? !onCancel : !text.trim() && files.length === 0}
-          className="shrink-0 h-10 w-10"
+          className="shrink-0 h-9 w-9 rounded-full"
         >
           {disabled ? (
             onCancel ? (

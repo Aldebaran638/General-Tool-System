@@ -1,8 +1,9 @@
 import { useRef, useState } from "react"
-import { Bot, Trash2, X } from "lucide-react"
+import { Trash2, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { AetherSpectrum } from "./AetherSpectrum"
 import { ChatInput } from "./ChatInput"
 import { ChatMessageList } from "./ChatMessageList"
 import { ThinkingIndicator } from "./ThinkingIndicator"
@@ -274,8 +275,8 @@ export function AIAssistantPanel({
       className={`flex flex-col h-full bg-background ${className ?? ""}`}
     >
       <div className="p-4 border-b flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-primary" />
+        <div className="flex items-center gap-3">
+          <AetherSpectrum state={isLoading ? "thinking" : "idle"} size={28} />
           <span className="text-base font-semibold">AI 组卷助手</span>
         </div>
         <div className="flex items-center gap-1">
@@ -308,7 +309,7 @@ export function AIAssistantPanel({
           <ThinkingIndicator />
         </div>
       ) : (
-        <ChatMessageList messages={messages} />
+        <ChatMessageList messages={messages} isLoading={isLoading} />
       )}
 
       {isLoading && messages.length > 0 && (

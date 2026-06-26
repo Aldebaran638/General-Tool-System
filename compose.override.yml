@@ -78,11 +78,17 @@ services:
       SMTP_TLS: "false"
       EMAILS_FROM_EMAIL: "noreply@example.com"
       WATCHFILES_FORCE_POLLING: "true"
+      # 容器内通过服务名访问数据库，避免被 .env 中的 localhost 覆盖
+      POSTGRES_SERVER: "db"
+      POSTGRES_PORT: "5432"
     # develop section removed for docker-compose v1 compatibility
 
   prestart:
     volumes:
       - ./backend:/app/backend
+    environment:
+      POSTGRES_SERVER: "db"
+      POSTGRES_PORT: "5432"
 
   mailcatcher:
     image: schickling/mailcatcher
