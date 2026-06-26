@@ -16,11 +16,13 @@ import {
   Search,
   X,
   Users,
+  Sparkles,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -79,6 +81,8 @@ import type { WecomUser, WecomDepartment } from "../api"
 import type { Exam, ExamUpdate, QuestionCreate } from "../types"
 import { TrainerSearchSelect } from "./TrainerSearchSelect"
 import { listExamCategories } from "../../category_management/api"
+import { AIAssistantPanel } from "../../ai_assistant/components/AIAssistantPanel"
+import useAuth from "@/hooks/useAuth"
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -1632,10 +1636,13 @@ function ExamStatisticsTab({ exam }: { exam: Exam }) {
 
 export function ExamDetailPage() {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
   const examId = window.location.pathname.split("/").filter(Boolean).pop() ?? ""
 
   const [questions, setQuestions] = useState<QuestionCreate[]>([])
   const [paperLoaded, setPaperLoaded] = useState(false)
+  const [aiOpen, setAiOpen] = useState(false)
+  const isAdmin = user?.is_superuser === true
 
   const examQuery = useQuery({
     queryKey: ["exam", examId],
@@ -1811,6 +1818,32 @@ export function ExamDetailPage() {
           <ExamStatisticsTab exam={exam} />
         </TabsContent>
       </Tabs>
+
+      {/* AI 助手入口 — 仅管理员可见，右侧悬浮 */}
+      {isAdmin && (
+        <Sheet open={aiOpen} onOpenChange={setAiOpen}>
+          <SheetTrigger asChild>
+            <Button
+              size="icon"
+              className="fixed right-6 bottom-6 h-14 w-14 rounded-full shadow-lg z-50"
+              title="AI 组卷助手"
+            >
+              <Sparkles className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-full sm:max-w-[420px] p-0">
+            <SheetTitle className="sr-only">AI 组卷助手</SheetTitle>
+            <AIAssistantPanel
+              examId={examId}
+              open={aiOpen}
+              onOpenChange={setAiOpen}
+              questions={questions}
+              onQuestionsChange={setQuestions}
+              className="h-full"
+            />
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   )
 }
