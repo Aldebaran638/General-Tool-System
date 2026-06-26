@@ -547,6 +547,7 @@ def submit_tool_results_stream(
     session.commit()
 
     final_state = graph.get_state(config)
+    pending = final_state.values.get("pending_tool_calls") if final_state else None
     messages_out = final_state.values.get("messages", []) if final_state else []
     last_message = messages_out[-1] if messages_out else None
     response_text = last_message.content if isinstance(last_message, AIMessage) else None
@@ -556,7 +557,7 @@ def submit_tool_results_stream(
         {
             "type": "done",
             "message": response_text,
-            "tool_calls": None,
+            "tool_calls": pending,
             "thread_id": thread_id,
         },
     )
