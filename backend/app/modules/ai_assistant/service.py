@@ -14,6 +14,7 @@ from __future__ import annotations
 import atexit
 import json
 import uuid
+from collections.abc import Iterator
 from datetime import datetime, timezone
 from typing import Annotated, Any, TypedDict
 
@@ -395,6 +396,170 @@ def submit_tool_results(
         "message": response_text,
         "thread_id": thread_id,
     }
+
+
+def _sse_event(event: str, data: dict[str, Any]) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+def chat_stream(
+    session: Session,
+    user_id: uuid.UUID,
+    exam_id: str,
+    message: str,
+    current_questions: list[dict[str, Any]],
+) -> Iterator[str]:
+    """Stream chat status events and return the final response via SSE."""
+    thread_id = _thread_id(user_id, exam_id)
+    config = {"configurable": {"thread_id": thread_id}}
+
+    _ensure_thread_metadata(session, user_id, exam_id, thread_id)
+
+    graph = _get_compiled_graph()
+    existing_state = graph.get_state(config)
+    has_history = bool(existing_state and existing_state.values.get("messages"))
+
+    human_msg = _make_human_message(message, exam_id, current_questions)
+    messages: list[BaseMessage] = [SystemMessage(content=_SYSTEM_PROMPT)] if not has_history else []
+    messages.append(human_msg)
+
+    yield _sse_event("status", {"type": "status", "status": "thinking"})
+
+    try:
+        for event in graph.stream(
+            {
+                "messages": messages,
+                "exam_id": exam_id,
+                "current_questions": current_questions,
+                "pending_tool_calls": None,
+            },
+            config,
+            stream_mode="events",
+        ):
+            kind = event.get("event")
+            if kind == "on_chat_model_start":
+                yield _sse_event("status", {"type": "status", "status": "thinking"})
+            elif kind == "on_chat_model_end":
+                output = event.get("data", {}).get("output")
+                tool_calls = getattr(output, "tool_calls", None) or []
+                if tool_calls:
+                    names = [tc.get("name") for tc in tool_calls if tc.get("name")]
+                    yield _sse_event(
+                        "status",
+                        {"type": "status", "status": "tool-calling", "tools": names},
+                    )
+    except (httpx.TimeoutException, httpx.ConnectError) as exc:
+        yield _sse_event("error", {"type": "error", "message": f"大模型服务无响应或连接失败: {exc}"})
+        return
+    except Exception as exc:
+        yield _sse_event("error", {"type": "error", "message": f"大模型服务调用异常: {exc}"})
+        return
+
+    _touch_thread(session, thread_id)
+    session.commit()
+
+    final_state = graph.get_state(config)
+    pending = final_state.values.get("pending_tool_calls") if final_state else None
+    messages_out = final_state.values.get("messages", []) if final_state else []
+    last_message = messages_out[-1] if messages_out else None
+    response_text = last_message.content if isinstance(last_message, AIMessage) else None
+
+    yield _sse_event(
+        "done",
+        {
+            "type": "done",
+            "message": response_text,
+            "tool_calls": pending,
+            "thread_id": thread_id,
+        },
+    )
+
+
+def chat_with_files_stream(
+    session: Session,
+    user_id: uuid.UUID,
+    exam_id: str,
+    message: str,
+    files: list[UploadFile],
+    current_questions: list[dict[str, Any]],
+) -> Iterator[str]:
+    """Parse uploaded files and stream the agent response via SSE."""
+    file_context = parse_upload_files(files)
+    user_prompt = message.strip() if message.strip() else "请根据上传的文件内容生成相关考试题目。"
+    combined_message = (
+        f"{user_prompt}\n\n"
+        f"以下是从上传文件中提取到的参考内容（文件未保存，仅用于本次出题）：\n\n"
+        f"{file_context}"
+    )
+    yield from chat_stream(
+        session=session,
+        user_id=user_id,
+        exam_id=exam_id,
+        message=combined_message,
+        current_questions=current_questions,
+    )
+
+
+def submit_tool_results_stream(
+    session: Session,
+    user_id: uuid.UUID,
+    exam_id: str,
+    tool_results: list[ToolResult],
+    current_questions: list[dict[str, Any]],
+) -> Iterator[str]:
+    """Stream tool-result feedback and return the final reply via SSE."""
+    thread_id = _thread_id(user_id, exam_id)
+    config = {"configurable": {"thread_id": thread_id}}
+
+    tool_messages = [
+        ToolMessage(content=r.content, tool_call_id=r.tool_call_id)
+        for r in tool_results
+    ]
+    human_msg = _make_human_message(
+        "已完成上述工具调用，请根据执行结果继续。", exam_id, current_questions
+    )
+
+    graph = _get_compiled_graph()
+    yield _sse_event("status", {"type": "status", "status": "thinking"})
+
+    try:
+        for event in graph.stream(
+            {
+                "messages": [*tool_messages, human_msg],
+                "exam_id": exam_id,
+                "current_questions": current_questions,
+                "pending_tool_calls": None,
+            },
+            config,
+            stream_mode="events",
+        ):
+            kind = event.get("event")
+            if kind == "on_chat_model_start":
+                yield _sse_event("status", {"type": "status", "status": "thinking"})
+    except (httpx.TimeoutException, httpx.ConnectError) as exc:
+        yield _sse_event("error", {"type": "error", "message": f"大模型服务无响应或连接失败: {exc}"})
+        return
+    except Exception as exc:
+        yield _sse_event("error", {"type": "error", "message": f"大模型服务调用异常: {exc}"})
+        return
+
+    _touch_thread(session, thread_id)
+    session.commit()
+
+    final_state = graph.get_state(config)
+    messages_out = final_state.values.get("messages", []) if final_state else []
+    last_message = messages_out[-1] if messages_out else None
+    response_text = last_message.content if isinstance(last_message, AIMessage) else None
+
+    yield _sse_event(
+        "done",
+        {
+            "type": "done",
+            "message": response_text,
+            "tool_calls": None,
+            "thread_id": thread_id,
+        },
+    )
 
 
 def clear_thread(

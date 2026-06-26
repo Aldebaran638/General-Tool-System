@@ -6,14 +6,16 @@ import { Button } from "@/components/ui/button"
 import { AetherSpectrum } from "./AetherSpectrum"
 import { ChatInput } from "./ChatInput"
 import { ChatMessageList } from "./ChatMessageList"
-import { chat, chatWithFiles, clearThread, submitToolResults } from "../api"
+import { chatStream, chatWithFilesStream, clearThread, submitToolResultsStream } from "../api"
 import type {
+  AIStatus,
   AIToolCall,
   ChatMessage,
   CreateQuestionArgs,
   EditQuestionArgs,
   DeleteQuestionArgs,
   SearchQuestionsArgs,
+  SSEDoneEvent,
   ToolResult,
 } from "../types"
 import type { QuestionCreate } from "../../exam_management/types"
@@ -174,6 +176,7 @@ export function AIAssistantPanel({
 }: AIAssistantPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [aiStatus, setAiStatus] = useState<AIStatus | null>(null)
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const abortControllerRef = useRef<AbortController | null>(null)
 
@@ -187,9 +190,13 @@ export function AIAssistantPanel({
   async function handleSend(message: string, files: File[]) {
     if (isLoading) return
 
-    const userMsg: ChatMessage = { role: "user", content: message || `已上传 ${files.length} 个文件` }
+    const userMsg: ChatMessage = {
+      role: "user",
+      content: message || `已上传 ${files.length} 个文件`,
+    }
     setMessages((prev) => [...prev, userMsg])
     setIsLoading(true)
+    setAiStatus("thinking")
 
     const controller = new AbortController()
     abortControllerRef.current = controller
@@ -204,23 +211,40 @@ export function AIAssistantPanel({
     }
 
     try {
-      const response =
+      const stream =
         files.length > 0
-          ? await chatWithFiles(request, files, controller.signal)
-          : await chat(request, controller.signal)
+          ? chatWithFilesStream(request, files, controller.signal)
+          : chatStream(request, controller.signal)
 
-      if (response.tool_calls && response.tool_calls.length > 0) {
+      let doneEvent: SSEDoneEvent | null = null
+      for await (const event of stream) {
+        if (event.type === "status") {
+          setAiStatus(event.status)
+        } else if (event.type === "error") {
+          throw new Error(event.message)
+        } else if (event.type === "done") {
+          doneEvent = event
+          break
+        }
+      }
+
+      if (!doneEvent) {
+        throw new Error("响应异常，未收到完成事件")
+      }
+
+      if (doneEvent.tool_calls && doneEvent.tool_calls.length > 0) {
         const assistantMsg: ChatMessage = {
           role: "assistant",
-          content: response.message ?? "",
-          tool_calls: response.tool_calls,
+          content: doneEvent.message ?? "",
+          tool_calls: doneEvent.tool_calls,
         }
         setMessages((prev) => [...prev, assistantMsg])
 
-        const { newQuestions, results } = applyToolCalls(response.tool_calls, questions)
+        const { newQuestions, results } = applyToolCalls(doneEvent.tool_calls, questions)
         onQuestionsChange(newQuestions)
+        setAiStatus("thinking")
 
-        const toolResponse = await submitToolResults(
+        const toolStream = submitToolResultsStream(
           {
             exam_id: examId,
             tool_results: results,
@@ -229,14 +253,26 @@ export function AIAssistantPanel({
           controller.signal,
         )
 
+        let toolDone: SSEDoneEvent | null = null
+        for await (const event of toolStream) {
+          if (event.type === "status") {
+            setAiStatus(event.status)
+          } else if (event.type === "error") {
+            throw new Error(event.message)
+          } else if (event.type === "done") {
+            toolDone = event
+            break
+          }
+        }
+
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: toolResponse.message ?? "已完成" },
+          { role: "assistant", content: toolDone?.message ?? "已完成" },
         ])
       } else {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: response.message ?? "" },
+          { role: "assistant", content: doneEvent.message ?? "" },
         ])
       }
     } catch (e) {
@@ -254,6 +290,7 @@ export function AIAssistantPanel({
       window.clearTimeout(timeoutId)
       abortControllerRef.current = null
       setIsLoading(false)
+      setAiStatus(null)
     }
   }
 
@@ -273,7 +310,10 @@ export function AIAssistantPanel({
     <div className={`flex flex-col bg-background ${className ?? ""}`}>
       <div className="p-4 border-b flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-          <AetherSpectrum state={isLoading ? "thinking" : "idle"} size={28} />
+          <AetherSpectrum
+            state={aiStatus ?? (isLoading ? "thinking" : "idle")}
+            size={56}
+          />
           <span className="text-base font-semibold">AI 组卷助手</span>
         </div>
         <div className="flex items-center gap-1">
@@ -301,7 +341,7 @@ export function AIAssistantPanel({
         </div>
       </div>
 
-      <ChatMessageList messages={messages} isLoading={isLoading} />
+      <ChatMessageList messages={messages} isLoading={isLoading} status={aiStatus} />
 
       <ChatInput
         onSend={handleSend}

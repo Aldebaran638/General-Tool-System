@@ -3,14 +3,15 @@ import { useMemo, useRef, useEffect } from "react"
 import { AetherSpectrum } from "./AetherSpectrum"
 import { CollapsibleToolBlock } from "./CollapsibleToolBlock"
 import { MarkdownContent } from "./MarkdownContent"
-import type { ChatMessage } from "../types"
+import type { AIStatus, ChatMessage } from "../types"
 
 interface ChatMessageListProps {
   messages: ChatMessage[]
   isLoading?: boolean
+  status?: AIStatus | null
 }
 
-export function ChatMessageList({ messages, isLoading = false }: ChatMessageListProps) {
+export function ChatMessageList({ messages, isLoading = false, status = null }: ChatMessageListProps) {
   const endRef = useRef<HTMLDivElement>(null)
 
   const lastAiIndex = useMemo(() => {
@@ -74,7 +75,7 @@ export function ChatMessageList({ messages, isLoading = false }: ChatMessageList
 
               {isLastAi && !isLoading && (
                 <div className="flex items-center gap-2 -ml-2 pt-1">
-                  <AetherSpectrum state="idle" size={28} />
+                  <AetherSpectrum state="idle" size={56} />
                   <span className="text-[10px] font-mono text-muted-foreground tracking-wider">
                     AETHER_IDLE
                   </span>
@@ -91,8 +92,10 @@ export function ChatMessageList({ messages, isLoading = false }: ChatMessageList
             AI 智能输出
           </div>
           <div className="pl-1 flex items-center gap-3 py-1">
-            <AetherSpectrum state="thinking" size={28} />
-            <span className="text-xs text-muted-foreground">AI 正在思考…</span>
+            <AetherSpectrum state={status ?? "thinking"} size={56} />
+            <span className="text-xs text-muted-foreground">
+              {status === "tool-calling" ? "AI 正在调用工具…" : "AI 正在思考…"}
+            </span>
           </div>
         </div>
       )}

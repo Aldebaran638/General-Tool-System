@@ -93,3 +93,25 @@ export interface ThreadStatusResponse {
   message_count: number
   exists: boolean
 }
+
+export type AIStatus = "thinking" | "tool-calling"
+
+export interface SSEStatusEvent {
+  type: "status"
+  status: AIStatus
+  tools?: string[]
+}
+
+export interface SSEErrorEvent {
+  type: "error"
+  message: string
+}
+
+export interface SSEDoneEvent {
+  type: "done"
+  message: string | null
+  tool_calls: AIToolCall[] | null
+  thread_id: string
+}
+
+export type SSEEvent = SSEStatusEvent | SSEErrorEvent | SSEDoneEvent
