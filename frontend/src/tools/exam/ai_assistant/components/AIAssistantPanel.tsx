@@ -271,7 +271,7 @@ export function AIAssistantPanel({
 
   return (
     <div
-      className={`flex flex-col h-[calc(100vh-8rem)] border rounded-xl bg-background shadow-sm overflow-hidden ${className ?? ""}`}
+      className={`flex flex-col h-full bg-background ${className ?? ""}`}
     >
       <div className="p-4 border-b flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">

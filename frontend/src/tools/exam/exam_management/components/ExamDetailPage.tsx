@@ -56,6 +56,7 @@ import {
 } from "@/components/ui/dialog"
 
 import useAuth from "@/hooks/useAuth"
+import { cn } from "@/lib/utils"
 import { AIAssistantPanel } from "../../ai_assistant/components/AIAssistantPanel"
 
 import {
@@ -1726,7 +1727,7 @@ export function ExamDetailPage() {
   const showAIAssistant = currentUser?.is_superuser ?? false
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6">
+    <div className="flex flex-col lg:flex-row gap-6 lg:gap-0">
       <div className="flex-1 min-w-0 flex flex-col gap-6">
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -1823,34 +1824,32 @@ export function ExamDetailPage() {
       </div>
 
       {showAIAssistant && (
-        <aside className="w-full lg:w-auto shrink-0">
-          <div className="lg:sticky lg:top-6">
-            {aiOpen ? (
-              <AIAssistantPanel
-                examId={examId}
-                open={aiOpen}
-                onOpenChange={setAiOpen}
-                questions={questions}
-                onQuestionsChange={setQuestions}
-                className="lg:w-96"
-              />
-            ) : (
-              <Button
-                variant="outline"
-                onClick={() => setAiOpen(true)}
-                className="w-full lg:w-12 lg:h-40 lg:flex-col lg:items-center lg:justify-center lg:gap-2 lg:rounded-l-xl lg:rounded-r-none lg:border-r-0 shadow-sm"
-              >
-                <Bot className="h-4 w-4 lg:mb-2" />
-                <span className="lg:hidden">AI 助手</span>
-                <span
-                  className="hidden lg:inline"
-                  style={{ writingMode: "vertical-rl" }}
-                >
-                  AI 助手
-                </span>
-              </Button>
-            )}
-          </div>
+        <aside
+          className={cn(
+            "shrink-0 flex flex-col transition-all duration-300",
+            "lg:sticky lg:top-6 lg:self-start lg:h-[calc(100vh-8rem)] lg:border-l lg:bg-background",
+            aiOpen ? "lg:w-96" : "lg:w-12"
+          )}
+        >
+          {aiOpen ? (
+            <AIAssistantPanel
+              examId={examId}
+              open={aiOpen}
+              onOpenChange={setAiOpen}
+              questions={questions}
+              onQuestionsChange={setQuestions}
+              className="h-full"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAiOpen(true)}
+              className="flex items-center justify-center gap-2 p-3 text-sm text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors lg:flex-col lg:h-full lg:py-6 lg:gap-3"
+            >
+              <Bot className="h-5 w-5" />
+              <span className="lg:[writing-mode:vertical-rl]">AI 助手</span>
+            </button>
+          )}
         </aside>
       )}
     </div>
