@@ -1,0 +1,5 @@
+services:
+  backend:
+    environment:
+      - POSTGRES_SERVER=host.docker.internal
+      - POSTGRES_PORT=10203
