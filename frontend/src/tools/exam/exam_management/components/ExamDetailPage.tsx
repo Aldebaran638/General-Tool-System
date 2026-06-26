@@ -138,7 +138,7 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex flex-col gap-6 max-w-2xl mx-auto">
       <Card>
         <CardHeader>
           <CardTitle className="text-base">基本信息</CardTitle>
