@@ -30,6 +30,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from "@/components/ui/card"
 import {
   Select,
@@ -138,12 +139,12 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card>
+    <div className="flex flex-col gap-6 h-full">
+      <Card className="flex-1 flex flex-col">
         <CardHeader>
           <CardTitle className="text-base">基本信息</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent className="flex flex-col gap-4 flex-1">
           <div className="grid gap-2">
             <Label>考试名称</Label>
             <Input
@@ -344,23 +345,22 @@ function ExamSettingsTab({ exam }: { exam: Exam }) {
             />
           </div>
         </CardContent>
-      </Card>
-
-      {isDraft && (
-        <div className="flex gap-3">
-          <Button onClick={handleSave} disabled={updateMutation.isPending}>
-            {updateMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
+        {isDraft && (
+          <CardFooter className="flex gap-3 border-t bg-muted/30">
+            <Button onClick={handleSave} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              保存
+            </Button>
+            {updateMutation.isSuccess && (
+              <span className="text-sm text-green-600 self-center">已保存</span>
             )}
-            保存
-          </Button>
-          {updateMutation.isSuccess && (
-            <span className="text-sm text-green-600 self-center">已保存</span>
-          )}
-        </div>
-      )}
+          </CardFooter>
+        )}
+      </Card>
     </div>
   )
 }
@@ -1727,10 +1727,10 @@ export function ExamDetailPage() {
   const showAIAssistant = currentUser?.is_superuser ?? false
 
   return (
-    <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-4rem)] lg:-mt-6 lg:-mt-8 lg:overflow-hidden lg:gap-4">
-      <div className="flex-1 min-w-0 flex flex-col gap-6 p-6 md:p-8 lg:overflow-y-auto">
+    <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-4rem)] lg:-mt-6 lg:-mt-8 lg:overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col gap-6 lg:overflow-y-auto">
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className={cn("flex items-start justify-between", aiOpen && "lg:pr-4")}>
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -1793,7 +1793,7 @@ export function ExamDetailPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="settings">
+      <Tabs defaultValue="settings" className="flex-1 min-h-0">
         <TabsList>
           <TabsTrigger value="settings">考试设置</TabsTrigger>
           <TabsTrigger value="paper">试卷编辑</TabsTrigger>
@@ -1838,7 +1838,7 @@ export function ExamDetailPage() {
         <aside
           className={cn(
             "shrink-0 flex flex-col transition-all duration-300 bg-background overflow-hidden",
-            "fixed inset-0 top-16 z-30 lg:static lg:w-96 lg:h-full lg:border-l",
+            "fixed inset-0 top-16 z-30 lg:static lg:w-96 lg:h-full lg:border-l lg:pl-4",
           )}
         >
           <AIAssistantPanel

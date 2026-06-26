@@ -270,9 +270,7 @@ export function AIAssistantPanel({
   }
 
   return (
-    <div
-      className={`flex flex-col h-full bg-background ${className ?? ""}`}
-    >
+    <div className={`flex flex-col bg-background ${className ?? ""}`}>
       <div className="p-4 border-b flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <AetherSpectrum state={isLoading ? "thinking" : "idle"} size={28} />
