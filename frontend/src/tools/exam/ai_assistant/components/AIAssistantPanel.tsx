@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { AetherSpectrum } from "./AetherSpectrum"
 import { ChatInput } from "./ChatInput"
 import { ChatMessageList } from "./ChatMessageList"
-import { ThinkingIndicator } from "./ThinkingIndicator"
 import { chat, chatWithFiles, clearThread, submitToolResults } from "../api"
 import type {
   AIToolCall,
@@ -304,19 +303,7 @@ export function AIAssistantPanel({
         </div>
       </div>
 
-      {isLoading && messages.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
-          <ThinkingIndicator />
-        </div>
-      ) : (
-        <ChatMessageList messages={messages} isLoading={isLoading} />
-      )}
-
-      {isLoading && messages.length > 0 && (
-        <div className="px-4 shrink-0">
-          <ThinkingIndicator />
-        </div>
-      )}
+      <ChatMessageList messages={messages} isLoading={isLoading} />
 
       <ChatInput
         onSend={handleSend}

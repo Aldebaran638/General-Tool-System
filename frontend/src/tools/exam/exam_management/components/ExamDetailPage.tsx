@@ -1827,7 +1827,8 @@ export function ExamDetailPage() {
         <aside
           className={cn(
             "shrink-0 flex flex-col transition-all duration-300",
-            "lg:sticky lg:top-6 lg:self-start lg:h-[calc(100vh-8rem)] lg:border-l lg:bg-background",
+            "lg:sticky lg:top-16 lg:self-start lg:h-[calc(100vh-4rem)] lg:border-l lg:bg-background lg:z-10",
+            "-mt-6 md:-mt-8",
             aiOpen ? "lg:w-96" : "lg:w-12"
           )}
         >

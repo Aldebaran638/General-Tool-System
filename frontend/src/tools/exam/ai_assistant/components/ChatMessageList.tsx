@@ -22,11 +22,19 @@ export function ChatMessageList({ messages, isLoading = false }: ChatMessageList
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+  }, [messages, isLoading])
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-5">
-      {messages.length === 0 && (
+    <div
+      className="flex-1 overflow-y-auto p-4 space-y-5
+        [scrollbar-width:thin]
+        [scrollbar-color:hsl(var(--muted-foreground)/0.3)_transparent]
+        [&::-webkit-scrollbar]:w-1.5
+        [&::-webkit-scrollbar-track]:bg-transparent
+        [&::-webkit-scrollbar-thumb]:rounded-full
+        [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30"
+    >
+      {messages.length === 0 && !isLoading && (
         <div className="text-center text-sm text-muted-foreground py-8">
           我是 AI 组卷助手，可以帮你出题、改题、查题。
           <br />
@@ -76,6 +84,18 @@ export function ChatMessageList({ messages, isLoading = false }: ChatMessageList
           </div>
         )
       })}
+
+      {isLoading && (
+        <div className="space-y-1.5">
+          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            AI 智能输出
+          </div>
+          <div className="pl-1 flex items-center gap-3 py-1">
+            <AetherSpectrum state="thinking" size={28} />
+            <span className="text-xs text-muted-foreground">AI 正在思考…</span>
+          </div>
+        </div>
+      )}
 
       <div ref={endRef} />
     </div>
