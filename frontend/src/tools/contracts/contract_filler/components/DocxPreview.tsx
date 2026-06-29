@@ -48,9 +48,9 @@ function InlineField({ fieldKey, field, value, onChange }: InlineFieldProps) {
 
   const commonClassName = `
     inline-block align-baseline mx-0.5 px-1 rounded-sm
-    border-b-2 border-dashed transition-colors
+    border-b-2 border-dashed transition-colors text-foreground
     focus:outline-none focus:border-primary focus:bg-primary/5
-    ${value ? "bg-transparent border-gray-400" : "bg-yellow-100 border-yellow-500"}
+    ${value ? "bg-transparent border-gray-400 dark:border-gray-500" : "bg-yellow-100 dark:bg-yellow-900/30 border-yellow-500 dark:border-yellow-600"}
   `
 
   const handleChange = (
@@ -134,7 +134,7 @@ export function DocxPreview({
   }
 
   return (
-    <div className="border rounded-lg p-8 bg-white min-h-[600px] font-serif text-sm leading-relaxed overflow-auto max-h-[calc(100vh-200px)]">
+    <div className="border border-border rounded-lg p-8 bg-white dark:bg-zinc-900 text-foreground min-h-[600px] font-serif text-sm leading-relaxed overflow-auto max-h-[calc(100vh-200px)]">
       {segments.map((segment, idx) => {
         if (segment.type === "paragraph" && segment.text) {
           return (
@@ -162,7 +162,7 @@ export function DocxPreview({
                     {row.map((cell, cidx) => (
                       <td
                         key={cidx}
-                        className="border border-gray-300 px-2 py-1"
+                        className="border border-gray-300 dark:border-zinc-700 px-2 py-1"
                       >
                         {renderMarkedText(cell)}
                       </td>

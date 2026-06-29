@@ -51,9 +51,9 @@ function InlineField({ fieldKey, field, value, onChange }: InlineFieldProps) {
 
   const commonClassName = `
     inline-block align-baseline mx-0.5 px-1 rounded-sm
-    border-b-2 border-dashed transition-colors
+    border-b-2 border-dashed transition-colors text-foreground
     focus:outline-none focus:border-primary focus:bg-primary/5
-    ${value ? "bg-transparent border-gray-400" : "bg-yellow-100 border-yellow-500"}
+    ${value ? "bg-transparent border-gray-400 dark:border-gray-500" : "bg-yellow-100 dark:bg-yellow-900/30 border-yellow-500 dark:border-yellow-600"}
   `
 
   const handleChange = (
@@ -175,12 +175,12 @@ function EquipmentTable({ headerRow, items, onChange }: EquipmentTableProps) {
             {headerRow.map((cell, idx) => (
               <th
                 key={idx}
-                className="border border-gray-300 px-2 py-1 bg-gray-50 text-xs font-semibold"
+                className="border border-gray-300 dark:border-zinc-700 px-2 py-1 bg-gray-50 dark:bg-zinc-800 text-xs font-semibold"
               >
                 {cell}
               </th>
             ))}
-            <th className="border border-gray-300 px-2 py-1 bg-gray-50 text-xs font-semibold">
+            <th className="border border-gray-300 dark:border-zinc-700 px-2 py-1 bg-gray-50 dark:bg-zinc-800 text-xs font-semibold">
               操作
             </th>
           </tr>
@@ -188,11 +188,11 @@ function EquipmentTable({ headerRow, items, onChange }: EquipmentTableProps) {
         <tbody>
           {displayItems.map((item, ridx) => (
             <tr key={ridx}>
-              <td className="border border-gray-300 px-1 py-1 text-center">
+              <td className="border border-gray-300 dark:border-zinc-700 px-1 py-1 text-center">
                 {ridx + 1}
               </td>
               {EQUIPMENT_TABLE_COLUMNS.map((col) => (
-                <td key={col.key} className="border border-gray-300 px-1 py-1">
+                <td key={col.key} className="border border-gray-300 dark:border-zinc-700 px-1 py-1">
                   <input
                     type="text"
                     value={(item[col.key as keyof EquipmentItem] as string) || ""}
@@ -200,15 +200,15 @@ function EquipmentTable({ headerRow, items, onChange }: EquipmentTableProps) {
                       handleCellChange(ridx, col.key as keyof EquipmentItem, e.target.value)
                     }
                     placeholder={col.label}
-                    className="w-full min-w-[60px] px-1 py-0.5 text-sm bg-yellow-50 focus:bg-primary/5 border-b border-dashed border-yellow-500 focus:border-primary focus:outline-none"
+                    className="w-full min-w-[60px] px-1 py-0.5 text-sm bg-yellow-50 dark:bg-yellow-900/20 text-foreground focus:bg-primary/5 border-b border-dashed border-yellow-500 dark:border-yellow-600 focus:border-primary focus:outline-none"
                   />
                 </td>
               ))}
-              <td className="border border-gray-300 px-1 py-1 text-center">
+              <td className="border border-gray-300 dark:border-zinc-700 px-1 py-1 text-center">
                 <button
                   type="button"
                   onClick={() => handleRemoveRow(ridx)}
-                  className="text-red-500 hover:text-red-700 text-xs"
+                  className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs"
                 >
                   删除
                 </button>
@@ -220,7 +220,7 @@ function EquipmentTable({ headerRow, items, onChange }: EquipmentTableProps) {
       <button
         type="button"
         onClick={handleAddRow}
-        className="mt-2 px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+        className="mt-2 px-3 py-1 text-sm border border-gray-300 dark:border-zinc-600 rounded hover:bg-gray-50 dark:hover:bg-zinc-800"
       >
         + 添加设备
       </button>
@@ -261,7 +261,7 @@ export function DocxPreview({
   }
 
   return (
-    <div className="border rounded-lg p-8 bg-white min-h-[600px] font-serif text-sm leading-relaxed overflow-auto max-h-[calc(100vh-200px)]">
+    <div className="border border-border rounded-lg p-8 bg-white dark:bg-zinc-900 text-foreground min-h-[600px] font-serif text-sm leading-relaxed overflow-auto max-h-[calc(100vh-200px)]">
       {segments.map((segment, idx) => {
         if (segment.type === "paragraph" && segment.text) {
           return (
@@ -300,7 +300,7 @@ export function DocxPreview({
                     {row.map((cell, cidx) => (
                       <td
                         key={cidx}
-                        className="border border-gray-300 px-2 py-1"
+                        className="border border-gray-300 dark:border-zinc-700 px-2 py-1"
                       >
                         {renderMarkedText(cell)}
                       </td>
