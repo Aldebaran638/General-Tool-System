@@ -14,7 +14,12 @@ from sqlmodel import Session
 from app.api.deps import CurrentUser, SessionDep
 from app.models_core import Message
 
-from .models import FilledVersionCreate, FilledVersionUpdate
+from .models import (
+    FilledVersionCreate,
+    FilledVersionPublic,
+    FilledVersionUpdate,
+    FilledVersionsPublic,
+)
 from .schemas import (
     ContractFieldsPublic,
     ContractPreviewPublic,
@@ -39,7 +44,7 @@ def read_preview() -> Any:
     return service.get_preview()
 
 
-@router.post("/versions", response_model=Any)
+@router.post("/versions", response_model=FilledVersionPublic)
 def create_version(
     *,
     session: SessionDep,
@@ -47,15 +52,14 @@ def create_version(
     version_in: FilledVersionCreate,
 ) -> Any:
     """Save a filled version of the contract."""
-    version = service.create_version(
+    return service.create_version(
         session,
         current_user=current_user,
         version_in=version_in,
     )
-    return version
 
 
-@router.get("/versions")
+@router.get("/versions", response_model=FilledVersionsPublic)
 def read_versions(
     *,
     session: SessionDep,
@@ -72,7 +76,7 @@ def read_versions(
     )
 
 
-@router.get("/versions/{version_id}")
+@router.get("/versions/{version_id}", response_model=FilledVersionPublic)
 def read_version(
     *,
     session: SessionDep,
@@ -83,7 +87,7 @@ def read_version(
     return service.read_version(session, current_user=current_user, version_id=version_id)
 
 
-@router.patch("/versions/{version_id}")
+@router.patch("/versions/{version_id}", response_model=FilledVersionPublic)
 def update_version(
     *,
     session: SessionDep,
@@ -112,7 +116,7 @@ def delete_version(
     return Message(message="Version deleted successfully")
 
 
-@router.post("/versions/{version_id}/export")
+@router.post("/versions/{version_id}/export", response_model=ExportResponse)
 def export_version(
     *,
     session: SessionDep,
@@ -121,7 +125,7 @@ def export_version(
     export_in: ExportRequest,
 ) -> ExportResponse:
     """Generate/export a filled DOCX for the version."""
-    file_path = service.export_version(
+    file_path, output_filename = service.export_version(
         session,
         current_user=current_user,
         version_id=version_id,
@@ -129,11 +133,11 @@ def export_version(
     )
     return ExportResponse(
         download_url=f"/api/v1/files/contract-filler/{version_id}",
-        filename=file_path.name,
+        filename=output_filename,
     )
 
 
-@router.post("/versions/{version_id}/fill-and-export")
+@router.post("/versions/{version_id}/fill-and-export", response_model=ExportResponse)
 def fill_and_export(
     *,
     session: SessionDep,
@@ -141,7 +145,7 @@ def fill_and_export(
     version_id: uuid.UUID,
     payload: FilledValuesPayload,
     export_in: ExportRequest,
-) -> Any:
+) -> ExportResponse:
     """Update field values and immediately export."""
     service.update_version(
         session,
@@ -149,9 +153,13 @@ def fill_and_export(
         version_id=version_id,
         version_in=FilledVersionUpdate(field_values=payload.field_values),
     )
-    return export_version(
+    file_path, output_filename = service.export_version(
         session=session,
         current_user=current_user,
         version_id=version_id,
-        export_in=export_in,
+        filename=export_in.filename,
+    )
+    return ExportResponse(
+        download_url=f"/api/v1/files/contract-filler/{version_id}",
+        filename=output_filename,
     )

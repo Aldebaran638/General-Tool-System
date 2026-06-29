@@ -33,8 +33,8 @@ export async function listVersions(): Promise<FilledVersion[]> {
   const response = (await __request(OpenAPI, {
     method: "GET",
     url: `${BASE_URL}/versions`,
-  })) as FilledVersion[]
-  return response
+  })) as { data: FilledVersion[]; count: number }
+  return response.data
 }
 
 export async function getVersion(id: string): Promise<FilledVersion> {

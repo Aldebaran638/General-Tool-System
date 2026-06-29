@@ -237,8 +237,8 @@ def fill_contract(template_path: Path, field_values: dict[str, str], output_path
 
         # Contract total amount
         if "本合同工程包干总价款为人民币" in t:
-            upper = values.get("contract_amount_upper", "")
-            lower = values.get("contract_amount_lower", "")
+            upper = re.escape(values.get("contract_amount_upper", ""))
+            lower = re.escape(values.get("contract_amount_lower", ""))
             new_text = re.sub(
                 r"人民币\s*元整（小写￥\s*）",
                 f"人民币{upper}（小写￥{lower}）",
@@ -249,8 +249,8 @@ def fill_contract(template_path: Path, field_values: dict[str, str], output_path
 
         # Prepayment
         if "本合同签署生效后" in t and "的预付款给乙方" in t:
-            ratio = values.get("prepayment_ratio", "")
-            amount = values.get("prepayment_amount", "")
+            ratio = re.escape(values.get("prepayment_ratio", ""))
+            amount = re.escape(values.get("prepayment_amount", ""))
             new_text = re.sub(
                 r"支付总工程款\s*%即人民币\s*元整（￥\s*）的预付款",
                 f"支付总工程款{ratio}%即人民币{amount}（￥{amount}）的预付款",
@@ -261,8 +261,8 @@ def fill_contract(template_path: Path, field_values: dict[str, str], output_path
 
         # Acceptance payment
         if "竣工验收合格后" in t and "给乙方。" in t and "质保金" not in t:
-            ratio = values.get("acceptance_ratio", "")
-            amount = values.get("acceptance_amount", "")
+            ratio = re.escape(values.get("acceptance_ratio", ""))
+            amount = re.escape(values.get("acceptance_amount", ""))
             new_text = re.sub(
                 r"支付总工程款\s*%即人民币\s*元整（￥\s*）给乙方",
                 f"支付总工程款{ratio}%即人民币{amount}（￥{amount}）给乙方",
@@ -273,8 +273,8 @@ def fill_contract(template_path: Path, field_values: dict[str, str], output_path
 
         # Warranty payment
         if "保修期内无质量问题" in t:
-            ratio = values.get("warranty_ratio", "")
-            amount = values.get("warranty_amount", "")
+            ratio = re.escape(values.get("warranty_ratio", ""))
+            amount = re.escape(values.get("warranty_amount", ""))
             new_text = re.sub(
                 r"总工程款\s*%即人民币\s*元整（￥\s*）给乙方",
                 f"总工程款{ratio}%即人民币{amount}（￥{amount}）给乙方",

@@ -275,8 +275,8 @@ def fill_contract(
 
         # Contract total amount
         if "合同总价为人民币：" in t:
-            upper = values.get("contract_amount_upper", "")
-            lower = values.get("contract_amount_lower", "")
+            upper = re.escape(values.get("contract_amount_upper", ""))
+            lower = re.escape(values.get("contract_amount_lower", ""))
             new_text = re.sub(
                 r"人民币：\s*元整（￥\s*）",
                 f"人民币：{upper}（￥{lower}）",
@@ -287,7 +287,7 @@ def fill_contract(
 
         # Tax rate
         if "合同总价为含税价（税率：" in t:
-            rate = values.get("tax_rate", "")
+            rate = re.escape(values.get("tax_rate", ""))
             new_text = re.sub(
                 r"税率：\s*%",
                 f"税率：{rate}%",
@@ -298,31 +298,31 @@ def fill_contract(
 
         # Delivery time - after signing
         if "本合同签订后" in t and "天之内" in t:
-            days = values.get("delivery_days_after_signing", "")
+            days = re.escape(values.get("delivery_days_after_signing", ""))
             new_text = re.sub(r"本合同签订后\s*天之内", f"本合同签订后{days}天之内", t)
             _replace_paragraph_text(p, new_text)
             continue
 
         # Delivery time - after prepayment
         if "收到预付款后" in t and "天之内" in t:
-            days = values.get("delivery_days_after_prepayment", "")
+            days = re.escape(values.get("delivery_days_after_prepayment", ""))
             new_text = re.sub(r"收到预付款后\s*天之内", f"收到预付款后{days}天之内", t)
             _replace_paragraph_text(p, new_text)
             continue
 
         # Delivery location
         if "卖方将合同设备送到买方指定地点即" in t:
-            location = values.get("delivery_location", "")
+            location = re.escape(values.get("delivery_location", ""))
             new_text = re.sub(r"卖方将合同设备送到买方指定地点即\s*。", f"卖方将合同设备送到买方指定地点即{location}。", t)
             _replace_paragraph_text(p, new_text)
             continue
 
         # Prepayment
         if "合同签订后" in t and "的预付款" in t:
-            days = values.get("prepayment_days", "")
-            ratio = values.get("prepayment_ratio", "")
-            upper = values.get("prepayment_amount_upper", "")
-            lower = values.get("prepayment_amount_lower", "")
+            days = re.escape(values.get("prepayment_days", ""))
+            ratio = re.escape(values.get("prepayment_ratio", ""))
+            upper = re.escape(values.get("prepayment_amount_upper", ""))
+            lower = re.escape(values.get("prepayment_amount_lower", ""))
             new_text = re.sub(
                 r"合同签订后\s*天内，买方支付合同总价\s*%即人民币\s*元整（￥\s*）的预付款",
                 f"合同签订后{days}天内，买方支付合同总价{ratio}%即人民币{upper}（￥{lower}）的预付款",
@@ -333,10 +333,10 @@ def fill_contract(
 
         # Acceptance payment
         if "设备交付买方并安装调试" in t and "经买方终验收合格后" in t:
-            days = values.get("acceptance_days", "")
-            ratio = values.get("acceptance_ratio", "")
-            upper = values.get("acceptance_amount_upper", "")
-            lower = values.get("acceptance_amount_lower", "")
+            days = re.escape(values.get("acceptance_days", ""))
+            ratio = re.escape(values.get("acceptance_ratio", ""))
+            upper = re.escape(values.get("acceptance_amount_upper", ""))
+            lower = re.escape(values.get("acceptance_amount_lower", ""))
             new_text = re.sub(
                 r"设备交付买方并安装调试，达到正常使用要求，经买方终验收合格后\s*天内，买方支付合同总价\s*%即人民币\s*元整（￥\s*）。",
                 f"设备交付买方并安装调试，达到正常使用要求，经买方终验收合格后{days}天内，买方支付合同总价{ratio}%即人民币{upper}（￥{lower}）。",
@@ -347,9 +347,9 @@ def fill_contract(
 
         # Warranty payment
         if "剩余合同总价5%" in t:
-            upper = values.get("warranty_amount_upper", "")
-            lower = values.get("warranty_amount_lower", "")
-            days = values.get("warranty_payment_days", "")
+            upper = re.escape(values.get("warranty_amount_upper", ""))
+            lower = re.escape(values.get("warranty_amount_lower", ""))
+            days = re.escape(values.get("warranty_payment_days", ""))
             new_text = re.sub(
                 r"剩余合同总价5%即人民币\s*元整（￥\s*）作为质保金",
                 f"剩余合同总价5%即人民币{upper}（￥{lower}）作为质保金",
@@ -376,7 +376,7 @@ def fill_contract(
 
         # Warranty months
         if "设备的质量保证期为设备整机调试、试运行验收合格之日起" in t:
-            months = values.get("warranty_months", "")
+            months = re.escape(values.get("warranty_months", ""))
             new_text = re.sub(
                 r"之日起\s*个月",
                 f"之日起{months}个月",
