@@ -9,7 +9,7 @@ import type {
   OcrPreviewResponse,
 } from "./types"
 
-const BASE_URL = "/api/v1/finance/purchase-records"
+const BASE_URL = "/api/v1/finance/purchase-records/"
 
 export async function ocrPreview(screenshot: File): Promise<OcrPreviewResponse> {
   const formData = new FormData()
@@ -17,7 +17,7 @@ export async function ocrPreview(screenshot: File): Promise<OcrPreviewResponse> 
 
   const response = await __request(OpenAPI, {
     method: "POST",
-    url: `${BASE_URL}/ocr-preview`,
+    url: `${BASE_URL}ocr-preview`,
     body: formData,
     mediaType: "multipart/form-data",
   })
@@ -42,7 +42,7 @@ export async function listPurchaseRecords(params?: {
 export async function getPurchaseRecord(id: string): Promise<PurchaseRecord> {
   const response = await __request(OpenAPI, {
     method: "GET",
-    url: `${BASE_URL}/${id}`,
+    url: `${BASE_URL}${id}`,
   })
 
   return response as PurchaseRecord
@@ -112,7 +112,7 @@ export async function updatePurchaseRecord(
 
   const response = await __request(OpenAPI, {
     method: "PATCH",
-    url: `${BASE_URL}/${id}`,
+    url: `${BASE_URL}${id}`,
     body: formData,
     mediaType: "multipart/form-data",
   })
@@ -123,7 +123,7 @@ export async function updatePurchaseRecord(
 export async function submitPurchaseRecord(id: string): Promise<PurchaseRecord> {
   const response = await __request(OpenAPI, {
     method: "POST",
-    url: `${BASE_URL}/${id}/submit`,
+    url: `${BASE_URL}${id}/submit`,
   })
 
   return response as PurchaseRecord
@@ -132,7 +132,7 @@ export async function submitPurchaseRecord(id: string): Promise<PurchaseRecord> 
 export async function withdrawPurchaseRecord(id: string): Promise<PurchaseRecord> {
   const response = await __request(OpenAPI, {
     method: "POST",
-    url: `${BASE_URL}/${id}/withdraw`,
+    url: `${BASE_URL}${id}/withdraw`,
   })
 
   return response as PurchaseRecord
@@ -141,14 +141,14 @@ export async function withdrawPurchaseRecord(id: string): Promise<PurchaseRecord
 export async function deletePurchaseRecord(id: string): Promise<void> {
   await __request(OpenAPI, {
     method: "DELETE",
-    url: `${BASE_URL}/${id}`,
+    url: `${BASE_URL}${id}`,
   })
 }
 
 export async function restorePurchaseRecord(id: string): Promise<PurchaseRecord> {
   const response = await __request(OpenAPI, {
     method: "POST",
-    url: `${BASE_URL}/${id}/restore`,
+    url: `${BASE_URL}${id}/restore`,
   })
 
   return response as PurchaseRecord
@@ -172,5 +172,5 @@ export async function downloadScreenshot(id: string): Promise<Blob> {
 }
 
 export function getScreenshotUrl(id: string): string {
-  return `${OpenAPI.BASE}${BASE_URL}/${id}/screenshot`
+  return `${OpenAPI.BASE}${BASE_URL}${id}/screenshot`
 }

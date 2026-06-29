@@ -9,7 +9,7 @@ import type {
   ParsePreviewResponse,
 } from "./types"
 
-const BASE_URL = "/api/v1/finance/invoice-files"
+const BASE_URL = "/api/v1/finance/invoice-files/"
 
 export async function parsePreview(pdf: File): Promise<ParsePreviewResponse> {
   const formData = new FormData()
@@ -17,7 +17,7 @@ export async function parsePreview(pdf: File): Promise<ParsePreviewResponse> {
 
   const response = await __request(OpenAPI, {
     method: "POST",
-    url: `${BASE_URL}/parse-preview`,
+    url: `${BASE_URL}parse-preview`,
     body: formData,
     mediaType: "multipart/form-data",
   })
@@ -43,7 +43,7 @@ export async function listInvoiceFiles(params?: {
 export async function getInvoiceFile(id: string): Promise<InvoiceFile> {
   const response = await __request(OpenAPI, {
     method: "GET",
-    url: `${BASE_URL}/${id}`,
+    url: `${BASE_URL}${id}`,
   })
 
   return response as InvoiceFile
@@ -115,7 +115,7 @@ export async function updateInvoiceFile(
 
   const response = await __request(OpenAPI, {
     method: "PATCH",
-    url: `${BASE_URL}/${id}`,
+    url: `${BASE_URL}${id}`,
     body: formData,
     mediaType: "multipart/form-data",
   })
@@ -126,7 +126,7 @@ export async function updateInvoiceFile(
 export async function confirmInvoiceFile(id: string): Promise<InvoiceFile> {
   const response = await __request(OpenAPI, {
     method: "POST",
-    url: `${BASE_URL}/${id}/confirm`,
+    url: `${BASE_URL}${id}/confirm`,
   })
 
   return response as InvoiceFile
@@ -137,7 +137,7 @@ export async function withdrawConfirmationInvoiceFile(
 ): Promise<InvoiceFile> {
   const response = await __request(OpenAPI, {
     method: "POST",
-    url: `${BASE_URL}/${id}/withdraw-confirmation`,
+    url: `${BASE_URL}${id}/withdraw-confirmation`,
   })
 
   return response as InvoiceFile
@@ -146,7 +146,7 @@ export async function withdrawConfirmationInvoiceFile(
 export async function voidInvoiceFile(id: string): Promise<InvoiceFile> {
   const response = await __request(OpenAPI, {
     method: "POST",
-    url: `${BASE_URL}/${id}/void`,
+    url: `${BASE_URL}${id}/void`,
   })
 
   return response as InvoiceFile
@@ -157,7 +157,7 @@ export async function restoreDraftInvoiceFile(
 ): Promise<InvoiceFile> {
   const response = await __request(OpenAPI, {
     method: "POST",
-    url: `${BASE_URL}/${id}/restore-draft`,
+    url: `${BASE_URL}${id}/restore-draft`,
   })
 
   return response as InvoiceFile
@@ -166,14 +166,14 @@ export async function restoreDraftInvoiceFile(
 export async function deleteInvoiceFile(id: string): Promise<void> {
   await __request(OpenAPI, {
     method: "DELETE",
-    url: `${BASE_URL}/${id}`,
+    url: `${BASE_URL}${id}`,
   })
 }
 
 export async function restoreInvoiceFile(id: string): Promise<InvoiceFile> {
   const response = await __request(OpenAPI, {
     method: "POST",
-    url: `${BASE_URL}/${id}/restore`,
+    url: `${BASE_URL}${id}/restore`,
   })
 
   return response as InvoiceFile

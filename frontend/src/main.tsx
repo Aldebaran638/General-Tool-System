@@ -16,7 +16,7 @@ import { routeTree } from "./routeTree.gen"
 
 const SESSION_EXPIRED_NOTICE_KEY = "session_expired_notice"
 
-OpenAPI.BASE = import.meta.env.VITE_API_URL
+OpenAPI.BASE = import.meta.env.VITE_API_URL || ""
 OpenAPI.TOKEN = async () => {
   return localStorage.getItem("access_token") || ""
 }
