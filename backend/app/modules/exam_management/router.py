@@ -151,7 +151,7 @@ def _get_exam_or_404(session: SessionDep, exam_id: uuid.UUID) -> Exam:
 @router.get("/categories", response_model=ExamCategoriesPublic, summary="分类列表")
 def list_categories_endpoint(
     session: SessionDep,
-    current_user: RequireExamAdmin,
+    current_user: CurrentUser,
 ) -> ExamCategoriesPublic:
     categories, count = list_categories(session)
     return ExamCategoriesPublic(
