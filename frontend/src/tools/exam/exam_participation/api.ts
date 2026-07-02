@@ -28,8 +28,10 @@ async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
 export interface MyExam {
   id: string
   name: string
+  category_id: number | null
+  category_name: string | null
   description: string | null
-  status: string
+  status: string  // PUBLISHED | ARCHIVED
   start_at: string
   end_at: string
   duration_minutes: number
@@ -45,6 +47,7 @@ export interface MyExam {
   passed: boolean
   completion_status: string // NOT_STARTED / IN_PROGRESS / COMPLETED / NOT_COMPLETED
   can_attempt: boolean
+  is_ended: boolean
 }
 
 export interface MyExamsResponse {

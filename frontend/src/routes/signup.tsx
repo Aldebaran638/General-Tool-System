@@ -22,12 +22,11 @@ import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 
 const formSchema = z
   .object({
-    email: z.email(),
-    full_name: z.string().min(1, { message: "Full Name is required" }),
+    wecom_userid: z.string().min(1, { message: "企微账号不能为空" }),
+    full_name: z.string().min(1, { message: "姓名不能为空" }),
     password: z
       .string()
-      .min(1, { message: "Password is required" })
-      .min(8, { message: "Password must be at least 8 characters" }),
+      .min(1, { message: "Password is required" }),
     confirm_password: z
       .string()
       .min(1, { message: "Password confirmation is required" }),
@@ -64,7 +63,7 @@ function SignUp() {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      email: "",
+      wecom_userid: "",
       full_name: "",
       password: "",
       confirm_password: "",
@@ -93,14 +92,14 @@ function SignUp() {
           <div className="grid gap-4">
             <FormField
               control={form.control}
-              name="full_name"
+              name="wecom_userid"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>企微账号</FormLabel>
                   <FormControl>
                     <Input
-                      data-testid="full-name-input"
-                      placeholder="User"
+                      data-testid="wecom-userid-input"
+                      placeholder="请输入企微账号"
                       type="text"
                       {...field}
                     />
@@ -112,15 +111,15 @@ function SignUp() {
 
             <FormField
               control={form.control}
-              name="email"
+              name="full_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>姓名</FormLabel>
                   <FormControl>
                     <Input
-                      data-testid="email-input"
-                      placeholder="user@example.com"
-                      type="email"
+                      data-testid="full-name-input"
+                      placeholder="User"
+                      type="text"
                       {...field}
                     />
                   </FormControl>

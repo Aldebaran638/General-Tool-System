@@ -81,8 +81,34 @@ const getUrl = (config: OpenAPIConfig, options: ApiRequestOptions): string => {
 	return options.query ? url + getQueryString(options.query) : url;
 };
 
-export const getFormData = (options: ApiRequestOptions): FormData | undefined => {
+export const getFormData = (options: ApiRequestOptions): FormData | URLSearchParams | undefined => {
 	if (options.formData) {
+		const useUrlEncoded = options.mediaType === 'application/x-www-form-urlencoded';
+
+		if (useUrlEncoded) {
+			const formData = new URLSearchParams();
+
+			const process = (key: string, value: unknown) => {
+				if (isString(value) || isBlob(value)) {
+					formData.append(key, value as string);
+				} else {
+					formData.append(key, JSON.stringify(value));
+				}
+			};
+
+			Object.entries(options.formData)
+				.filter(([, value]) => value !== undefined && value !== null)
+				.forEach(([key, value]) => {
+					if (Array.isArray(value)) {
+						value.forEach(v => process(key, v));
+					} else {
+						process(key, value);
+					}
+				});
+
+			return formData;
+		}
+
 		const formData = new FormData();
 
 		const process = (key: string, value: unknown) => {
@@ -180,7 +206,7 @@ export const sendRequest = async <T>(
 	options: ApiRequestOptions<T>,
 	url: string,
 	body: unknown,
-	formData: FormData | undefined,
+	formData: FormData | URLSearchParams | undefined,
 	headers: Record<string, string>,
 	onCancel: OnCancel,
 	axiosClient: AxiosInstance

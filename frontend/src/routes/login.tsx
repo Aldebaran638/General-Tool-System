@@ -23,14 +23,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
-import useAuth, { isLoggedIn, redirectToWecomOAuth } from "@/hooks/useAuth"
+import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 
 const formSchema = z.object({
-  username: z.email(),
+  username: z.string().min(1, { message: "企微账号不能为空" }),
   password: z
     .string()
-    .min(1, { message: "Password is required" })
-    .min(8, { message: "Password must be at least 8 characters" }),
+    .min(1, { message: "Password is required" }),
 }) satisfies z.ZodType<AccessToken>
 
 type FormData = z.infer<typeof formSchema>
@@ -131,12 +130,12 @@ function Login() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>邮箱地址</FormLabel>
+                  <FormLabel>企微账号</FormLabel>
                   <FormControl>
                     <Input
                       data-testid="email-input"
-                      placeholder="请输入邮箱地址"
-                      type="email"
+                      placeholder="请输入企微账号"
+                      type="text"
                       className="h-11 transition-all focus-visible:ring-2 focus-visible:ring-primary/20"
                       {...field}
                     />
@@ -184,6 +183,7 @@ function Login() {
             </LoadingButton>
           </div>
 
+          {/* 暂不实现企业微信 OAuth 登录
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
@@ -215,6 +215,7 @@ function Login() {
             </svg>
             企业微信一键登录
           </button>
+          */}
 
           <div className="text-center text-sm text-muted-foreground">
             还没有账户?{" "}

@@ -15,7 +15,6 @@ And registered via:
 import uuid
 from datetime import datetime, timezone
 
-from pydantic import EmailStr
 from sqlalchemy import DateTime
 from sqlmodel import Field, SQLModel
 
@@ -29,36 +28,41 @@ def get_datetime_utc() -> datetime:
 # =============================================================================
 
 class UserBase(SQLModel):
-    email: EmailStr = Field(unique=True, index=True, max_length=255)
+    wecom_userid: str = Field(unique=True, index=True, max_length=64)
+    mobile: str | None = Field(default=None, unique=True, index=True, max_length=32)
+    full_name: str | None = Field(default=None, max_length=255)
     is_active: bool = True
     is_superuser: bool = False
-    full_name: str | None = Field(default=None, max_length=255)
-    wecom_userid: str | None = Field(default=None, unique=True, index=True, max_length=64)
 
 
 class UserCreate(UserBase):
-    password: str = Field(min_length=8, max_length=128)
+    password: str = Field(min_length=1, max_length=128)
 
 
 class UserRegister(SQLModel):
-    email: EmailStr = Field(max_length=255)
-    password: str = Field(min_length=8, max_length=128)
+    wecom_userid: str = Field(max_length=64)
+    password: str = Field(min_length=1, max_length=128)
     full_name: str | None = Field(default=None, max_length=255)
+    mobile: str | None = Field(default=None, max_length=32)
 
 
-class UserUpdate(UserBase):
-    email: EmailStr | None = Field(default=None, max_length=255)  # type: ignore
-    password: str | None = Field(default=None, min_length=8, max_length=128)
+class UserUpdate(SQLModel):
+    wecom_userid: str | None = Field(default=None, max_length=64)
+    mobile: str | None = Field(default=None, max_length=32)
+    full_name: str | None = Field(default=None, max_length=255)
+    is_active: bool | None = Field(default=None)
+    is_superuser: bool | None = Field(default=None)
+    password: str | None = Field(default=None, min_length=1, max_length=128)
 
 
 class UserUpdateMe(SQLModel):
     full_name: str | None = Field(default=None, max_length=255)
-    email: EmailStr | None = Field(default=None, max_length=255)
+    mobile: str | None = Field(default=None, max_length=32)
 
 
 class UpdatePassword(SQLModel):
-    current_password: str = Field(min_length=8, max_length=128)
-    new_password: str = Field(min_length=8, max_length=128)
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=1, max_length=128)
 
 
 # Database model - this stays in core because authentication is platform-level
@@ -97,7 +101,7 @@ class TokenPayload(SQLModel):
 
 class NewPassword(SQLModel):
     token: str
-    new_password: str = Field(min_length=8, max_length=128)
+    new_password: str = Field(min_length=1, max_length=128)
 
 
 # =============================================================================

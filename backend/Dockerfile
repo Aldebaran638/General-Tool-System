@@ -20,27 +20,19 @@ WORKDIR /app/
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#using-the-environment
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Install dependencies
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-workspace --package app
+# Install dependencies (without BuildKit cache mounts for legacy builder compatibility)
+COPY uv.lock pyproject.toml /app/
+RUN uv sync --frozen --no-install-workspace --package app
 
 COPY ./backend/scripts /app/backend/scripts
 
 COPY ./backend/pyproject.toml ./backend/alembic.ini /app/backend/
 
 COPY ./backend/app /app/backend/app
-COPY ./WW_verify_HUz4rWBElVbwEoOX.txt /app/backend/app/WW_verify_HUz4rWBElVbwEoOX.txt
 
-# Sync the project
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --package app
+# Sync the project (without BuildKit cache mounts)
+RUN uv sync --frozen --package app
 
 WORKDIR /app/backend/
 
-CMD ["fastapi", "run", "--workers", "4", "app/main.py"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--timeout-keep-alive", "120"]

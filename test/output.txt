@@ -1,0 +1,83 @@
+\\wsl.localhost\Ubuntu-24.04\home\winkey\course-training-assessment\test\venv\Lib\site-packages\langgraph\cache\base\__init__.py:8: LangChainPendingDeprecationWarning: The default value of `allowed_objects` will change in a future version. Pass an explicit value (e.g., allowed_objects='messages' or allowed_objects='core') to suppress this warning.
+  from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
+正在解析文档: 题目1.docx
+共提取 258 个字符
+------------------------------------------------------------
+多选题
+物质吸收红外光应满足哪些条件？（AB）
+A 辐射光子具有的能量与发生振动跃迁所需的跃迁能量相等
+B 辐射与物质之间有耦合作用
+C 连续稳定波长的红外光
+判断题
+发生跃迁时，分子中某个基团的振动频率或转动频率和红外光的频率（A）
+A 正确
+B 错误
+红外吸收光谱图中，百分透射比T%越小，吸收越强（A）
+A 正确
+B 错误
+红外光谱中吸收峰的位置和强度取决于分子中各基团的振动形式（B）
+A 正确
+B 错误
+官能区内的峰是由伸缩振动产生的吸收带，比较稀疏，容易辨认，常用于鉴定官能团。（A）
+A 正确
+B 错误
+------------------------------------------------------------
+
+正在调用本地大模型: Qwen3.6-27B-FP8 @ http://192.168.3.242:1995/v1
+Traceback (most recent call last):
+  File "\\wsl.localhost\Ubuntu-24.04\home\winkey\course-training-assessment\test\extract_fill_blank_demo.py", line 300, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "\\wsl.localhost\Ubuntu-24.04\home\winkey\course-training-assessment\test\extract_fill_blank_demo.py", line 282, in main
+    final_state = graph.invoke({
+        "raw_text": raw_text,
+    ...<2 lines>...
+        "attempt_count": 0,
+    })
+  File "\\wsl.localhost\Ubuntu-24.04\home\winkey\course-training-assessment\test\venv\Lib\site-packages\langgraph\pregel\main.py", line 3085, in invoke
+    for chunk in self.stream(
+                 ~~~~~~~~~~~^
+        input,
+        ^^^^^^
+    ...<10 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    ):
+    ^
+  File "\\wsl.localhost\Ubuntu-24.04\home\winkey\course-training-assessment\test\venv\Lib\site-packages\langgraph\pregel\main.py", line 2674, in stream
+    for _ in runner.tick(
+             ~~~~~~~~~~~^
+        [t for t in loop.tasks.values() if not t.writes],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        schedule_task=loop.accept_push,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ):
+    ^
+  File "\\wsl.localhost\Ubuntu-24.04\home\winkey\course-training-assessment\test\venv\Lib\site-packages\langgraph\pregel\_runner.py", line 162, in tick
+    run_with_retry(
+    ~~~~~~~~~~~~~~^
+        t,
+        ^^
+    ...<10 lines>...
+        },
+        ^^
+    )
+    ^
+  File "\\wsl.localhost\Ubuntu-24.04\home\winkey\course-training-assessment\test\venv\Lib\site-packages\langgraph\pregel\_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "\\wsl.localhost\Ubuntu-24.04\home\winkey\course-training-assessment\test\venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 657, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+  File "\\wsl.localhost\Ubuntu-24.04\home\winkey\course-training-assessment\test\venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 401, in invoke
+    ret = self.func(*args, **kwargs)
+  File "\\wsl.localhost\Ubuntu-24.04\home\winkey\course-training-assessment\test\extract_fill_blank_demo.py", line 192, in extract_node
+    parsed = call_llm(SYSTEM_PROMPT, user_prompt)
+  File "\\wsl.localhost\Ubuntu-24.04\home\winkey\course-training-assessment\test\extract_fill_blank_demo.py", line 168, in call_llm
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "\\wsl.localhost\Ubuntu-24.04\home\winkey\course-training-assessment\test\venv\Lib\site-packages\httpx\_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Server error '502 Bad Gateway' for url 'http://192.168.3.242:1995/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502
+During task with name 'extract' and id 'b6879c62-cd05-424f-7c1c-80167df32841'

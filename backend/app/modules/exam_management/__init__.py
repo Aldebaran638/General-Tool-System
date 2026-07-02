@@ -4,6 +4,7 @@ Exam Management Module — self-registration
 
 from app.modules.exam_management.models import (
     Exam,
+    ExamPaper,
     ExamParticipant,
     Question,
     QuestionOption,
@@ -16,7 +17,7 @@ registry.register(
     name="exam_management",
     group="exam",
     router=router,
-    models=[Exam, Question, QuestionOption, ExamParticipant],
+    models=[Exam, ExamPaper, Question, QuestionOption, ExamParticipant],
 )
 
 # Register user-facing exam routes

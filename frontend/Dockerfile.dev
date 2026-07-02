@@ -1,14 +1,19 @@
-FROM oven/bun:1
+FROM node:20-bookworm
 
 WORKDIR /app
 
-COPY package.json bun.lock /app/
+# Copy package files and frontend source
+COPY package.json package-lock.json* bun.lock* /app/
 COPY frontend/package.json /app/frontend/package.json
-
-WORKDIR /app/frontend
-
-RUN bun install --no-verify
-
 COPY ./frontend /app/frontend
 
-CMD ["bun", "run", "dev", "--host", "0.0.0.0", "--port", "5173"]
+# Remove any existing node_modules and lock files to ensure clean install with correct platform bindings
+RUN rm -rf /app/node_modules /app/frontend/node_modules /app/package-lock.json /app/frontend/package-lock.json
+
+WORKDIR /app
+RUN npm install
+
+WORKDIR /app/frontend
+RUN npm install
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]

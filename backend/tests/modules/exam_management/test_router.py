@@ -36,7 +36,7 @@ def _exam_payload(**overrides) -> dict:
         "end_at": _future_end(),
         "duration_minutes": 60,
         "attempt_limit_type": "UNLIMITED",
-        "pass_score": 10.0,
+        "pass_score": 60.0,
         "submit_rule": "ALL_REQUIRED",
         "show_answer": False,
         "random_question_order": False,
@@ -53,7 +53,7 @@ def _paper_payload() -> dict:
             {
                 "question_type": "SINGLE_CHOICE",
                 "stem": "What is 1+1?",
-                "score": 10.0,
+                "score": 50.0,
                 "sort_no": 1,
                 "analysis": "Basic arithmetic",
                 "options": [
@@ -65,7 +65,7 @@ def _paper_payload() -> dict:
             {
                 "question_type": "SINGLE_CHOICE",
                 "stem": "What is 2+2?",
-                "score": 10.0,
+                "score": 50.0,
                 "sort_no": 2,
                 "options": [
                     {"option_key": "A", "option_text": "3", "is_correct": False, "sort_no": 1},
@@ -297,7 +297,7 @@ class TestExamPaper:
         data = r.json()
         assert "questions" in data
         assert data["question_count"] == 2
-        assert data["total_score"] == 20.0
+        assert data["total_score"] == 100.0
         assert len(data["questions"]) == 2
         # Verify options are present
         for q in data["questions"]:
@@ -386,6 +386,37 @@ class TestExamLifecycle:
         assert data["valid"] is False
         # Should have error about needing questions and participants
         assert any("题" in e for e in data["errors"])
+
+    def test_validate_exam_requires_total_score_100(
+        self, client: TestClient, superuser_token_headers: dict[str, str]
+    ) -> None:
+        exam = _create_exam(client, superuser_token_headers)
+        exam_id = exam["id"]
+
+        client.put(
+            f"{API}/{exam_id}/paper",
+            headers=superuser_token_headers,
+            json={
+                "questions": [
+                    {
+                        "question_type": "SINGLE_CHOICE",
+                        "stem": "Only fifty points",
+                        "score": 50.0,
+                        "sort_no": 1,
+                        "options": [
+                            {"option_key": "A", "option_text": "Yes", "is_correct": True, "sort_no": 1},
+                            {"option_key": "B", "option_text": "No", "is_correct": False, "sort_no": 2},
+                        ],
+                    }
+                ]
+            },
+        )
+
+        r = client.post(f"{API}/{exam_id}/validate", headers=superuser_token_headers)
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data["valid"] is False
+        assert any("试卷总分必须等于 100 分" in e for e in data["errors"])
 
     def test_publish_exam(
         self, client: TestClient, superuser_token_headers: dict[str, str],
@@ -675,6 +706,150 @@ class TestParticipants:
             f"{API}/{fake_id}/participants", headers=superuser_token_headers
         )
         assert r.status_code == 404
+
+
+# ─── Dashboard & Trainer Summary Tests ───────────────────────────────────────
+
+class TestSystemDashboard:
+    """Tests for GET /api/v1/exams/admin/dashboard/stats"""
+
+    def test_dashboard_stats_no_filter(
+        self, client: TestClient, superuser_token_headers: dict[str, str]
+    ) -> None:
+        """Dashboard returns stats without date filter."""
+        r = client.get(f"{API}/admin/dashboard/stats", headers=superuser_token_headers)
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert "exam_count" in data
+        assert "total_participation" in data
+        assert "overall_pass_rate" in data
+        assert "question_count" in data
+        assert "paper_count" in data
+        assert "question_type_distribution" in data
+        assert "device_type_distribution" in data
+        # difficulty_distribution should NOT be present
+        assert "difficulty_distribution" not in data
+
+    def test_dashboard_stats_with_date_filter(
+        self, client: TestClient, superuser_token_headers: dict[str, str]
+    ) -> None:
+        """Dashboard accepts start_date and end_date query params."""
+        r = client.get(
+            f"{API}/admin/dashboard/stats",
+            headers=superuser_token_headers,
+            params={"start_date": "2026-01-01", "end_date": "2026-12-31"},
+        )
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert isinstance(data["exam_count"], int)
+
+    def test_dashboard_stats_future_range_returns_zero(
+        self, client: TestClient, superuser_token_headers: dict[str, str]
+    ) -> None:
+        """A date range with no exams should return all-zero stats."""
+        r = client.get(
+            f"{API}/admin/dashboard/stats",
+            headers=superuser_token_headers,
+            params={"start_date": "2099-01-01", "end_date": "2099-12-31"},
+        )
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data["exam_count"] == 0
+        assert data["total_participation"] == 0
+        assert data["overall_pass_rate"] == 0.0
+        assert data["question_count"] == 0
+        assert data["paper_count"] == 0
+        assert data["question_type_distribution"] == []
+        assert data["device_type_distribution"] == []
+
+    def test_dashboard_no_auth(self, client: TestClient) -> None:
+        r = client.get(f"{API}/admin/dashboard/stats")
+        assert r.status_code == 401
+
+    def test_dashboard_normal_user_forbidden(
+        self, client: TestClient, normal_user_token_headers: dict[str, str]
+    ) -> None:
+        r = client.get(f"{API}/admin/dashboard/stats", headers=normal_user_token_headers)
+        assert r.status_code == 403
+
+
+class TestTrainerSummary:
+    """Tests for GET /api/v1/exams/admin/trainers/summary"""
+
+    def test_trainer_summary_no_filter(
+        self, client: TestClient, superuser_token_headers: dict[str, str]
+    ) -> None:
+        """Trainer summary returns grouped data without filter."""
+        r = client.get(f"{API}/admin/trainers/summary", headers=superuser_token_headers)
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert "data" in data
+        assert "count" in data
+        assert isinstance(data["data"], list)
+        assert isinstance(data["count"], int)
+
+    def test_trainer_summary_search_by_trainer_name(
+        self, client: TestClient, superuser_token_headers: dict[str, str]
+    ) -> None:
+        """Search by trainer name (q param)."""
+        r = client.get(
+            f"{API}/admin/trainers/summary",
+            headers=superuser_token_headers,
+            params={"q": "admin"},
+        )
+        assert r.status_code == 200, r.text
+        data = r.json()
+        # Result may be empty or filtered; just verify structure
+        assert "data" in data
+        assert "count" in data
+
+    def test_trainer_summary_search_by_exam_name(
+        self, client: TestClient, superuser_token_headers: dict[str, str]
+    ) -> None:
+        """Search by exam name (q param)."""
+        r = client.get(
+            f"{API}/admin/trainers/summary",
+            headers=superuser_token_headers,
+            params={"q": "Test"},
+        )
+        assert r.status_code == 200, r.text
+
+    def test_trainer_summary_with_date_filter(
+        self, client: TestClient, superuser_token_headers: dict[str, str]
+    ) -> None:
+        """Trainer summary accepts start_date and end_date."""
+        r = client.get(
+            f"{API}/admin/trainers/summary",
+            headers=superuser_token_headers,
+            params={"start_date": "2026-01-01", "end_date": "2026-12-31"},
+        )
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert isinstance(data["count"], int)
+
+    def test_trainer_summary_future_range_empty(
+        self, client: TestClient, superuser_token_headers: dict[str, str]
+    ) -> None:
+        """A future date range should return empty results."""
+        r = client.get(
+            f"{API}/admin/trainers/summary",
+            headers=superuser_token_headers,
+            params={"start_date": "2099-01-01", "end_date": "2099-12-31"},
+        )
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data["data"] == []
+        assert data["count"] == 0
+
+    def test_trainer_summary_no_auth(self, client: TestClient) -> None:
+        r = client.get(f"{API}/admin/trainers/summary")
+        assert r.status_code == 401
+
+    def test_trainer_summary_normal_user_forbidden(
+        self, client: TestClient, normal_user_token_headers: dict[str, str]
+    ) -> None:
+        r = client.get(f"{API}/admin/trainers/summary", headers=normal_user_token_headers)
+        assert r.status_code == 403
 
 
 # ─── Auth Tests ───────────────────────────────────────────────────────────────

@@ -35,12 +35,10 @@ router = APIRouter(prefix="/my-exams", tags=["my-exams"])
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
 def _get_user_identifiers(user: CurrentUser) -> list[str]:
-    """Get all possible user identifiers for matching (wecom_userid, email, UUID)."""
+    """Get all possible user identifiers for matching (wecom_userid, UUID)."""
     ids = []
     if user.wecom_userid:
         ids.append(user.wecom_userid)
-    if user.email:
-        ids.append(user.email)
     ids.append(str(user.id))  # Always include UUID
     return ids
 
@@ -54,7 +52,9 @@ class MyExamPublic(BaseModel):
     """Exam info for regular users."""
     id: uuid.UUID
     name: str
-    description: str | None
+    category_id: int | None = None
+    category_name: str | None = None
+    trainer_ids: list[str] | None = None
     status: str
     start_at: datetime
     end_at: datetime
@@ -71,6 +71,7 @@ class MyExamPublic(BaseModel):
     passed: bool = False
     completion_status: str = "NOT_STARTED"  # NOT_STARTED / IN_PROGRESS / COMPLETED / NOT_COMPLETED
     can_attempt: bool = True
+    is_ended: bool = False
 
 
 class MyExamsPublic(BaseModel):
@@ -128,15 +129,17 @@ def list_my_exams(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
 ) -> MyExamsPublic:
-    """List exams that the current user is enrolled in."""
+    """List exams that the current user is enrolled in (published + archived)."""
     user_ids = _get_user_identifiers(current_user)
+
+    _VISIBLE_STATUSES = ("PUBLISHED", "ARCHIVED")
 
     # Find exams where user is a participant
     query = (
         select(Exam)
         .join(ExamParticipant, ExamParticipant.exam_id == Exam.id)
         .where(ExamParticipant.userid.in_(user_ids))
-        .where(Exam.status == "PUBLISHED")
+        .where(Exam.status.in_(_VISIBLE_STATUSES))
         .order_by(Exam.start_at.desc())
     )
 
@@ -146,8 +149,9 @@ def list_my_exams(
         .select_from(Exam)
         .join(ExamParticipant, ExamParticipant.exam_id == Exam.id)
         .where(ExamParticipant.userid.in_(user_ids))
-        .where(Exam.status == "PUBLISHED")
+        .where(Exam.status.in_(_VISIBLE_STATUSES))
     )
+
 
     count = session.exec(count_query).one()
     offset = (page - 1) * limit
@@ -180,7 +184,16 @@ def list_my_exams(
     participants = session.exec(participants_query).all()
     participant_map = {p.exam_id: p for p in participants}
 
+    # Batch fetch category names
+    cat_ids = {e.category_id for e in exams if e.category_id is not None}
+    cat_map: dict[int, str] = {}
+    if cat_ids:
+        from app.modules.exam_management.models import ExamCategory
+        cats = session.exec(select(ExamCategory).where(ExamCategory.id.in_(cat_ids))).all()
+        cat_map = {c.id: c.name for c in cats}
+
     # Build exam list with attempt stats
+    now = datetime.now(timezone.utc)
     exam_data = []
     for e in exams:
         stats = stats_map.get(e.id)
@@ -199,10 +212,16 @@ def list_my_exams(
         if e.attempt_limit_type == "LIMITED" and e.attempt_limit_count is not None:
             can_attempt = attempt_count < e.attempt_limit_count
 
+        # Check if exam has ended
+        end_at = e.end_at if e.end_at.tzinfo else e.end_at.replace(tzinfo=timezone.utc)
+        is_ended = now > end_at
+
         exam_data.append(MyExamPublic(
             id=e.id,
             name=e.name,
-            description=e.description,
+            category_id=e.category_id,
+            category_name=cat_map.get(e.category_id) if e.category_id else None,
+            trainer_ids=e.trainer_ids,
             status=e.status,
             start_at=e.start_at,
             end_at=e.end_at,
@@ -218,6 +237,7 @@ def list_my_exams(
             passed=passed,
             completion_status=completion_status,
             can_attempt=can_attempt,
+            is_ended=is_ended,
         ))
 
     return MyExamsPublic(data=exam_data, count=count)
@@ -237,16 +257,20 @@ def get_my_exam(
         .join(ExamParticipant, ExamParticipant.exam_id == Exam.id)
         .where(Exam.id == exam_id)
         .where(ExamParticipant.userid.in_(user_ids))
-        .where(Exam.status == "PUBLISHED")
+        .where(Exam.status.in_(("PUBLISHED", "ARCHIVED")))
     ).first()
 
     if not exam:
         raise HTTPException(status_code=404, detail="考试不存在或未参与")
 
+    now = datetime.now(timezone.utc)
+    end_at = exam.end_at if exam.end_at.tzinfo else exam.end_at.replace(tzinfo=timezone.utc)
+    is_ended = now > end_at
+
     return MyExamPublic(
         id=exam.id,
         name=exam.name,
-        description=exam.description,
+        trainer_ids=exam.trainer_ids,
         status=exam.status,
         start_at=exam.start_at,
         end_at=exam.end_at,
@@ -256,6 +280,7 @@ def get_my_exam(
         pass_score=exam.pass_score,
         show_answer=exam.show_answer,
         created_at=exam.created_at,
+        is_ended=is_ended,
     )
 
 

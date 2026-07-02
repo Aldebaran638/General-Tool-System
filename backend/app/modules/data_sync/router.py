@@ -212,6 +212,42 @@ def member_sync_status(
 # ─── Synced data endpoints ───────────────────────────────────────────────────
 
 @router.get(
+    "/wecom-centers",
+    response_model=WecomDepartmentsPublic,
+    summary="已同步的企微中心列表（level=1）",
+)
+def list_centers(
+    session: SessionDep,
+    current_user: RequireSuperuser,
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100),
+    q: str | None = Query(default=None, description="按部门名称搜索"),
+) -> WecomDepartmentsPublic:
+    """Return departments with level=1 (centers)."""
+    offset = (page - 1) * limit
+    base = select(WecomDepartment).where(WecomDepartment.level == 1)  # type: ignore[union-attr]
+    count_base = (
+        select(func.count())
+        .select_from(WecomDepartment)
+        .where(WecomDepartment.level == 1)  # type: ignore[union-attr]
+    )
+    if q:
+        like = f"%{q}%"
+        base = base.where(WecomDepartment.name.ilike(like))  # type: ignore[union-attr]
+        count_base = count_base.where(WecomDepartment.name.ilike(like))  # type: ignore[union-attr]
+    count = session.exec(count_base).one()
+    rows = session.exec(
+        base.order_by(WecomDepartment.synced_at.desc())  # type: ignore[arg-type]
+        .offset(offset)
+        .limit(limit)
+    ).all()
+    return WecomDepartmentsPublic(
+        data=[WecomDepartmentPublic.model_validate(r, from_attributes=True) for r in rows],
+        count=count,
+    )
+
+
+@router.get(
     "/wecom-departments",
     response_model=WecomDepartmentsPublic,
     summary="已同步的企微部门列表",
@@ -222,10 +258,14 @@ def list_departments(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
     q: str | None = Query(default=None, description="按部门名称搜索"),
+    level: int | None = Query(default=None, ge=0, le=3, description="按层级筛选: 1=中心, 2=部门"),
 ) -> WecomDepartmentsPublic:
     offset = (page - 1) * limit
     base = select(WecomDepartment)
     count_base = select(func.count()).select_from(WecomDepartment)
+    if level is not None:
+        base = base.where(WecomDepartment.level == level)  # type: ignore[union-attr]
+        count_base = count_base.where(WecomDepartment.level == level)  # type: ignore[union-attr]
     if q:
         like = f"%{q}%"
         base = base.where(WecomDepartment.name.ilike(like))  # type: ignore[union-attr]

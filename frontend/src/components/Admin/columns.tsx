@@ -32,10 +32,10 @@ export const columns: ColumnDef<UserTableData>[] = [
     },
   },
   {
-    accessorKey: "email",
-    header: "Email",
+    accessorKey: "wecom_userid",
+    header: "企微账号",
     cell: ({ row }) => (
-      <span className="text-muted-foreground">{row.original.email}</span>
+      <span className="text-muted-foreground">{row.original.wecom_userid}</span>
     ),
   },
   {

@@ -45,6 +45,7 @@ export interface WecomDepartment {
   name_en: string | null
   parentid: number | null
   order: number
+  level: number
   synced_at: string
 }
 

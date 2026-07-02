@@ -1,13 +1,90 @@
 import { Appearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
 import { Footer } from "./Footer"
-import { BookOpen, Award, Users, BarChart3 } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 
 interface AuthLayoutProps {
   children: React.ReactNode
 }
 
+interface StatItemProps {
+  value: number
+  suffix?: string
+  label: string
+  duration?: number
+}
+
+interface PublicStats {
+  total_trainees: number
+  total_exams: number
+  passed_exams: number
+  total_departments: number
+}
+
+function useCountUp(end: number, duration = 1500) {
+  const [count, setCount] = useState(0)
+  const frameRef = useRef<number | undefined>(undefined)
+
+  useEffect(() => {
+    const startTime = performance.now()
+    const animate = (now: number) => {
+      const elapsed = now - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 4)
+      setCount(Math.floor(eased * end))
+      if (progress < 1) {
+        frameRef.current = requestAnimationFrame(animate)
+      }
+    }
+    frameRef.current = requestAnimationFrame(animate)
+    return () => {
+      if (frameRef.current) cancelAnimationFrame(frameRef.current)
+    }
+  }, [end, duration])
+
+  return count
+}
+
+function StatItem({ value, suffix = "", label, duration = 1500 }: StatItemProps) {
+  const count = useCountUp(value, duration)
+  return (
+    <div className="flex flex-col items-center rounded-xl bg-white/10 p-4 backdrop-blur-sm transition-all hover:bg-white/20">
+      <div className="text-2xl font-bold text-white tabular-nums">
+        {count.toLocaleString()}
+        {suffix}
+      </div>
+      <div className="mt-1 text-xs text-blue-100">{label}</div>
+    </div>
+  )
+}
+
+const STAT_CONFIG: { key: keyof PublicStats; suffix: string; label: string }[] = [
+  { key: "total_trainees", suffix: "+", label: "累计培训人次" },
+  { key: "total_exams", suffix: "", label: "考试场次" },
+  { key: "passed_exams", suffix: "+", label: "考核通过" },
+  { key: "total_departments", suffix: "", label: "参与部门" },
+]
+
+async function fetchPublicStats(): Promise<PublicStats> {
+  const base = (import.meta.env.VITE_API_URL as string | undefined) || ""
+  const res = await fetch(`${base}/api/v1/public/stats`)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch stats: ${res.status}`)
+  }
+  return res.json()
+}
+
 export function AuthLayout({ children }: AuthLayoutProps) {
+  const [stats, setStats] = useState<PublicStats | null>(null)
+
+  useEffect(() => {
+    fetchPublicStats()
+      .then(setStats)
+      .catch(() => {
+        // Gracefully degrade: stats panel remains at zero on error.
+      })
+  }, [])
+
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       {/* Left brand panel */}
@@ -20,35 +97,33 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col items-center gap-8 px-12">
-          <div className="flex flex-col items-center gap-4">
+        <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-8 px-12">
+          <div className="flex flex-col items-center gap-4 text-center">
             <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
               <Logo variant="full" className="h-12 brightness-0 invert" asLink={false} />
             </div>
-            <div className="text-center">
+            <div>
               <h1 className="text-3xl font-bold text-white">课程培训及考核管理平台</h1>
-              <p className="mt-2 text-blue-100">高效管理培训流程，智能考核评估</p>
+              <p className="mt-2 text-blue-100">数据驱动的培训与考核管理</p>
             </div>
           </div>
 
-          {/* Feature highlights */}
-          <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
-            {[
-              { icon: BookOpen, label: "在线课程", desc: "随时随地学习" },
-              { icon: Award, label: "智能考核", desc: "自动化考试" },
-              { icon: Users, label: "团队管理", desc: "高效协作" },
-              { icon: BarChart3, label: "数据分析", desc: "精准洞察" },
-            ].map((feature, i) => (
-              <div
-                key={i}
-                className="flex flex-col items-center gap-2 rounded-xl bg-white/10 p-4 backdrop-blur-sm transition-all hover:bg-white/20"
-              >
-                <feature.icon className="h-6 w-6 text-white" />
-                <span className="text-sm font-medium text-white">{feature.label}</span>
-                <span className="text-xs text-blue-100">{feature.desc}</span>
-              </div>
+          {/* Stats highlights */}
+          <div className="grid grid-cols-2 gap-4 w-full">
+            {STAT_CONFIG.map(({ key, suffix, label }) => (
+              <StatItem
+                key={key}
+                value={stats?.[key] ?? 0}
+                suffix={suffix}
+                label={label}
+              />
             ))}
           </div>
+
+          <p className="flex items-center gap-1.5 text-xs text-blue-200/70">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            实时数据
+          </p>
         </div>
       </div>
 

@@ -30,7 +30,7 @@ from sqlmodel import Session, select
 
 from app.core.security import get_password_hash
 from app.models import User
-from app.modules.data_sync.models import SyncTask, WecomDepartment
+from app.modules.data_sync.models import SyncTask, WecomDepartment, WecomMember
 from app.services.wecom import WecomAPIError, WecomNotConfiguredError, get_wecom_client
 
 
@@ -39,6 +39,41 @@ def _now() -> datetime:
 
 
 # ─── Department sync ──────────────────────────────────────────────────────────
+
+def _compute_department_levels(
+    departments: list[dict],
+) -> dict[int, int]:
+    """Compute hierarchy level for each department.
+
+    Rules:
+      - Root department (parentid is None or 0): level = 0
+      - Direct child of root: level = 1 (center)
+      - Child of level 1: level = 2 (department)
+      - Anything deeper: level = 3 (invalid)
+    """
+    parent_map = {d["id"]: d.get("parentid") for d in departments}
+
+    def _level(dept_id: int, visited: set[int] | None = None) -> int:
+        if visited is None:
+            visited = set()
+        if dept_id in visited:
+            return 3  # cycle guard
+        visited.add(dept_id)
+
+        parent_id = parent_map.get(dept_id)
+        if parent_id is None or parent_id == 0:
+            return 0
+
+        parent_level = _level(parent_id, visited.copy())
+        if parent_level == 0:
+            return 1
+        elif parent_level == 1:
+            return 2
+        else:
+            return 3
+
+    return {d["id"]: _level(d["id"]) for d in departments}
+
 
 async def sync_departments(
     session: Session,
@@ -67,12 +102,16 @@ async def sync_departments(
         departments = await client.list_departments()
         task.fetched_count = len(departments)
 
+        # Pre-compute hierarchy levels for all departments
+        level_map = _compute_department_levels(departments)
+
         now = _now()
         api_ids: set[int] = set()
 
         for d in departments:
             dept_id: int = d["id"]
             api_ids.add(dept_id)
+            level = level_map.get(dept_id, 0)
 
             existing = session.get(WecomDepartment, dept_id)
             if existing is None:
@@ -82,6 +121,7 @@ async def sync_departments(
                     name_en=d.get("name_en"),
                     parentid=d.get("parentid"),
                     order=d.get("order", 0),
+                    level=level,
                     synced_at=now,
                 ))
                 created += 1
@@ -90,6 +130,7 @@ async def sync_departments(
                 existing.name_en = d.get("name_en")
                 existing.parentid = d.get("parentid")
                 existing.order = d.get("order", 0)
+                existing.level = level
                 existing.synced_at = now
                 session.add(existing)
                 updated += 1
@@ -131,10 +172,13 @@ async def sync_members(
     trigger_type: str = "manual",
     triggered_by_id: uuid.UUID | None = None,
 ) -> SyncTask:
-    """Pull WeCom member list and upsert into User table.
+    """Pull WeCom member list and upsert into User and WecomMember tables.
 
     Only touches users with wecom_userid set (i.e. WeCom-origin users).
     Local users (wecom_userid IS NULL) are never modified.
+
+    Member department lists are filtered to only retain department IDs whose
+    level is 1 (center) or 2 (department).
     """
 
     task = SyncTask(
@@ -152,42 +196,104 @@ async def sync_members(
 
     try:
         client = get_wecom_client()
-        members = await client.list_department_users(department_id=1, fetch_child=1)
+
+        # Load valid department IDs (level 1 or 2) for filtering and fetching
+        valid_dept_rows = session.exec(
+            select(WecomDepartment.id).where(
+                WecomDepartment.level.in_([1, 2])  # type: ignore[union-attr]
+            )
+        ).all()
+        valid_dept_ids: set[int] = set(valid_dept_rows)
+
+        if not valid_dept_ids:
+            raise WecomNotConfiguredError(
+                "No valid departments (level 1/2) found. Please sync departments first."
+            )
+
+        # Fetch members from each valid department instead of root department 1.
+        # This keeps the requested scope within the WeCom app's visible range.
+        seen_userids: set[str] = set()
+        members: list[dict[str, Any]] = []
+        for dept_id in sorted(valid_dept_ids):
+            dept_members = await client.list_department_users(
+                department_id=dept_id, fetch_child=1
+            )
+            for m in dept_members:
+                userid = m["userid"]
+                if userid not in seen_userids:
+                    seen_userids.add(userid)
+                    members.append(m)
+
         task.fetched_count = len(members)
 
+        now = _now()
         api_userids: set[str] = set()
 
         for m in members:
             userid: str = m["userid"]
             api_userids.add(userid)
+            mobile: str | None = m.get("mobile")
 
-            existing = session.exec(
+            # --- Sync User ---
+            existing_user = session.exec(
                 select(User).where(User.wecom_userid == userid)
             ).first()
 
-            if existing is None:
+            if existing_user is None:
+                # 直接用企微 userid 作为系统登录账号
                 session.add(User(
-                    email=f"wecom_{userid}@wechat.work",
+                    mobile=mobile,
                     full_name=m.get("name") or userid,
                     wecom_userid=userid,
-                    hashed_password=get_password_hash(uuid.uuid4().hex),
+                    hashed_password=get_password_hash("123456"),
                     is_active=True,
                     is_superuser=False,
                 ))
                 created += 1
             else:
-                existing.full_name = m.get("name") or existing.full_name
-                if not existing.is_active:
-                    existing.is_active = True
-                session.add(existing)
+                existing_user.full_name = m.get("name") or existing_user.full_name
+                if mobile:
+                    existing_user.mobile = mobile
+                if not existing_user.is_active:
+                    existing_user.is_active = True
+                session.add(existing_user)
                 updated += 1
 
-        # Full sync only: deactivate WeCom users no longer in API
+            # --- Sync WecomMember (with filtered departments) ---
+            raw_depts: list[int] = m.get("department", [])
+            filtered_depts = [d for d in raw_depts if d in valid_dept_ids]
+
+            existing_member = session.get(WecomMember, userid)
+            if existing_member is None:
+                session.add(WecomMember(
+                    userid=userid,
+                    name=m.get("name") or userid,
+                    mobile=mobile,
+                    department=filtered_depts,
+                    avatar=m.get("avatar"),
+                    status=m.get("status", 1),
+                    synced_at=now,
+                    removed_at=None,
+                ))
+            else:
+                existing_member.name = m.get("name") or existing_member.name
+                existing_member.mobile = mobile
+                existing_member.department = filtered_depts
+                existing_member.avatar = m.get("avatar")
+                existing_member.status = m.get("status", 1)
+                existing_member.synced_at = now
+                existing_member.removed_at = None
+                session.add(existing_member)
+
+        # Full sync only: deactivate WeCom users no longer in API.
+        # Superusers (e.g. adminUser) are local accounts and must never be
+        # deactivated by the WeCom sync.
         if mode == "full":
             active_wecom = session.exec(
                 select(User).where(
                     User.wecom_userid.is_not(None),  # type: ignore[union-attr]
                     User.is_active == True,  # noqa: E712
+                    User.is_superuser == False,  # noqa: E712
                 )
             ).all()
             for user in active_wecom:
@@ -195,6 +301,13 @@ async def sync_members(
                     user.is_active = False
                     session.add(user)
                     deleted += 1
+
+            # Also mark removed WecomMembers
+            all_members = session.exec(select(WecomMember)).all()
+            for member in all_members:
+                if member.userid not in api_userids:
+                    member.removed_at = now
+                    session.add(member)
 
         session.commit()
 

@@ -10,8 +10,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "18080:80"
-      - "18090:8080"
+      - "10201:80"
+      - "10202:8080"
     # Duplicate the command from compose.yml to add --api.insecure=true
     command:
       # Enable Docker in Traefik, so that it reads labels from Docker services
@@ -48,17 +48,17 @@ services:
   db:
     restart: "no"
     ports:
-      - "15432:5432"
+      - "10203:5432"
 
   adminer:
     restart: "no"
     ports:
-      - "18081:8080"
+      - "10204:8080"
 
   backend:
     restart: "no"
     ports:
-      - "8001:8000"
+      - "10205:8000"
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -78,67 +78,59 @@ services:
       SMTP_TLS: "false"
       EMAILS_FROM_EMAIL: "noreply@example.com"
       WATCHFILES_FORCE_POLLING: "true"
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./backend/app
-          target: /app/backend/app
-          ignore:
-            - __pycache__/
-        - action: rebuild
-          path: ./backend/pyproject.toml
-        - action: rebuild
-          path: ./pyproject.toml
-        - action: rebuild
-          path: ./uv.lock
+      # 容器内通过服务名访问数据库，避免被 .env 中的 localhost 覆盖
+      POSTGRES_SERVER: "db"
+      POSTGRES_PORT: "5432"
+    # develop section removed for docker-compose v1 compatibility
+
+  prestart:
+    volumes:
+      - ./backend:/app/backend
+    environment:
+      POSTGRES_SERVER: "db"
+      POSTGRES_PORT: "5432"
 
   mailcatcher:
     image: schickling/mailcatcher
     ports:
-      - "1180:1080"
-      - "11025:1025"
+      - "10208:1080"
+      - "10209:1025"
 
   frontend:
     restart: "no"
     ports:
-      - "8000:5173"
+      - "10206:5173"
     build:
       context: .
       dockerfile: frontend/Dockerfile.dev
     command:
-      - bun
+      - npm
       - run
       - dev
+      - --
       - --host
       - 0.0.0.0
       - --port
       - "5173"
     environment:
+      # Vite dev 模式需要 NODE_ENV=development，否则 JSX 自动运行时会找不到 _jsxDEV
+      NODE_ENV: "development"
       # 空字符串 → OpenAPI.BASE="" → 前端使用相对路径
       # /api/* 由 Vite proxy 转发到 backend 容器，无需跨域
       VITE_API_URL: ""
       # Vite proxy 在容器内使用 Docker 内部服务名到达 backend
       BACKEND_URL: "http://backend:8000"
       CHOKIDAR_USEPOLLING: "true"
-    volumes:
-      - ./frontend:/app/frontend
-      - frontend-node_modules:/app/frontend/node_modules
+    # volumes removed for remote deployment - node_modules installed in image
     labels:
       - traefik.http.services.${STACK_NAME?Variable not set}-frontend.loadbalancer.server.port=5173
-    develop:
-      watch:
-        - action: sync
-          path: ./frontend/src
-          target: /app/frontend/src
-        - action: sync
-          path: ./frontend/public
-          target: /app/frontend/public
-        - action: rebuild
-          path: ./frontend/package.json
-        - action: rebuild
-          path: ./package.json
-        - action: rebuild
-          path: ./bun.lock
+    # develop section removed for docker-compose v1 compatibility
+
+  chartdb:
+    image: ghcr.io/chartdb/chartdb:latest
+    restart: "no"
+    ports:
+      - "10207:80"
 
   playwright:
     profiles:
@@ -165,7 +157,7 @@ services:
       - ./frontend/blob-report:/app/frontend/blob-report
       - ./frontend/test-results:/app/frontend/test-results
     ports:
-      - 9323:9323
+      - 10110:9323
 
 networks:
   traefik-public:

@@ -24,7 +24,6 @@ from app.models import (
     UserUpdateMe,
 )
 from app.modules.workbench.project_management.models import Item
-from app.utils import generate_new_account_email, send_email
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -38,7 +37,7 @@ def read_users(
     session: SessionDep,
     skip: int = 0,
     limit: int = 100,
-    q: str | None = Query(default=None, description="Search by name, email, or wecom_userid"),
+    q: str | None = Query(default=None, description="Search by name or wecom_userid"),
 ) -> Any:
     """
     Retrieve users, optionally filtered by search query.
@@ -50,7 +49,6 @@ def read_users(
         statement = statement.where(
             or_(
                 col(User.full_name).ilike(pattern),
-                col(User.email).ilike(pattern),
                 col(User.wecom_userid).ilike(pattern),
             )
         )
@@ -71,23 +69,16 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
     """
     Create new user.
     """
-    user = crud.get_user_by_email(session=session, email=user_in.email)
+    user = crud.get_user_by_wecom_userid(
+        session=session, wecom_userid=user_in.wecom_userid
+    )
     if user:
         raise HTTPException(
             status_code=400,
-            detail="The user with this email already exists in the system.",
+            detail="The user with this wecom_userid already exists in the system.",
         )
 
     user = crud.create_user(session=session, user_create=user_in)
-    if settings.emails_enabled and user_in.email:
-        email_data = generate_new_account_email(
-            email_to=user_in.email, username=user_in.email, password=user_in.password
-        )
-        send_email(
-            email_to=user_in.email,
-            subject=email_data.subject,
-            html_content=email_data.html_content,
-        )
     return user
 
 
@@ -98,13 +89,6 @@ def update_user_me(
     """
     Update own user.
     """
-
-    if user_in.email:
-        existing_user = crud.get_user_by_email(session=session, email=user_in.email)
-        if existing_user and existing_user.id != current_user.id:
-            raise HTTPException(
-                status_code=409, detail="User with this email already exists"
-            )
     user_data = user_in.model_dump(exclude_unset=True)
     current_user.sqlmodel_update(user_data)
     session.add(current_user)
@@ -161,11 +145,13 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     """
     Create new user without the need to be logged in.
     """
-    user = crud.get_user_by_email(session=session, email=user_in.email)
+    user = crud.get_user_by_wecom_userid(
+        session=session, wecom_userid=user_in.wecom_userid
+    )
     if user:
         raise HTTPException(
             status_code=400,
-            detail="The user with this email already exists in the system",
+            detail="The user with this wecom_userid already exists in the system",
         )
     user_create = UserCreate.model_validate(user_in)
     user = crud.create_user(session=session, user_create=user_create)
@@ -213,11 +199,13 @@ def update_user(
             status_code=404,
             detail="The user with this id does not exist in the system",
         )
-    if user_in.email:
-        existing_user = crud.get_user_by_email(session=session, email=user_in.email)
+    if user_in.wecom_userid:
+        existing_user = crud.get_user_by_wecom_userid(
+            session=session, wecom_userid=user_in.wecom_userid
+        )
         if existing_user and existing_user.id != user_id:
             raise HTTPException(
-                status_code=409, detail="User with this email already exists"
+                status_code=409, detail="User with this wecom_userid already exists"
             )
 
     db_user = crud.update_user(session=session, db_user=db_user, user_in=user_in)

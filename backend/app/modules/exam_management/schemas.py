@@ -11,11 +11,43 @@ from pydantic import BaseModel
 from sqlmodel import SQLModel
 
 
+# ─── Exam Category ──────────────────────────────────────────────────────────
+
+class ExamCategoryCreate(BaseModel):
+    name: str
+    sort_order: int = 0
+
+
+class ExamCategoryUpdate(BaseModel):
+    name: str | None = None
+    sort_order: int | None = None
+
+
+class ExamCategoryPublic(BaseModel):
+    id: int
+    name: str
+    sort_order: int
+    created_at: datetime | None
+
+
+class ExamCategoriesPublic(BaseModel):
+    data: list[ExamCategoryPublic]
+    count: int
+
+
+# ─── Trainer Info ────────────────────────────────────────────────────────────
+
+class TrainerInfo(BaseModel):
+    id: str
+    name: str
+
+
 # ─── Exam ────────────────────────────────────────────────────────────────────
 
 class ExamCreate(BaseModel):
     name: str
-    description: str | None = None
+    trainer_ids: list[str] | None = None
+    category_id: int | None = None
     start_at: datetime
     end_at: datetime
     duration_minutes: int
@@ -30,7 +62,8 @@ class ExamCreate(BaseModel):
 
 class ExamUpdate(BaseModel):
     name: str | None = None
-    description: str | None = None
+    trainer_ids: list[str] | None = None
+    category_id: int | None = None
     start_at: datetime | None = None
     end_at: datetime | None = None
     duration_minutes: int | None = None
@@ -46,8 +79,11 @@ class ExamUpdate(BaseModel):
 class ExamPublic(BaseModel):
     id: uuid.UUID
     name: str
-    description: str | None
+    trainer_ids: list[str] | None
+    trainers: list[TrainerInfo] | None = None
     status: str
+    category_id: int | None
+    category_name: str | None
     start_at: datetime
     end_at: datetime
     duration_minutes: int
@@ -153,3 +189,113 @@ class AddByUsersRequest(BaseModel):
 class PublishValidation(BaseModel):
     valid: bool
     errors: list[str] = []
+
+
+# ─── Exam Statistics ─────────────────────────────────────────────────────────
+
+class ScoreDistribution(BaseModel):
+    range_label: str  # "0-59", "60-69", "70-79", "80-89", "90-100"
+    count: int
+
+
+class ExamStatistics(BaseModel):
+    total_participants: int
+    completed_count: int
+    passed_count: int
+    failed_count: int
+    not_started_count: int
+    in_progress_count: int
+    pass_rate: float  # percentage, e.g. 85.5
+    avg_score: float | None
+    max_score: float | None
+    min_score: float | None
+    score_distribution: list[ScoreDistribution]
+
+
+class ParticipantDetail(BaseModel):
+    id: uuid.UUID
+    userid: str
+    name_snapshot: str | None
+    center_snapshot: str | None
+    department_snapshot: str | None
+    position_snapshot: str | None
+    completion_status: str
+    final_score: float | None
+    final_passed: bool
+    completed_at: datetime | None
+
+
+class ParticipantListResponse(BaseModel):
+    data: list[ParticipantDetail]
+    count: int
+
+
+# ─── System Dashboard ─────────────────────────────────────────────────────
+
+class QuestionTypeCount(BaseModel):
+    question_type: str
+    count: int
+
+
+class DeviceTypeCount(BaseModel):
+    device_type: str
+    count: int
+
+
+class SystemDashboardStats(BaseModel):
+    exam_count: int
+    total_participation: int
+    overall_pass_rate: float  # percentage
+    question_count: int
+    paper_count: int
+    question_type_distribution: list[QuestionTypeCount]
+    device_type_distribution: list[DeviceTypeCount]
+
+
+# ─── Question Bank ──────────────────────────────────────────────────────────
+
+class QuestionBankItem(BaseModel):
+    exam_id: uuid.UUID
+    exam_name: str
+    category_id: int | None
+    category_name: str | None
+    status: str  # PENDING / GENERATED / FAILED
+    generated_at: datetime | None
+    question_count: int
+    total_score: float
+
+
+class QuestionBankPublic(BaseModel):
+    data: list[QuestionBankItem]
+    count: int
+
+
+class QuestionBankDetail(BaseModel):
+    exam_id: uuid.UUID
+    exam_name: str
+    questions: list[QuestionPublic]
+    total_score: float
+    question_count: int
+
+
+# ─── Trainer Summary ─────────────────────────────────────────────────────────
+
+class TrainerExamItem(BaseModel):
+    exam_id: uuid.UUID
+    exam_name: str
+    center: str | None
+    start_at: datetime
+    participant_count: int
+
+
+class TrainerGroup(BaseModel):
+    trainer_id: str
+    trainer_name: str
+    exam_count: int
+    total_participants: int
+    exams: list[TrainerExamItem]
+
+
+class TrainerSummaryResponse(BaseModel):
+    data: list[TrainerGroup]
+    count: int

@@ -87,6 +87,56 @@ export function savePaper(examId: string, data: PaperSaveRequest): Promise<void>
   return apiFetch(`${BASE}/${examId}/paper`, { method: "PUT", body: JSON.stringify(data) })
 }
 
+// ─── Statistics ─────────────────────────────────────────────────────────────
+
+export interface ScoreDistribution {
+  range_label: string
+  count: number
+}
+
+export interface ExamStatistics {
+  total_participants: number
+  completed_count: number
+  passed_count: number
+  failed_count: number
+  not_started_count: number
+  in_progress_count: number
+  pass_rate: number
+  avg_score: number | null
+  max_score: number | null
+  min_score: number | null
+  score_distribution: ScoreDistribution[]
+}
+
+export function getExamStatistics(examId: string): Promise<ExamStatistics> {
+  return apiFetch(`${BASE}/${examId}/statistics`)
+}
+
+export interface ParticipantDetail {
+  id: string
+  userid: string
+  name_snapshot: string | null
+  center_snapshot: string | null
+  department_snapshot: string | null
+  position_snapshot: string | null
+  completion_status: string
+  final_score: number | null
+  final_passed: boolean
+  completed_at: string | null
+}
+
+export interface ParticipantListResponse {
+  data: ParticipantDetail[]
+  count: number
+}
+
+export function getParticipantsByStatus(
+  examId: string,
+  status: string
+): Promise<ParticipantListResponse> {
+  return apiFetch(`${BASE}/${examId}/participants/by-status?status=${status}`)
+}
+
 // ─── Participants ───────────────────────────────────────────────────────────
 
 export function listParticipants(
@@ -175,7 +225,7 @@ export async function searchUsers(params: {
   return {
     data: res.data.map((u) => ({
       userid: u.wecom_userid || u.id,
-      name: u.full_name || u.email,
+      name: u.full_name || u.wecom_userid || u.id,
       is_active: u.is_active,
       created_at: u.created_at,
     })),
@@ -191,6 +241,7 @@ export interface WecomDepartment {
   name_en: string | null
   parentid: number | null
   order: number
+  level?: number
 }
 
 export interface WecomDepartmentsResponse {
@@ -207,5 +258,30 @@ export async function searchDepartments(params: {
   if (params.q) p.set("q", params.q)
   if (params.page) p.set("page", String(params.page))
   if (params.limit) p.set("limit", String(params.limit))
+  return apiFetch<WecomDepartmentsResponse>(`/api/v1/data-sync/wecom-departments?${p}`)
+}
+
+export async function getCenters(params: {
+  q?: string
+  page?: number
+  limit?: number
+}): Promise<WecomDepartmentsResponse> {
+  const p = new URLSearchParams()
+  if (params.q) p.set("q", params.q)
+  if (params.page) p.set("page", String(params.page))
+  if (params.limit) p.set("limit", String(params.limit))
+  return apiFetch<WecomDepartmentsResponse>(`/api/v1/data-sync/wecom-centers?${p}`)
+}
+
+export async function getDepartmentsOnly(params: {
+  q?: string
+  page?: number
+  limit?: number
+}): Promise<WecomDepartmentsResponse> {
+  const p = new URLSearchParams()
+  if (params.q) p.set("q", params.q)
+  if (params.page) p.set("page", String(params.page))
+  if (params.limit) p.set("limit", String(params.limit))
+  p.set("level", "2")
   return apiFetch<WecomDepartmentsResponse>(`/api/v1/data-sync/wecom-departments?${p}`)
 }

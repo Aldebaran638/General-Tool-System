@@ -3,8 +3,8 @@
 #
 # 功能：
 #   1. 启动 docker compose 服务（若已运行则跳过）
-#   2. 等待前端(8000)和后端(8001)就绪
-#   3. 启动 Cloudflare 临时隧道（指向前端 localhost:8000）
+#   2. 等待前端(10206)和后端(10205)就绪
+#   3. 启动 Cloudflare 临时隧道（指向前端 localhost:10206）
 #   4. 自动更新 .env 中的 DOMAIN / FRONTEND_HOST / BACKEND_CORS_ORIGINS
 #   5. 重启后端使新 CORS 配置生效
 #   6. 验证公网可达性
@@ -73,9 +73,10 @@ check_port() {
 }
 
 PORT_CONFLICT=0
-check_port 8001 "后端" || PORT_CONFLICT=1
-check_port 8000 "前端" || PORT_CONFLICT=1
-check_port 15432 "数据库" || PORT_CONFLICT=1
+check_port 10205 "后端" || PORT_CONFLICT=1
+check_port 10206 "前端" || PORT_CONFLICT=1
+check_port 10203 "数据库" || PORT_CONFLICT=1
+check_port 10207 "ChartDB" || PORT_CONFLICT=1
 
 if [ "$PORT_CONFLICT" -eq 1 ]; then
     error "存在端口冲突，请解决后重新运行"
@@ -127,7 +128,7 @@ for f in "$CLOUDFLARE_DIR"/*.json; do
 done
 
 # 隧道先指向前端端口（稍后前端启动后就能连上）
-TUNNEL_PORT=8000
+TUNNEL_PORT=10206
 info "隧道目标: http://localhost:${TUNNEL_PORT} (Vite dev server)"
 
 TMPFILE=$(mktemp)
@@ -182,7 +183,7 @@ update_env() {
 }
 
 # BACKEND_CORS_ORIGINS：保留 localhost 条目，新增隧道域名
-CORS_VALUE="${URL},http://localhost:8000,http://localhost:5173"
+CORS_VALUE="${URL},http://localhost:10206,http://localhost:5173"
 
 # 更新根 .env
 update_env ".env" "DOMAIN"               "$HOST"
@@ -209,6 +210,15 @@ header "启动应用容器"
 info "启动后端和前端（配置已写入，无需二次重启）..."
 docker compose up -d --force-recreate backend frontend
 success "应用容器已启动"
+
+# ── 生成 ChartDB 导入结果（prestart 迁移完成后）──────────────────────────────
+header "生成 ChartDB 导入结果"
+
+if ./scripts/generate-chartdb-schema.sh; then
+    success "ChartDB 导入结果已生成: docs/chartdb/schema.json"
+else
+    warn "ChartDB 导入结果生成失败；应用仍会继续启动"
+fi
 
 # ── 检查前端依赖完整性（volume 缓存可能导致 node_modules 过期）────────────────
 header "检查前端依赖"
@@ -272,12 +282,12 @@ wait_for_port() {
     warn "${name} 在 $((max * 2)) 秒内未响应，继续执行..."
 }
 
-wait_for_port 8000 "前端(Vite)"
-wait_for_port 8001 "后端(FastAPI)"
+wait_for_port 10206 "前端(Vite)"
+wait_for_port 10205 "后端(FastAPI)"
 
 # 后端健康检查（带 /api/v1 前缀）
 for i in {1..30}; do
-    HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/api/v1/utils/health-check/ 2>/dev/null || echo "000")
+    HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:10205/api/v1/utils/health-check/ 2>/dev/null || echo "000")
     if [ "$HEALTH" = "200" ]; then
         success "后端 /health-check 返回 200"
         break
@@ -289,14 +299,14 @@ echo ""
 
 # ── 最终验证：前端页面可访问 ───────────────────────────────────────────────────
 info "验证前端页面..."
-FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "http://localhost:8000" 2>/dev/null || echo "000")
+FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "http://localhost:10206" 2>/dev/null || echo "000")
 if [ "$FRONTEND_STATUS" = "200" ]; then
     success "前端页面可访问 (HTTP 200)"
 else
     warn "前端返回 HTTP $FRONTEND_STATUS，尝试重启前端..."
     docker compose restart frontend
     sleep 5
-    FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "http://localhost:8000" 2>/dev/null || echo "000")
+    FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "http://localhost:10206" 2>/dev/null || echo "000")
     if [ "$FRONTEND_STATUS" = "200" ]; then
         success "前端重启后可访问"
     else
@@ -327,6 +337,10 @@ CORP_ID="wwe221b9e0dafa804a"
 AGENT_ID="1000003"
 APP_HOME_URL="${URL}/"
 OAUTH_URL="https://open.weixin.qq.com/connect/oauth2/authorize?appid=${CORP_ID}&redirect_uri=${ENCODED_CALLBACK}&response_type=code&scope=snsapi_base&agentid=${AGENT_ID}&state=STATE#wechat_redirect"
+VERIFY_FILENAME="${WECOM_VERIFY_FILENAME:-$(find backend/app . -maxdepth 1 -name 'WW_verify_*.txt' -printf '%f\n' 2>/dev/null | head -1)}"
+if [ -z "$VERIFY_FILENAME" ]; then
+    VERIFY_FILENAME="WW_verify_<企业微信后台下载的文件名>.txt"
+fi
 
 echo ""
 echo -e "${BOLD}请在企业微信管理后台（work.weixin.qq.com/wework_admin）完成以下配置：${NC}"
@@ -345,7 +359,7 @@ echo -e "   ${GREEN}${APP_HOME_URL}${NC}"
 echo ""
 echo -e "${YELLOW}④ 域名校验文件（如已配置可跳过）${NC}"
 echo "   验证地址已内置，访问可验证："
-echo -e "   ${GREEN}${URL}/WW_verify_HUz4rWBElVbwEoOX.txt${NC}"
+echo -e "   ${GREEN}${URL}/${VERIFY_FILENAME}${NC}"
 echo ""
 echo -e "${YELLOW}⑤ 手动测试 OAuth 登录流程${NC}"
 echo "   在手机企业微信中打开以下链接，或让开发工具生成 QR 码："
@@ -355,11 +369,12 @@ echo -e "${YELLOW}⑥ PC 端调试登录（浏览器直接访问）${NC}"
 echo -e "   ${GREEN}${URL}/api/auth/wecom/login${NC}"
 echo ""
 echo -e "${BOLD}本地服务地址：${NC}"
-echo -e "  前端:    ${GREEN}http://localhost:8000${NC}"
-echo -e "  后端:    ${GREEN}http://localhost:8001${NC}"
-echo -e "  Swagger: ${GREEN}http://localhost:8001/api/v1/docs${NC}"
-echo -e "  Adminer: ${GREEN}http://localhost:18081${NC}  (DB 管理)"
-echo -e "  邮件:    ${GREEN}http://localhost:1180${NC}   (MailCatcher)"
+echo -e "  前端:    ${GREEN}http://localhost:10206${NC}"
+echo -e "  后端:    ${GREEN}http://localhost:10205${NC}"
+echo -e "  Swagger: ${GREEN}http://localhost:10205/api/v1/docs${NC}"
+echo -e "  Adminer: ${GREEN}http://localhost:10204${NC}  (DB 管理)"
+echo -e "  ChartDB: ${GREEN}http://localhost:10207${NC}  (导入 docs/chartdb/schema.json)"
+echo -e "  邮件:    ${GREEN}http://localhost:10208${NC}   (MailCatcher)"
 echo ""
 echo -e "${BOLD}公网隧道地址：${NC}"
 echo -e "  ${GREEN}${URL}${NC}"

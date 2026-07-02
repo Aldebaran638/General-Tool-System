@@ -68,6 +68,18 @@ export function getDepartments(page = 1, limit = 20): Promise<WecomDepartmentsRe
   return apiFetch(`${BASE}/wecom-departments?page=${page}&limit=${limit}`)
 }
 
+export function getCenters(page = 1, limit = 20, q?: string): Promise<WecomDepartmentsResponse> {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) })
+  if (q) params.set("q", q)
+  return apiFetch(`${BASE}/wecom-centers?${params}`)
+}
+
+export function getDepartmentsOnly(page = 1, limit = 20, q?: string): Promise<WecomDepartmentsResponse> {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit), level: "2" })
+  if (q) params.set("q", q)
+  return apiFetch(`${BASE}/wecom-departments?${params}`)
+}
+
 export function getMembers(page = 1, limit = 20, q?: string): Promise<WecomMembersResponse> {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) })
   if (q) params.set("q", q)

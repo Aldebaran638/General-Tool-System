@@ -59,6 +59,11 @@ const useAuth = () => {
       formData: data,
     })
     localStorage.setItem("access_token", response.access_token)
+
+    // Eagerly fetch current user so the dashboard/sidebar don't flash empty
+    // while the useQuery for ["currentUser"] is still loading.
+    const currentUser = await UsersService.readUserMe()
+    queryClient.setQueryData(["currentUser"], currentUser)
   }
 
   const loginMutation = useMutation({

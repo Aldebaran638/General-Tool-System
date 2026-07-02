@@ -33,11 +33,11 @@ import { handleError } from "@/utils"
 
 const formSchema = z
   .object({
-    email: z.email({ message: "Invalid email address" }),
+    wecom_userid: z.string().min(1, { message: "企微账号不能为空" }),
     full_name: z.string().optional(),
     password: z
       .string()
-      .min(8, { message: "Password must be at least 8 characters" })
+      .min(1, { message: "Password must be at least 1 character" })
       .optional()
       .or(z.literal("")),
     confirm_password: z.string().optional(),
@@ -66,7 +66,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      email: user.email,
+      wecom_userid: user.wecom_userid,
       full_name: user.full_name ?? undefined,
       is_superuser: user.is_superuser,
       is_active: user.is_active,
@@ -117,16 +117,16 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
             <div className="grid gap-4 py-4">
               <FormField
                 control={form.control}
-                name="email"
+                name="wecom_userid"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Email <span className="text-destructive">*</span>
+                      企微账号 <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Email"
-                        type="email"
+                        placeholder="企微账号"
+                        type="text"
                         {...field}
                         required
                       />

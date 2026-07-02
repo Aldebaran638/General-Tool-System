@@ -31,22 +31,21 @@ def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> Any:
     return db_user
 
 
-def get_user_by_email(*, session: Session, email: str) -> User | None:
-    statement = select(User).where(User.email == email)
+def get_user_by_wecom_userid(*, session: Session, wecom_userid: str) -> User | None:
+    statement = select(User).where(User.wecom_userid == wecom_userid)
     session_user = session.exec(statement).first()
     return session_user
 
 
-# Dummy hash to use for timing attack prevention when user is not found
-# This is an Argon2 hash of a random password, used to ensure constant-time comparison
-DUMMY_HASH = "$argon2id$v=19$m=65536,t=3,p=4$MjQyZWE1MzBjYjJlZTI0Yw$YTU4NGM5ZTZmYjE2NzZlZjY0ZWY3ZGRkY2U2OWFjNjk"
+# Dummy password to use for timing attack prevention when user is not found.
+# Keeps response time similar whether the username exists or not.
+DUMMY_HASH = "123456"
 
 
-def authenticate(*, session: Session, email: str, password: str) -> User | None:
-    db_user = get_user_by_email(session=session, email=email)
+def authenticate(*, session: Session, wecom_userid: str, password: str) -> User | None:
+    db_user = get_user_by_wecom_userid(session=session, wecom_userid=wecom_userid)
     if not db_user:
         # Prevent timing attacks by running password verification even when user doesn't exist
-        # This ensures the response time is similar whether or not the email exists
         verify_password(password, DUMMY_HASH)
         return None
     verified, updated_password_hash = verify_password(password, db_user.hashed_password)

@@ -1,0 +1,11 @@
+{
+  "questions": [
+    {
+      "stem": "Python 中定义函数的关键字是___。",
+      "answer": "def",
+      "analysis": "def 是 Python 定义函数的关键字。",
+      "difficulty": "EASY",
+      "score": 2.0
+    }
+  ]
+}

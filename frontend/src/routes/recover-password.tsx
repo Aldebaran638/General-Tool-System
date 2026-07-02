@@ -25,7 +25,7 @@ import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
 const formSchema = z.object({
-  email: z.email(),
+  wecom_userid: z.string().min(1, { message: "企微账号不能为空" }),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -52,21 +52,21 @@ function RecoverPassword() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      wecom_userid: "",
     },
   })
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const recoverPassword = async (data: FormData) => {
     await LoginService.recoverPassword({
-      email: data.email,
+      wecomUserid: data.wecom_userid,
     })
   }
 
   const mutation = useMutation({
     mutationFn: recoverPassword,
     onSuccess: () => {
-      showSuccessToast("Password recovery email sent successfully")
+      showSuccessToast("Password recovery request sent successfully")
       form.reset()
     },
     onError: handleError.bind(showErrorToast),
@@ -91,15 +91,15 @@ function RecoverPassword() {
           <div className="grid gap-4">
             <FormField
               control={form.control}
-              name="email"
+              name="wecom_userid"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>企微账号</FormLabel>
                   <FormControl>
                     <Input
-                      data-testid="email-input"
-                      placeholder="user@example.com"
-                      type="email"
+                      data-testid="wecom-userid-input"
+                      placeholder="请输入企微账号"
+                      type="text"
                       {...field}
                     />
                   </FormControl>

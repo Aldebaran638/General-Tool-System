@@ -16,18 +16,20 @@ import {
 } from "@/components/ui/select"
 
 import { createExam } from "../api"
+import { datetimeLocalToApi } from "../datetime"
 import type { ExamCreate } from "../types"
+import { TrainerSearchSelect } from "./TrainerSearchSelect"
 
 export function NewExamPage() {
   const navigate = useNavigate()
   const [form, setForm] = useState<ExamCreate>({
     name: "",
-    description: "",
+    trainer_ids: [],
     start_at: "",
     end_at: "",
     duration_minutes: 60,
     attempt_limit_type: "UNLIMITED",
-    pass_score: 30,
+    pass_score: 60,
     submit_rule: "ALL_REQUIRED",
     show_answer: false,
     random_question_order: false,
@@ -36,11 +38,11 @@ export function NewExamPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: ExamCreate) => {
-      const payload = { ...data }
-      if (payload.start_at && !payload.start_at.endsWith("Z"))
-        payload.start_at = payload.start_at + ":00Z"
-      if (payload.end_at && !payload.end_at.endsWith("Z"))
-        payload.end_at = payload.end_at + ":00Z"
+      const payload = {
+        ...data,
+        start_at: datetimeLocalToApi(data.start_at) ?? data.start_at,
+        end_at: datetimeLocalToApi(data.end_at) ?? data.end_at,
+      }
       return createExam(payload)
     },
     onSuccess: (exam) => navigate({ to: `/exams/${exam.id}` }),
@@ -84,15 +86,11 @@ export function NewExamPage() {
             />
           </div>
           <div className="grid gap-2">
-            <Label>考试说明</Label>
-            <textarea
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="给学员看的考试说明（可选）"
-              value={form.description ?? ""}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setForm({ ...form, description: e.target.value })
-              }
-              rows={3}
+            <Label>培训讲师（可选）</Label>
+            <TrainerSearchSelect
+              selectedTrainerIds={form.trainer_ids ?? []}
+              selectedTrainers={[]}
+              onSelectionChange={(ids) => setForm({ ...form, trainer_ids: ids })}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -132,11 +130,15 @@ export function NewExamPage() {
               <Label>及格分数 *</Label>
               <Input
                 type="number"
+                max={100}
                 value={form.pass_score}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setForm({ ...form, pass_score: Number(e.target.value) })
                 }
               />
+              <p className="text-xs text-muted-foreground">
+                试卷总分固定为 100 分，及格分数不能超过 100。
+              </p>
             </div>
           </div>
         </CardContent>

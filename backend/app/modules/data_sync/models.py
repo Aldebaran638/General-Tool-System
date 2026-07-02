@@ -34,6 +34,10 @@ class WecomDepartment(SQLModel, table=True):
     parentid: int | None = Field(default=None, index=True)
     order: int = Field(default=0)
 
+    # Hierarchy level: 1 = root child (center), 2 = first-level child (department),
+    # 3+ = deeper levels (invalid for our use case). Defaults to 0 until computed.
+    level: int = Field(default=0)
+
     # Our metadata
     synced_at: datetime = Field(
         default_factory=_utcnow,
@@ -51,6 +55,7 @@ class WecomMember(SQLModel, table=True):
     # WeCom native fields
     userid: str = Field(primary_key=True, max_length=64)
     name: str = Field(max_length=64)
+    mobile: str | None = Field(default=None, max_length=32)
     department: list[int] = Field(
         default_factory=list,
         sa_column=Column(JSON, nullable=False, server_default="[]"),
