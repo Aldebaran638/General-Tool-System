@@ -1,9 +1,40 @@
-import { useRef, useEffect } from "react"
+import { useRef, useEffect, useState } from "react"
 
-import { Bot } from "lucide-react"
+import { Bot, ChevronDown, Lightbulb } from "lucide-react"
 import { CollapsibleToolBlock } from "./CollapsibleToolBlock"
 import { MarkdownContent } from "./MarkdownContent"
+import { ThinkingIndicator } from "./ThinkingIndicator"
 import type { AIStatus, ChatMessage } from "../types"
+
+function ReasoningBlock({ reasoning }: { reasoning: string }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  if (!reasoning.trim()) return null
+
+  return (
+    <div className="rounded-xl overflow-hidden border border-amber-200/50 bg-amber-50/40 dark:bg-amber-950/20">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full px-3 py-2 flex items-center justify-between text-left"
+      >
+        <div className="flex items-center gap-2 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+          <Lightbulb className="w-3 h-3" />
+          <span>思考过程</span>
+        </div>
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-amber-600/70 transition-transform duration-300 ${
+            isExpanded ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+      {isExpanded && (
+        <div className="px-3 py-2 border-t border-amber-200/50 text-[11px] text-amber-900/80 dark:text-amber-300/80 leading-relaxed whitespace-pre-wrap font-mono">
+          {reasoning}
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface ChatMessageListProps {
   messages: ChatMessage[]
@@ -61,6 +92,10 @@ export function ChatMessageList({
                 AI 组卷助手
               </div>
 
+              {msg.reasoning && msg.reasoning.trim().length > 0 && (
+                <ReasoningBlock reasoning={msg.reasoning} />
+              )}
+
               {msg.content && (
                 <div className="rounded-2xl rounded-tl-none border bg-muted/40 px-4 py-3 text-sm leading-relaxed shadow-sm">
                   <MarkdownContent text={msg.content} />
@@ -76,26 +111,7 @@ export function ChatMessageList({
       })}
 
       {isLoading && (
-        <div className="flex gap-3 animate-fade-in-up">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Bot className="h-4 w-4 animate-pulse" />
-          </div>
-          <div className="flex-1 min-w-0 space-y-2">
-            <div className="text-xs font-medium text-muted-foreground">
-              AI 组卷助手
-            </div>
-            <div className="inline-flex items-center gap-2 rounded-2xl rounded-tl-none border bg-muted/40 px-4 py-3 text-sm text-muted-foreground shadow-sm">
-              <span>
-                {status === "tool-calling" ? "正在调用工具…" : "AI 正在思考…"}
-              </span>
-              <span className="flex gap-0.5">
-                <span className="h-1 w-1 rounded-full bg-current animate-bounce [animation-delay:-0.2s]" />
-                <span className="h-1 w-1 rounded-full bg-current animate-bounce [animation-delay:-0.1s]" />
-                <span className="h-1 w-1 rounded-full bg-current animate-bounce" />
-              </span>
-            </div>
-          </div>
-        </div>
+        <ThinkingIndicator status={status} />
       )}
 
       <div ref={endRef} />

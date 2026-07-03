@@ -15,7 +15,6 @@ import type {
   EditQuestionArgs,
   DeleteQuestionArgs,
   SearchQuestionsArgs,
-  SSEDoneEvent,
   ToolResult,
 } from "../types"
 import type { QuestionCreate } from "../../exam_management/types"
@@ -207,34 +206,65 @@ export function AIAssistantPanel({
       current_questions: questions,
     }
 
+    // Placeholder assistant message that will be filled by the stream.
+    const assistantPlaceholder: ChatMessage = {
+      role: "assistant",
+      content: "",
+      reasoning: "",
+    }
+    setMessages((prev) => [...prev, assistantPlaceholder])
+
     try {
       const stream = chatStream(request, files, controller.signal)
 
-      let doneEvent: SSEDoneEvent | null = null
+      let hasToolCalls = false
+      let toolCalls: AIToolCall[] | undefined
       for await (const event of stream) {
         if (event.type === "status") {
           setAiStatus(event.status)
+        } else if (event.type === "reasoning") {
+          setMessages((prev) => {
+            const last = prev[prev.length - 1]
+            if (last?.role !== "assistant") return prev
+            return [
+              ...prev.slice(0, -1),
+              { ...last, reasoning: (last.reasoning ?? "") + event.delta },
+            ]
+          })
+        } else if (event.type === "content") {
+          setMessages((prev) => {
+            const last = prev[prev.length - 1]
+            if (last?.role !== "assistant") return prev
+            return [
+              ...prev.slice(0, -1),
+              { ...last, content: last.content + event.delta },
+            ]
+          })
+        } else if (event.type === "tool-calls") {
+          hasToolCalls = true
+          toolCalls = event.tool_calls
+          setMessages((prev) => {
+            const last = prev[prev.length - 1]
+            if (last?.role !== "assistant") return prev
+            return [...prev.slice(0, -1), { ...last, tool_calls: event.tool_calls }]
+          })
         } else if (event.type === "error") {
           throw new Error(event.message)
         } else if (event.type === "done") {
-          doneEvent = event
+          setMessages((prev) => {
+            const last = prev[prev.length - 1]
+            if (last?.role !== "assistant") return prev
+            return [
+              ...prev.slice(0, -1),
+              { ...last, content: event.message ?? last.content },
+            ]
+          })
           break
         }
       }
 
-      if (!doneEvent) {
-        throw new Error("响应异常，未收到完成事件")
-      }
-
-      if (doneEvent.tool_calls && doneEvent.tool_calls.length > 0) {
-        const assistantMsg: ChatMessage = {
-          role: "assistant",
-          content: doneEvent.message ?? "",
-          tool_calls: doneEvent.tool_calls,
-        }
-        setMessages((prev) => [...prev, assistantMsg])
-
-        const { newQuestions, results } = applyToolCalls(doneEvent.tool_calls, questions)
+      if (hasToolCalls && toolCalls && toolCalls.length > 0) {
+        const { newQuestions, results } = applyToolCalls(toolCalls, questions)
         onQuestionsChange(newQuestions)
         setAiStatus("thinking")
 
@@ -247,27 +277,48 @@ export function AIAssistantPanel({
           controller.signal,
         )
 
-        let toolDone: SSEDoneEvent | null = null
+        const toolPlaceholder: ChatMessage = {
+          role: "assistant",
+          content: "",
+          reasoning: "",
+        }
+        setMessages((prev) => [...prev, toolPlaceholder])
+
         for await (const event of toolStream) {
           if (event.type === "status") {
             setAiStatus(event.status)
+          } else if (event.type === "reasoning") {
+            setMessages((prev) => {
+              const last = prev[prev.length - 1]
+              if (last?.role !== "assistant") return prev
+              return [
+                ...prev.slice(0, -1),
+                { ...last, reasoning: (last.reasoning ?? "") + event.delta },
+              ]
+            })
+          } else if (event.type === "content") {
+            setMessages((prev) => {
+              const last = prev[prev.length - 1]
+              if (last?.role !== "assistant") return prev
+              return [
+                ...prev.slice(0, -1),
+                { ...last, content: last.content + event.delta },
+              ]
+            })
           } else if (event.type === "error") {
             throw new Error(event.message)
           } else if (event.type === "done") {
-            toolDone = event
+            setMessages((prev) => {
+              const last = prev[prev.length - 1]
+              if (last?.role !== "assistant") return prev
+              return [
+                ...prev.slice(0, -1),
+                { ...last, content: event.message ?? last.content },
+              ]
+            })
             break
           }
         }
-
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: toolDone?.message ?? "已完成" },
-        ])
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: doneEvent.message ?? "" },
-        ])
       }
     } catch (e) {
       const err = e as Error

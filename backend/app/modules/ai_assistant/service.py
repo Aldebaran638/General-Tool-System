@@ -24,9 +24,9 @@ from typing import Annotated, Any, TypedDict
 import httpx
 import psycopg
 from fastapi import UploadFile
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.runnables import RunnableLambda
 from langchain_core.tools import StructuredTool
-from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
@@ -34,6 +34,7 @@ from sqlalchemy import text
 from sqlmodel import Session, delete, select
 
 from app.core.config import settings
+from app.modules.ai_assistant.llm import MyVLLMChatModel
 from app.modules.ai_assistant.models import AIAssistantThread
 from app.modules.ai_assistant.parser import parse_upload_files
 from app.modules.ai_assistant.schemas import (
@@ -169,37 +170,30 @@ class AgentState(TypedDict):
     pending_tool_calls: list[dict[str, Any]] | None
 
 
-_LLM_TIMEOUT = httpx.Timeout(120.0, connect=10.0)
-
-
-def _get_model() -> ChatOpenAI:
-    return ChatOpenAI(
+def _get_model() -> MyVLLMChatModel:
+    return MyVLLMChatModel(
         base_url=settings.LLM_BASE_URL.rstrip("/"),
         api_key=settings.LLM_API_KEY,
         model=settings.LLM_MODEL,
         temperature=0.2,
-        max_retries=0,
-        timeout=_LLM_TIMEOUT,
-        http_client=httpx.Client(trust_env=False, timeout=_LLM_TIMEOUT),
     )
 
 
-def _agent_node(state: AgentState) -> dict[str, Any]:
-    model = _get_model().bind_tools(TOOLS)
-    response = model.invoke(state["messages"])
-    raw_tool_calls = response.tool_calls if response.tool_calls else []
-    pending_tool_calls = [
-        {
-            "id": tc.get("id") or str(uuid.uuid4()),
-            "name": tc["name"],
-            "arguments": tc.get("args", {}),
-        }
-        for tc in raw_tool_calls
-    ]
-    return {
-        "messages": [response],
-        "pending_tool_calls": pending_tool_calls if pending_tool_calls else None,
-    }
+def _agent_node(state: AgentState) -> Any:
+    """Return the conversation history so the bound model can stream tokens."""
+    return state["messages"]
+
+
+def _agent_output_node(output: BaseMessage) -> AgentState:
+    """Wrap the model's final message so LangGraph writes it to state."""
+    return {"messages": [output]}
+
+
+_AGENT_RUNNABLE = (
+    RunnableLambda(_agent_node)
+    | _get_model().bind_tools(TOOLS)
+    | RunnableLambda(_agent_output_node)
+)
 
 
 _COMPILED_GRAPH: Any | None = None
@@ -219,7 +213,7 @@ def _get_compiled_graph() -> Any:
         saver = PostgresSaver(_PG_CONNECTION)
         saver.setup()
         graph = StateGraph(AgentState)
-        graph.add_node("agent", _agent_node)
+        graph.add_node("agent", _AGENT_RUNNABLE)
         graph.set_entry_point("agent")
         graph.add_edge("agent", END)
         _COMPILED_GRAPH = graph.compile(checkpointer=saver)
@@ -281,6 +275,69 @@ def _touch_thread(session: Session, user_id: uuid.UUID, exam_id: str) -> None:
 
 # ─── Public API ───────────────────────────────────────────────────────────────
 
+def _extract_message_chunks(stream_item: Any) -> Iterator[BaseMessage]:
+    """Normalize graph.stream(..., stream_mode='messages') output.
+
+    Depending on the LangGraph version, each streamed item is either a
+    ``(messages, metadata)`` tuple or just a list of messages.
+    """
+    messages: Any
+    if isinstance(stream_item, tuple):
+        messages = stream_item[0]
+    else:
+        messages = stream_item
+
+    if isinstance(messages, BaseMessage):
+        yield messages
+    elif isinstance(messages, list):
+        for msg in messages:
+            if isinstance(msg, BaseMessage):
+                yield msg
+
+
+def _stream_model_output(graph: Any, input_state: dict[str, Any], config: dict[str, Any]) -> Iterator[tuple[str, str]]:
+    """Yield ('reasoning', delta) and ('content', delta) chunks from the model."""
+    for item in graph.stream(input_state, config, stream_mode="messages"):
+        for msg in _extract_message_chunks(item):
+            if isinstance(msg, AIMessageChunk):
+                reasoning = msg.additional_kwargs.get("reasoning")
+                if reasoning:
+                    yield "reasoning", reasoning
+                content = msg.content
+                if content:
+                    if isinstance(content, str):
+                        yield "content", content
+                    elif isinstance(content, list):
+                        yield "content", "".join(str(c) for c in content)
+
+
+def _finalize_response(
+    final_state: Any | None,
+) -> tuple[str | None, list[dict[str, Any]] | None]:
+    """Extract the final assistant message text and any tool calls."""
+    if not final_state:
+        return None, None
+    messages_out = final_state.values.get("messages", [])
+    last_message = messages_out[-1] if messages_out else None
+    if not isinstance(last_message, AIMessage):
+        return None, None
+
+    response_text = last_message.content or ""
+    raw_tool_calls = getattr(last_message, "tool_calls", None) or []
+    pending = None
+    if raw_tool_calls:
+        pending = [
+            {
+                "id": tc.get("id") or str(uuid.uuid4()),
+                "name": tc["name"],
+                "arguments": tc.get("args", {}),
+            }
+            for tc in raw_tool_calls
+        ]
+    return response_text, pending
+
+
+
 def _build_file_message(files: list[UploadFile]) -> str:
     file_context = parse_upload_files(files)
     return (
@@ -297,11 +354,7 @@ def chat_stream(
     current_questions: list[dict[str, Any]],
     files: list[UploadFile] | None = None,
 ) -> Iterator[str]:
-    """Stream chat status events and return the final response via SSE.
-
-    Supports optional file uploads; when files are provided their text content
-    is appended to the user message as context.
-    """
+    """Stream chat events (reasoning, content, tool-calls, done) via SSE."""
     thread_id = _thread_id(user_id, exam_id)
     config = {"configurable": {"thread_id": thread_id}}
 
@@ -319,31 +372,21 @@ def chat_stream(
     messages: list[BaseMessage] = [SystemMessage(content=_SYSTEM_PROMPT)] if not has_history else []
     messages.append(human_msg)
 
+    input_state = {
+        "messages": messages,
+        "exam_id": exam_id,
+        "current_questions": current_questions,
+        "pending_tool_calls": None,
+    }
+
     yield _sse_event("status", {"type": "status", "status": "thinking"})
 
     try:
-        for event in graph.stream(
-            {
-                "messages": messages,
-                "exam_id": exam_id,
-                "current_questions": current_questions,
-                "pending_tool_calls": None,
-            },
-            config,
-            stream_mode="events",
-        ):
-            kind = event.get("event")
-            if kind == "on_chat_model_start":
-                yield _sse_event("status", {"type": "status", "status": "thinking"})
-            elif kind == "on_chat_model_end":
-                output = event.get("data", {}).get("output")
-                tool_calls = getattr(output, "tool_calls", None) or []
-                if tool_calls:
-                    names = [tc.get("name") for tc in tool_calls if tc.get("name")]
-                    yield _sse_event(
-                        "status",
-                        {"type": "status", "status": "tool-calling", "tools": names},
-                    )
+        for chunk_type, delta in _stream_model_output(graph, input_state, config):
+            if chunk_type == "reasoning":
+                yield _sse_event("reasoning", {"type": "reasoning", "delta": delta})
+            elif chunk_type == "content":
+                yield _sse_event("content", {"type": "content", "delta": delta})
     except (httpx.TimeoutException, httpx.ConnectError) as exc:
         yield _sse_event("error", {"type": "error", "message": f"大模型服务无响应或连接失败: {exc}"})
         return
@@ -355,10 +398,12 @@ def chat_stream(
     session.commit()
 
     final_state = graph.get_state(config)
-    pending = final_state.values.get("pending_tool_calls") if final_state else None
-    messages_out = final_state.values.get("messages", []) if final_state else []
-    last_message = messages_out[-1] if messages_out else None
-    response_text = last_message.content if isinstance(last_message, AIMessage) else None
+    response_text, pending = _finalize_response(final_state)
+
+    if pending:
+        names = [tc.get("name") for tc in pending if tc.get("name")]
+        yield _sse_event("status", {"type": "status", "status": "tool-calling", "tools": names})
+        yield _sse_event("tool-calls", {"type": "tool-calls", "tool_calls": pending})
 
     yield _sse_event(
         "done",
@@ -377,7 +422,7 @@ def submit_tool_results_stream(
     tool_results: list[ToolResult],
     current_questions: list[dict[str, Any]],
 ) -> Iterator[str]:
-    """Stream tool-result feedback and return the final reply via SSE."""
+    """Stream tool-result feedback events via SSE."""
     thread_id = _thread_id(user_id, exam_id)
     config = {"configurable": {"thread_id": thread_id}}
 
@@ -390,22 +435,21 @@ def submit_tool_results_stream(
     )
 
     graph = _get_compiled_graph()
+    input_state = {
+        "messages": [*tool_messages, human_msg],
+        "exam_id": exam_id,
+        "current_questions": current_questions,
+        "pending_tool_calls": None,
+    }
+
     yield _sse_event("status", {"type": "status", "status": "thinking"})
 
     try:
-        for event in graph.stream(
-            {
-                "messages": [*tool_messages, human_msg],
-                "exam_id": exam_id,
-                "current_questions": current_questions,
-                "pending_tool_calls": None,
-            },
-            config,
-            stream_mode="events",
-        ):
-            kind = event.get("event")
-            if kind == "on_chat_model_start":
-                yield _sse_event("status", {"type": "status", "status": "thinking"})
+        for chunk_type, delta in _stream_model_output(graph, input_state, config):
+            if chunk_type == "reasoning":
+                yield _sse_event("reasoning", {"type": "reasoning", "delta": delta})
+            elif chunk_type == "content":
+                yield _sse_event("content", {"type": "content", "delta": delta})
     except (httpx.TimeoutException, httpx.ConnectError) as exc:
         yield _sse_event("error", {"type": "error", "message": f"大模型服务无响应或连接失败: {exc}"})
         return
@@ -417,10 +461,7 @@ def submit_tool_results_stream(
     session.commit()
 
     final_state = graph.get_state(config)
-    pending = final_state.values.get("pending_tool_calls") if final_state else None
-    messages_out = final_state.values.get("messages", []) if final_state else []
-    last_message = messages_out[-1] if messages_out else None
-    response_text = last_message.content if isinstance(last_message, AIMessage) else None
+    response_text, pending = _finalize_response(final_state)
 
     yield _sse_event(
         "done",

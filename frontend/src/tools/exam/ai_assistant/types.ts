@@ -57,6 +57,7 @@ export interface ToolResult {
 export interface ChatMessage {
   role: "user" | "assistant" | "tool"
   content: string
+  reasoning?: string
   tool_calls?: AIToolCall[]
   tool_call_id?: string
 }
@@ -90,10 +91,38 @@ export interface SSEErrorEvent {
   message: string
 }
 
+export interface SSEContentEvent {
+  type: "content"
+  delta: string
+}
+
+export interface SSEReasoningEvent {
+  type: "reasoning"
+  delta: string
+}
+
+export interface SSEToolCallsEvent {
+  type: "tool-calls"
+  tool_calls: AIToolCall[]
+}
+
 export interface SSEDoneEvent {
   type: "done"
   message: string | null
   tool_calls: AIToolCall[] | null
 }
 
-export type SSEEvent = SSEStatusEvent | SSEErrorEvent | SSEDoneEvent
+export type SSEEvent =
+  | SSEStatusEvent
+  | SSEErrorEvent
+  | SSEContentEvent
+  | SSEReasoningEvent
+  | SSEToolCallsEvent
+  | SSEDoneEvent
+
+export interface AssistantMessage {
+  role: "assistant"
+  content: string
+  reasoning: string
+  tool_calls?: AIToolCall[]
+}

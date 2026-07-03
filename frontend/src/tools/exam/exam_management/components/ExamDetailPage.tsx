@@ -557,18 +557,6 @@ function PaperEditorTab({
             <Plus className="mr-1 h-3 w-3" />
             判断题
           </Button>
-          {isAdmin && (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setAiOpen(true)}
-              title="AI 组卷助手"
-              className="bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 text-primary-foreground shadow-sm transition-all hover:shadow-md"
-            >
-              <Bot className="mr-1 h-3 w-3" />
-              AI 组卷
-            </Button>
-          )}
         </div>
         <div className="flex items-center gap-x-4 gap-y-2 text-sm text-muted-foreground flex-wrap">
           <span>共 {questions.length} 题</span>
@@ -582,6 +570,18 @@ function PaperEditorTab({
                 ? `还差 ${scoreDelta} 分`
                 : `超出 ${Math.abs(scoreDelta)} 分`}
             </span>
+          )}
+          {isAdmin && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setAiOpen(true)}
+              title="AI 组卷助手"
+              className="bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 text-primary-foreground shadow-sm transition-all hover:shadow-md"
+            >
+              <Bot className="mr-1 h-3 w-3" />
+              AI 组卷
+            </Button>
           )}
           {isDraft && (
             <Button
