@@ -68,10 +68,6 @@ services:
       - run
       - --reload
       - "app/main.py"
-    # TODO: remove once coverage is done locally
-    volumes:
-      - ./backend:/app/backend
-      - ./backend/htmlcov:/app/backend/htmlcov
     environment:
       SMTP_HOST: "mailcatcher"
       SMTP_PORT: "1025"
@@ -81,7 +77,26 @@ services:
       # 容器内通过服务名访问数据库，避免被 .env 中的 localhost 覆盖
       POSTGRES_SERVER: "db"
       POSTGRES_PORT: "5432"
-    # develop section removed for docker-compose v1 compatibility
+    develop:
+      watch:
+        - action: sync
+          path: ./backend
+          target: /app/backend
+          ignore:
+            - .venv
+            - .venv312
+            - __pycache__
+            - .pytest_cache
+            - htmlcov
+            - .mypy_cache
+        - action: rebuild
+          path: ./backend/pyproject.toml
+        - action: rebuild
+          path: ./backend/alembic.ini
+        - action: rebuild
+          path: ./uv.lock
+        - action: rebuild
+          path: ./pyproject.toml
 
   prestart:
     volumes:
@@ -121,10 +136,27 @@ services:
       # Vite proxy 在容器内使用 Docker 内部服务名到达 backend
       BACKEND_URL: "http://backend:8000"
       CHOKIDAR_USEPOLLING: "true"
-    # volumes removed for remote deployment - node_modules installed in image
     labels:
       - traefik.http.services.${STACK_NAME?Variable not set}-frontend.loadbalancer.server.port=5173
-    # develop section removed for docker-compose v1 compatibility
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /app/frontend
+          ignore:
+            - node_modules
+            - dist
+            - blob-report
+            - test-results
+            - playwright-report
+        - action: rebuild
+          path: ./frontend/package.json
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./bun.lock
+        - action: rebuild
+          path: ./package-lock.json
 
   chartdb:
     image: ghcr.io/chartdb/chartdb:latest
