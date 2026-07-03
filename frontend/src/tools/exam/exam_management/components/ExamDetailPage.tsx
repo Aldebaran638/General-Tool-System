@@ -17,6 +17,7 @@ import {
   X,
   Users,
   Bot,
+  BookOpen,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -75,6 +76,7 @@ import {
   getDepartmentsOnly,
   getExamStatistics,
   getParticipantsByStatus,
+  importQuestionBank,
 } from "../api"
 import { apiDatetimeToLocal, datetimeLocalToApi } from "../datetime"
 import type { WecomUser, WecomDepartment } from "../api"
@@ -82,6 +84,7 @@ import type { Exam, ExamUpdate, QuestionCreate } from "../types"
 import { TrainerSearchSelect } from "./TrainerSearchSelect"
 import { listExamCategories } from "../../category_management/api"
 import { AIAssistantPanel } from "../../ai_assistant/components/AIAssistantPanel"
+import { QuestionBankSetSelect } from "../../question_bank_management/components/QuestionBankSetSelect"
 import useAuth from "@/hooks/useAuth"
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -370,21 +373,46 @@ function PaperEditorTab({
   exam,
   questions,
   setQuestions,
+  refetchPaper,
+  setPaperLoaded,
 }: {
   exam: Exam
   questions: QuestionCreate[]
   setQuestions: React.Dispatch<React.SetStateAction<QuestionCreate[]>>
+  refetchPaper: () => Promise<unknown>
+  setPaperLoaded: (v: boolean) => void
 }) {
   const queryClient = useQueryClient()
 
   const [aiOpen, setAiOpen] = useState(false)
-  const { user } = useAuth()
-  const isAdmin = user?.is_superuser === true
+  const [importOpen, setImportOpen] = useState(false)
+  const { user, roles } = useAuth()
+  const isAdmin =
+    user?.is_superuser === true ||
+    roles?.includes("EXAM_ADMIN") ||
+    roles?.includes("SUPER_ADMIN")
+
   const saveMutation = useMutation({
     mutationFn: () => savePaper(exam.id, { questions }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["paper", exam.id] })
       queryClient.invalidateQueries({ queryKey: ["exam", exam.id] })
+    },
+  })
+
+  const importMutation = useMutation({
+    mutationFn: ({
+      bankSetId,
+      mode,
+    }: {
+      bankSetId: string
+      mode: "append" | "overwrite"
+    }) => importQuestionBank(exam.id, bankSetId, mode),
+    onSuccess: async () => {
+      setPaperLoaded(false)
+      await queryClient.invalidateQueries({ queryKey: ["paper", exam.id] })
+      await refetchPaper()
+      setImportOpen(false)
     },
   })
 
@@ -581,6 +609,17 @@ function PaperEditorTab({
             >
               <Bot className="mr-1 h-3 w-3" />
               AI 组卷
+            </Button>
+          )}
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setImportOpen(true)}
+              title="从题库导入"
+            >
+              <BookOpen className="mr-1 h-3 w-3" />
+              从题库导入
             </Button>
           )}
           {isDraft && (
@@ -784,6 +823,16 @@ function PaperEditorTab({
           </SheetContent>
         </Sheet>
       )}
+
+      {/* 从题库导入 — 仅管理员可见 */}
+      <QuestionBankSetSelect
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onConfirm={(set, mode) =>
+          importMutation.mutate({ bankSetId: set.id, mode })
+        }
+        isLoading={importMutation.isPending}
+      />
     </div>
   )
 }
@@ -1834,6 +1883,8 @@ export function ExamDetailPage() {
             exam={exam}
             questions={questions}
             setQuestions={setQuestions}
+            refetchPaper={paperQuery.refetch}
+            setPaperLoaded={setPaperLoaded}
           />
         </TabsContent>
 

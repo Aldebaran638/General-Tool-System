@@ -64,6 +64,7 @@ from app.modules.exam_management.schemas import (
     TrainerInfo,
     TrainerSummaryResponse,
 )
+from app.modules.question_bank_management.schemas import ImportQuestionBankRequest
 from app.modules.exam_management.service import (
     add_participants_by_centers,
     add_participants_by_departments,
@@ -81,6 +82,7 @@ from app.modules.exam_management.service import (
     get_question_bank_detail,
     get_system_stats,
     get_trainer_summary,
+    import_question_bank,
     list_categories,
     list_exams,
     list_participants,
@@ -583,6 +585,24 @@ def save_paper_endpoint(
     exam = _get_exam_or_404(session, exam_id)
     try:
         save_paper(session, exam, body)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(
+    "/{exam_id}/import-question-bank",
+    status_code=204,
+    summary="从题库集导入题目",
+)
+def import_question_bank_endpoint(
+    session: SessionDep,
+    current_user: RequireExamAdmin,
+    exam_id: uuid.UUID,
+    body: ImportQuestionBankRequest,
+):
+    exam = _get_exam_or_404(session, exam_id)
+    try:
+        import_question_bank(session, exam, body.bank_set_id, body.mode)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

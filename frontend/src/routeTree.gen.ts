@@ -21,14 +21,17 @@ import { Route as LayoutWecomDepartmentSyncRouteImport } from './routes/_layout/
 import { Route as LayoutTrainerSummaryRouteImport } from './routes/_layout/trainer-summary'
 import { Route as LayoutSystemDashboardRouteImport } from './routes/_layout/system-dashboard'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutQuestionBankManagementRouteImport } from './routes/_layout/question-bank-management'
 import { Route as LayoutQuestionBankRouteImport } from './routes/_layout/question-bank'
 import { Route as LayoutMyExamsRouteImport } from './routes/_layout/my-exams'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutExamsRouteImport } from './routes/_layout/exams'
 import { Route as LayoutExamCategoriesRouteImport } from './routes/_layout/exam-categories'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LayoutQuestionBankManagementIndexRouteImport } from './routes/_layout/question-bank-management.index'
 import { Route as LayoutExamsIndexRouteImport } from './routes/_layout/exams/index'
 import { Route as LayoutQuestionBankExamIdRouteImport } from './routes/_layout/question-bank.$examId'
+import { Route as LayoutQuestionBankManagementSetIdRouteImport } from './routes/_layout/question-bank-management.$setId'
 import { Route as LayoutMyExamsExamIdRouteImport } from './routes/_layout/my-exams/$examId'
 import { Route as LayoutExamsNewRouteImport } from './routes/_layout/exams/new'
 import { Route as LayoutExamsExamIdRouteImport } from './routes/_layout/exams/$examId'
@@ -93,6 +96,12 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutQuestionBankManagementRoute =
+  LayoutQuestionBankManagementRouteImport.update({
+    id: '/question-bank-management',
+    path: '/question-bank-management',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 const LayoutQuestionBankRoute = LayoutQuestionBankRouteImport.update({
   id: '/question-bank',
   path: '/question-bank',
@@ -123,6 +132,12 @@ const LayoutAdminRoute = LayoutAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutQuestionBankManagementIndexRoute =
+  LayoutQuestionBankManagementIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => LayoutQuestionBankManagementRoute,
+  } as any)
 const LayoutExamsIndexRoute = LayoutExamsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -133,6 +148,12 @@ const LayoutQuestionBankExamIdRoute =
     id: '/$examId',
     path: '/$examId',
     getParentRoute: () => LayoutQuestionBankRoute,
+  } as any)
+const LayoutQuestionBankManagementSetIdRoute =
+  LayoutQuestionBankManagementSetIdRouteImport.update({
+    id: '/$setId',
+    path: '/$setId',
+    getParentRoute: () => LayoutQuestionBankManagementRoute,
   } as any)
 const LayoutMyExamsExamIdRoute = LayoutMyExamsExamIdRouteImport.update({
   id: '/$examId',
@@ -162,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/items': typeof LayoutItemsRoute
   '/my-exams': typeof LayoutMyExamsRouteWithChildren
   '/question-bank': typeof LayoutQuestionBankRouteWithChildren
+  '/question-bank-management': typeof LayoutQuestionBankManagementRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
   '/system-dashboard': typeof LayoutSystemDashboardRoute
   '/trainer-summary': typeof LayoutTrainerSummaryRoute
@@ -171,8 +193,10 @@ export interface FileRoutesByFullPath {
   '/exams/$examId': typeof LayoutExamsExamIdRoute
   '/exams/new': typeof LayoutExamsNewRoute
   '/my-exams/$examId': typeof LayoutMyExamsExamIdRoute
+  '/question-bank-management/$setId': typeof LayoutQuestionBankManagementSetIdRoute
   '/question-bank/$examId': typeof LayoutQuestionBankExamIdRoute
   '/exams/': typeof LayoutExamsIndexRoute
+  '/question-bank-management/': typeof LayoutQuestionBankManagementIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -194,8 +218,10 @@ export interface FileRoutesByTo {
   '/exams/$examId': typeof LayoutExamsExamIdRoute
   '/exams/new': typeof LayoutExamsNewRoute
   '/my-exams/$examId': typeof LayoutMyExamsExamIdRoute
+  '/question-bank-management/$setId': typeof LayoutQuestionBankManagementSetIdRoute
   '/question-bank/$examId': typeof LayoutQuestionBankExamIdRoute
   '/exams': typeof LayoutExamsIndexRoute
+  '/question-bank-management': typeof LayoutQuestionBankManagementIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -210,6 +236,7 @@ export interface FileRoutesById {
   '/_layout/items': typeof LayoutItemsRoute
   '/_layout/my-exams': typeof LayoutMyExamsRouteWithChildren
   '/_layout/question-bank': typeof LayoutQuestionBankRouteWithChildren
+  '/_layout/question-bank-management': typeof LayoutQuestionBankManagementRouteWithChildren
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/system-dashboard': typeof LayoutSystemDashboardRoute
   '/_layout/trainer-summary': typeof LayoutTrainerSummaryRoute
@@ -220,8 +247,10 @@ export interface FileRoutesById {
   '/_layout/exams/$examId': typeof LayoutExamsExamIdRoute
   '/_layout/exams/new': typeof LayoutExamsNewRoute
   '/_layout/my-exams/$examId': typeof LayoutMyExamsExamIdRoute
+  '/_layout/question-bank-management/$setId': typeof LayoutQuestionBankManagementSetIdRoute
   '/_layout/question-bank/$examId': typeof LayoutQuestionBankExamIdRoute
   '/_layout/exams/': typeof LayoutExamsIndexRoute
+  '/_layout/question-bank-management/': typeof LayoutQuestionBankManagementIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -237,6 +266,7 @@ export interface FileRouteTypes {
     | '/items'
     | '/my-exams'
     | '/question-bank'
+    | '/question-bank-management'
     | '/settings'
     | '/system-dashboard'
     | '/trainer-summary'
@@ -246,8 +276,10 @@ export interface FileRouteTypes {
     | '/exams/$examId'
     | '/exams/new'
     | '/my-exams/$examId'
+    | '/question-bank-management/$setId'
     | '/question-bank/$examId'
     | '/exams/'
+    | '/question-bank-management/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -269,8 +301,10 @@ export interface FileRouteTypes {
     | '/exams/$examId'
     | '/exams/new'
     | '/my-exams/$examId'
+    | '/question-bank-management/$setId'
     | '/question-bank/$examId'
     | '/exams'
+    | '/question-bank-management'
   id:
     | '__root__'
     | '/_layout'
@@ -284,6 +318,7 @@ export interface FileRouteTypes {
     | '/_layout/items'
     | '/_layout/my-exams'
     | '/_layout/question-bank'
+    | '/_layout/question-bank-management'
     | '/_layout/settings'
     | '/_layout/system-dashboard'
     | '/_layout/trainer-summary'
@@ -294,8 +329,10 @@ export interface FileRouteTypes {
     | '/_layout/exams/$examId'
     | '/_layout/exams/new'
     | '/_layout/my-exams/$examId'
+    | '/_layout/question-bank-management/$setId'
     | '/_layout/question-bank/$examId'
     | '/_layout/exams/'
+    | '/_layout/question-bank-management/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -393,6 +430,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/question-bank-management': {
+      id: '/_layout/question-bank-management'
+      path: '/question-bank-management'
+      fullPath: '/question-bank-management'
+      preLoaderRoute: typeof LayoutQuestionBankManagementRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/question-bank': {
       id: '/_layout/question-bank'
       path: '/question-bank'
@@ -435,6 +479,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/question-bank-management/': {
+      id: '/_layout/question-bank-management/'
+      path: '/'
+      fullPath: '/question-bank-management/'
+      preLoaderRoute: typeof LayoutQuestionBankManagementIndexRouteImport
+      parentRoute: typeof LayoutQuestionBankManagementRoute
+    }
     '/_layout/exams/': {
       id: '/_layout/exams/'
       path: '/'
@@ -448,6 +499,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/question-bank/$examId'
       preLoaderRoute: typeof LayoutQuestionBankExamIdRouteImport
       parentRoute: typeof LayoutQuestionBankRoute
+    }
+    '/_layout/question-bank-management/$setId': {
+      id: '/_layout/question-bank-management/$setId'
+      path: '/$setId'
+      fullPath: '/question-bank-management/$setId'
+      preLoaderRoute: typeof LayoutQuestionBankManagementSetIdRouteImport
+      parentRoute: typeof LayoutQuestionBankManagementRoute
     }
     '/_layout/my-exams/$examId': {
       id: '/_layout/my-exams/$examId'
@@ -512,6 +570,24 @@ const LayoutQuestionBankRouteChildren: LayoutQuestionBankRouteChildren = {
 const LayoutQuestionBankRouteWithChildren =
   LayoutQuestionBankRoute._addFileChildren(LayoutQuestionBankRouteChildren)
 
+interface LayoutQuestionBankManagementRouteChildren {
+  LayoutQuestionBankManagementSetIdRoute: typeof LayoutQuestionBankManagementSetIdRoute
+  LayoutQuestionBankManagementIndexRoute: typeof LayoutQuestionBankManagementIndexRoute
+}
+
+const LayoutQuestionBankManagementRouteChildren: LayoutQuestionBankManagementRouteChildren =
+  {
+    LayoutQuestionBankManagementSetIdRoute:
+      LayoutQuestionBankManagementSetIdRoute,
+    LayoutQuestionBankManagementIndexRoute:
+      LayoutQuestionBankManagementIndexRoute,
+  }
+
+const LayoutQuestionBankManagementRouteWithChildren =
+  LayoutQuestionBankManagementRoute._addFileChildren(
+    LayoutQuestionBankManagementRouteChildren,
+  )
+
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutExamCategoriesRoute: typeof LayoutExamCategoriesRoute
@@ -519,6 +595,7 @@ interface LayoutRouteChildren {
   LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutMyExamsRoute: typeof LayoutMyExamsRouteWithChildren
   LayoutQuestionBankRoute: typeof LayoutQuestionBankRouteWithChildren
+  LayoutQuestionBankManagementRoute: typeof LayoutQuestionBankManagementRouteWithChildren
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutSystemDashboardRoute: typeof LayoutSystemDashboardRoute
   LayoutTrainerSummaryRoute: typeof LayoutTrainerSummaryRoute
@@ -534,6 +611,8 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutItemsRoute: LayoutItemsRoute,
   LayoutMyExamsRoute: LayoutMyExamsRouteWithChildren,
   LayoutQuestionBankRoute: LayoutQuestionBankRouteWithChildren,
+  LayoutQuestionBankManagementRoute:
+    LayoutQuestionBankManagementRouteWithChildren,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutSystemDashboardRoute: LayoutSystemDashboardRoute,
   LayoutTrainerSummaryRoute: LayoutTrainerSummaryRoute,

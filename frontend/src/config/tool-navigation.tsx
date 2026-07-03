@@ -16,6 +16,7 @@ import "@/tools/exam/exam_management"
 import "@/tools/exam/exam_participation"
 import "@/tools/exam/category_management"
 import "@/tools/exam/question_bank"
+import "@/tools/exam/question_bank_management"
 import "@/tools/workbench/system_dashboard"
 import "@/tools/workbench/trainer_summary"
 
@@ -50,9 +51,14 @@ export function getNavigationEntries(
   currentUser?: {
     is_superuser?: boolean
   } | null,
+  roles?: string[] | null,
 ): NavigationEntry[] {
   const context = {
     isSuperuser: currentUser?.is_superuser ?? false,
+    isExamAdmin:
+      !!currentUser?.is_superuser ||
+      !!roles?.includes("EXAM_ADMIN") ||
+      !!roles?.includes("SUPER_ADMIN"),
   }
 
   // Start with platform entries

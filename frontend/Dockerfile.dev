@@ -2,18 +2,16 @@ FROM node:20-bookworm
 
 WORKDIR /app
 
-# Copy package files and frontend source
+# Copy only package files first so the install layer is cached unless they change.
 COPY package.json package-lock.json* bun.lock* /app/
 COPY frontend/package.json /app/frontend/package.json
+
+# One workspace install installs root + frontend dependencies.
+RUN npm install
+
+# Copy source after install so code changes don't bust the install cache.
 COPY ./frontend /app/frontend
 
-# Remove any existing node_modules and lock files to ensure clean install with correct platform bindings
-RUN rm -rf /app/node_modules /app/frontend/node_modules /app/package-lock.json /app/frontend/package-lock.json
-
-WORKDIR /app
-RUN npm install
-
 WORKDIR /app/frontend
-RUN npm install
 
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]

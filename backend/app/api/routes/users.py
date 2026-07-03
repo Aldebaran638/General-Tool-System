@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.models import (
     Message,
+    SystemUserRole,
     UpdatePassword,
     User,
     UserCreate,
@@ -124,6 +125,28 @@ def read_user_me(current_user: CurrentUser) -> Any:
     Get current user.
     """
     return current_user
+
+
+@router.get("/me/roles", response_model=list[str])
+def read_user_roles(
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> list[str]:
+    """
+    Get current user's role codes.
+    """
+    if current_user.is_superuser:
+        return ["SUPER_ADMIN"]
+
+    if not current_user.wecom_userid:
+        return []
+
+    roles = session.exec(
+        select(SystemUserRole.role_code).where(
+            SystemUserRole.userid == current_user.wecom_userid
+        )
+    ).all()
+    return list(roles)
 
 
 @router.delete("/me", response_model=Message)

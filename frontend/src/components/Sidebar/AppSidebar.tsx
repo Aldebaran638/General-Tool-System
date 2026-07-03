@@ -12,8 +12,8 @@ import { Main } from "./Main"
 import { User } from "./User"
 
 export function AppSidebar() {
-  const { user: currentUser } = useAuth()
-  const items = getNavigationEntries(currentUser)
+  const { user: currentUser, roles } = useAuth()
+  const items = getNavigationEntries(currentUser, roles)
 
   return (
     <Sidebar collapsible="icon">

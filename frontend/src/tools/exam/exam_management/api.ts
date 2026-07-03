@@ -10,6 +10,7 @@ import type {
   ParticipantsResponse,
   PublishValidation,
 } from "./types"
+import type { ImportMode } from "../question_bank_management/types"
 
 const BASE = "/api/v1/exams"
 
@@ -284,4 +285,15 @@ export async function getDepartmentsOnly(params: {
   if (params.limit) p.set("limit", String(params.limit))
   p.set("level", "2")
   return apiFetch<WecomDepartmentsResponse>(`/api/v1/data-sync/wecom-departments?${p}`)
+}
+
+export function importQuestionBank(
+  examId: string,
+  bankSetId: string,
+  mode: ImportMode = "append",
+): Promise<void> {
+  return apiFetch(`${BASE}/${examId}/import-question-bank`, {
+    method: "POST",
+    body: JSON.stringify({ bank_set_id: bankSetId, mode }),
+  })
 }

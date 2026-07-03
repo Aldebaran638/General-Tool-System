@@ -15,6 +15,19 @@ const isLoggedIn = () => {
   return localStorage.getItem("access_token") !== null
 }
 
+async function fetchCurrentUserRoles(): Promise<string[]> {
+  const token = localStorage.getItem("access_token")
+  if (!token) return []
+  const res = await fetch("/api/v1/users/me/roles", {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) return []
+  const data = await res.json().catch(() => ({}))
+  if (Array.isArray(data)) return data
+  if (Array.isArray(data?.roles)) return data.roles
+  return []
+}
+
 /**
  * Returns true when the page is running inside the WeCom built-in browser.
  * WeCom injects "wxwork" into the User-Agent string on both Android and iOS.
@@ -42,6 +55,12 @@ const useAuth = () => {
     enabled: isLoggedIn(),
   })
 
+  const { data: roles } = useQuery<string[], Error>({
+    queryKey: ["currentUserRoles"],
+    queryFn: fetchCurrentUserRoles,
+    enabled: isLoggedIn(),
+  })
+
   const signUpMutation = useMutation({
     mutationFn: (data: UserRegister) =>
       UsersService.registerUser({ requestBody: data }),
@@ -60,10 +79,14 @@ const useAuth = () => {
     })
     localStorage.setItem("access_token", response.access_token)
 
-    // Eagerly fetch current user so the dashboard/sidebar don't flash empty
-    // while the useQuery for ["currentUser"] is still loading.
-    const currentUser = await UsersService.readUserMe()
+    // Eagerly fetch current user and roles so the dashboard/sidebar don't flash empty
+    // while the useQuery for ["currentUser"] / ["currentUserRoles"] is still loading.
+    const [currentUser, currentRoles] = await Promise.all([
+      UsersService.readUserMe(),
+      fetchCurrentUserRoles(),
+    ])
     queryClient.setQueryData(["currentUser"], currentUser)
+    queryClient.setQueryData(["currentUserRoles"], currentRoles)
   }
 
   const loginMutation = useMutation({
@@ -84,6 +107,7 @@ const useAuth = () => {
     loginMutation,
     logout,
     user,
+    roles,
   }
 }
 

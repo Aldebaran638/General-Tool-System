@@ -23,6 +23,8 @@ export type ToolNavigationConfig = {
   path: string
   /** Whether this tool requires superuser */
   requiresSuperuser?: boolean
+  /** Whether this tool requires exam admin role */
+  requiresExamAdmin?: boolean
 }
 
 export type ToolModuleConfig = {
@@ -74,7 +76,7 @@ class ToolRegistry {
     return Array.from(this.groups.keys())
   }
 
-  getNavigationEntries(context: { isSuperuser: boolean }): NavigationEntry[] {
+  getNavigationEntries(context: { isSuperuser: boolean; isExamAdmin: boolean }): NavigationEntry[] {
     const entries: NavigationEntry[] = []
 
     for (const [groupName, toolNames] of this.groups) {
@@ -82,6 +84,9 @@ class ToolRegistry {
         .map((name) => this.tools.get(name)!)
         .filter((tool) => {
           if (tool.navigation.requiresSuperuser && !context.isSuperuser) {
+            return false
+          }
+          if (tool.navigation.requiresExamAdmin && !context.isExamAdmin) {
             return false
           }
           return true
@@ -92,6 +97,7 @@ class ToolRegistry {
           title: tool.navigation.title,
           path: tool.navigation.path,
           requiresSuperuser: tool.navigation.requiresSuperuser,
+          requiresExamAdmin: tool.navigation.requiresExamAdmin,
         }))
 
       if (children.length > 0) {
@@ -133,6 +139,7 @@ export type NavigationTool = {
   title: string
   path: string
   requiresSuperuser?: boolean
+  requiresExamAdmin?: boolean
 }
 
 export type NavigationGroup = {

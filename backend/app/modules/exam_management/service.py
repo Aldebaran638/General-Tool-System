@@ -24,6 +24,11 @@ from app.modules.exam_management.models import (
     Question,
     QuestionOption,
 )
+from app.modules.question_bank_management.models import (
+    QuestionBankOption,
+    QuestionBankQuestion,
+    QuestionBankSet,
+)
 from app.modules.exam_management.schemas import (
     DeviceTypeCount,
     ExamCategoryCreate,
@@ -1208,6 +1213,98 @@ def get_question_bank_detail(
         "total_score": paper_data["total_score"],
         "question_count": paper_data["question_count"],
     }
+
+
+# ─── Import from Pre-upload Question Bank ────────────────────────────────────
+
+def import_question_bank(
+    session: Session,
+    exam: Exam,
+    bank_set_id: uuid.UUID,
+    mode: str,
+) -> None:
+    """Import questions from a question bank set into an exam.
+
+    Args:
+        exam: The target exam. Must be in DRAFT status.
+        bank_set_id: UUID of the source QuestionBankSet.
+        mode: "append" to keep existing questions, "overwrite" to replace them.
+
+    Raises:
+        ValueError: If the exam is not editable or the bank set does not exist.
+    """
+    if exam.status != "DRAFT":
+        raise ValueError("只能向未发布的考试导入题库")
+
+    bank_set = session.get(QuestionBankSet, bank_set_id)
+    if not bank_set:
+        raise ValueError("题库集不存在")
+
+    if mode == "overwrite":
+        old_question_ids = session.exec(
+            select(Question.id).where(Question.exam_id == exam.id)
+        ).all()
+        if old_question_ids:
+            session.exec(
+                sql_delete(QuestionOption).where(
+                    QuestionOption.question_id.in_(old_question_ids)
+                )
+            )
+        session.exec(sql_delete(Question).where(Question.exam_id == exam.id))
+        base_sort_no = 1
+    elif mode == "append":
+        current_count = session.exec(
+            select(func.count()).select_from(Question).where(Question.exam_id == exam.id)
+        ).one()
+        base_sort_no = current_count + 1
+    else:
+        raise ValueError("mode 必须是 append 或 overwrite")
+
+    bank_questions = session.exec(
+        select(QuestionBankQuestion)
+        .where(QuestionBankQuestion.set_id == bank_set_id)
+        .order_by(QuestionBankQuestion.sort_no)
+    ).all()
+
+    if bank_questions:
+        question_ids = [q.id for q in bank_questions]
+        all_options = session.exec(
+            select(QuestionBankOption)
+            .where(QuestionBankOption.question_id.in_(question_ids))
+            .order_by(QuestionBankOption.sort_no)
+        ).all()
+
+        options_by_question: dict[uuid.UUID, list[QuestionBankOption]] = {}
+        for option in all_options:
+            options_by_question.setdefault(option.question_id, []).append(option)
+
+        for idx, q in enumerate(bank_questions):
+            new_question = Question(
+                exam_id=exam.id,
+                question_type=q.question_type,
+                stem=q.stem,
+                score=q.score,
+                difficulty=q.difficulty,
+                sort_no=base_sort_no + idx,
+                analysis=q.analysis,
+            )
+            session.add(new_question)
+            session.flush()
+
+            for option in options_by_question.get(q.id, []):
+                session.add(
+                    QuestionOption(
+                        question_id=new_question.id,
+                        option_key=option.option_key,
+                        option_text=option.option_text,
+                        is_correct=option.is_correct,
+                        sort_no=option.sort_no,
+                    )
+                )
+
+    exam.updated_at = _now()
+    session.add(exam)
+    session.commit()
 
 
 # ─── Docx Generation Scheduler ─────────────────────────────────────────────

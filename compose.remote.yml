@@ -68,6 +68,9 @@ services:
 
   frontend:
     restart: "no"
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.dev
     ports:
       - "10106:5173"
     command:
