@@ -5,6 +5,9 @@ The actual conversation state is persisted by LangGraph's PostgresSaver
 (checkpoints, checkpoint_blobs, checkpoint_writes tables). This table only
 keeps lightweight metadata so the application knows whether a thread exists
 and when it was last active.
+
+A user always has exactly one thread per exam; the pair (user_id, exam_id)
+is the primary key. No external thread_id is needed.
 """
 
 from __future__ import annotations
@@ -23,10 +26,8 @@ def _now_utc() -> datetime:
 class AIAssistantThread(SQLModel, table=True):
     __tablename__ = "ai_assistant_thread"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    user_id: uuid.UUID = Field(index=True, nullable=False)
-    exam_id: uuid.UUID = Field(index=True, nullable=False)
-    thread_id: str = Field(max_length=128, nullable=False, unique=True)
+    user_id: uuid.UUID = Field(primary_key=True, nullable=False)
+    exam_id: uuid.UUID = Field(primary_key=True, nullable=False)
     created_at: datetime | None = Field(
         default_factory=_now_utc,
         sa_type=DateTime(timezone=True),  # type: ignore[call-arg]

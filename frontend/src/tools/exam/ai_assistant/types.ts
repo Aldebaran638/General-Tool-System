@@ -67,31 +67,14 @@ export interface ChatRequest {
   current_questions: QuestionCreate[]
 }
 
-export interface ChatResponse {
-  message: string | null
-  tool_calls: AIToolCall[] | null
-  thread_id: string
-}
-
 export interface ToolResultsRequest {
   exam_id: string
   tool_results: ToolResult[]
   current_questions: QuestionCreate[]
 }
 
-export interface ToolResultsResponse {
-  message: string | null
-  thread_id: string
-}
-
 export interface ClearThreadRequest {
   exam_id: string
-}
-
-export interface ThreadStatusResponse {
-  thread_id: string
-  message_count: number
-  exists: boolean
 }
 
 export type AIStatus = "thinking" | "tool-calling"
@@ -111,7 +94,6 @@ export interface SSEDoneEvent {
   type: "done"
   message: string | null
   tool_calls: AIToolCall[] | null
-  thread_id: string
 }
 
 export type SSEEvent = SSEStatusEvent | SSEErrorEvent | SSEDoneEvent

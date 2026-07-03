@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { AetherSpectrum } from "./AetherSpectrum"
 import { ChatInput } from "./ChatInput"
 import { ChatMessageList } from "./ChatMessageList"
-import { chatStream, chatWithFilesStream, clearThread, submitToolResultsStream } from "../api"
+import { chatStream, clearThread, submitToolResultsStream } from "../api"
 import type {
   AIStatus,
   AIToolCall,
@@ -208,10 +208,7 @@ export function AIAssistantPanel({
     }
 
     try {
-      const stream =
-        files.length > 0
-          ? chatWithFilesStream(request, files, controller.signal)
-          : chatStream(request, controller.signal)
+      const stream = chatStream(request, files, controller.signal)
 
       let doneEvent: SSEDoneEvent | null = null
       for await (const event of stream) {

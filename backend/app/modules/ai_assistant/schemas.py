@@ -64,14 +64,8 @@ class ToolResult(BaseModel):
 
 class ChatRequest(BaseModel):
     exam_id: str
-    message: str
+    message: str = ""
     current_questions: list[dict[str, Any]] = []
-
-
-class ChatResponse(BaseModel):
-    message: str | None = None
-    tool_calls: list[ToolCall] | None = None
-    thread_id: str
 
 
 class ToolResultsRequest(BaseModel):
@@ -80,15 +74,5 @@ class ToolResultsRequest(BaseModel):
     current_questions: list[dict[str, Any]] = []
 
 
-class ToolResultsResponse(BaseModel):
-    message: str | None = None
-    thread_id: str
-
-
 class ClearThreadRequest(BaseModel):
     exam_id: str
-
-
-class ThreadStatusResponse(BaseModel):
-    thread_id: str
-    message_count: int

@@ -5,8 +5,11 @@ The agent exposes tool schemas to the LLM so it can reason about editing the
 exam paper, but the actual tool side-effects are executed by the frontend.
 When the LLM emits tool_calls, the backend pauses and returns them to the
 frontend. The frontend applies the mutations and sends the results back via
-``/tool-results``, at which point the agent continues and produces a final
-natural-language response.
+``/tool-results/stream``, at which point the agent continues and produces a
+final natural-language response.
+
+Thread identity is (user_id, exam_id). Opening the same exam always resumes
+the same conversation.
 """
 
 from __future__ import annotations
@@ -45,6 +48,7 @@ from app.modules.ai_assistant.schemas import (
 
 def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
+
 
 class LLMUnavailableError(RuntimeError):
     """Raised when the LLM endpoint is unreachable or times out."""
@@ -236,6 +240,7 @@ def _close_pg_connection() -> None:
 # ─── Thread helpers ───────────────────────────────────────────────────────────
 
 def _thread_id(user_id: uuid.UUID, exam_id: str) -> str:
+    """LangGraph checkpoint thread id; derived from the natural (user, exam) key."""
     return f"{user_id}:{exam_id}"
 
 
@@ -243,10 +248,12 @@ def _ensure_thread_metadata(
     session: Session,
     user_id: uuid.UUID,
     exam_id: str,
-    thread_id: str,
 ) -> None:
     existing = session.exec(
-        select(AIAssistantThread).where(AIAssistantThread.thread_id == thread_id)
+        select(AIAssistantThread).where(
+            AIAssistantThread.user_id == user_id,
+            AIAssistantThread.exam_id == uuid.UUID(exam_id),
+        )
     ).first()
     if existing:
         existing.updated_at = _now_utc()
@@ -256,14 +263,16 @@ def _ensure_thread_metadata(
         AIAssistantThread(
             user_id=user_id,
             exam_id=uuid.UUID(exam_id),
-            thread_id=thread_id,
         )
     )
 
 
-def _touch_thread(session: Session, thread_id: str) -> None:
+def _touch_thread(session: Session, user_id: uuid.UUID, exam_id: str) -> None:
     row = session.exec(
-        select(AIAssistantThread).where(AIAssistantThread.thread_id == thread_id)
+        select(AIAssistantThread).where(
+            AIAssistantThread.user_id == user_id,
+            AIAssistantThread.exam_id == uuid.UUID(exam_id),
+        )
     ).first()
     if row:
         row.updated_at = _now_utc()
@@ -272,134 +281,12 @@ def _touch_thread(session: Session, thread_id: str) -> None:
 
 # ─── Public API ───────────────────────────────────────────────────────────────
 
-def chat(
-    session: Session,
-    user_id: uuid.UUID,
-    exam_id: str,
-    message: str,
-    current_questions: list[dict[str, Any]],
-) -> dict[str, Any]:
-    """Send a user message to the agent and return either a reply or pending tool calls."""
-    thread_id = _thread_id(user_id, exam_id)
-    config = {"configurable": {"thread_id": thread_id}}
-
-    _ensure_thread_metadata(session, user_id, exam_id, thread_id)
-
-    graph = _get_compiled_graph()
-    existing_state = graph.get_state(config)
-    has_history = bool(existing_state and existing_state.values.get("messages"))
-
-    human_msg = _make_human_message(message, exam_id, current_questions)
-    messages: list[BaseMessage] = [SystemMessage(content=_SYSTEM_PROMPT)] if not has_history else []
-    messages.append(human_msg)
-
-    try:
-        final_state = graph.invoke(
-            {
-                "messages": messages,
-                "exam_id": exam_id,
-                "current_questions": current_questions,
-                "pending_tool_calls": None,
-            },
-            config,
-        )
-    except (httpx.TimeoutException, httpx.ConnectError) as exc:
-        raise LLMUnavailableError(f"大模型服务无响应或连接失败: {exc}") from exc
-    except Exception as exc:
-        raise LLMUnavailableError(f"大模型服务调用异常: {exc}") from exc
-
-    _touch_thread(session, thread_id)
-
-    pending = final_state.get("pending_tool_calls")
-    last_message = final_state["messages"][-1]
-    response_text = last_message.content if isinstance(last_message, AIMessage) else None
-
-    return {
-        "message": response_text,
-        "tool_calls": pending,
-        "thread_id": thread_id,
-    }
-
-
-def chat_with_files(
-    session: Session,
-    user_id: uuid.UUID,
-    exam_id: str,
-    message: str,
-    files: list[UploadFile],
-    current_questions: list[dict[str, Any]],
-) -> dict[str, Any]:
-    """Parse uploaded files in memory and send their contents to the agent as context.
-
-    The actual file side-effects (creating questions) are still executed by the
-    frontend via the returned tool_calls, keeping the pause/resume flow consistent
-    with the regular chat endpoint.
-    """
+def _build_file_message(files: list[UploadFile]) -> str:
     file_context = parse_upload_files(files)
-    user_prompt = message.strip() if message.strip() else "请根据上传的文件内容生成相关考试题目。"
-    combined_message = (
-        f"{user_prompt}\n\n"
-        f"以下是从上传文件中提取到的参考内容（文件未保存，仅用于本次出题）：\n\n"
+    return (
+        "以下是从上传文件中提取到的参考内容（文件未保存，仅用于本次出题）：\n\n"
         f"{file_context}"
     )
-    return chat(
-        session=session,
-        user_id=user_id,
-        exam_id=exam_id,
-        message=combined_message,
-        current_questions=current_questions,
-    )
-
-
-def submit_tool_results(
-    session: Session,
-    user_id: uuid.UUID,
-    exam_id: str,
-    tool_results: list[ToolResult],
-    current_questions: list[dict[str, Any]],
-) -> dict[str, Any]:
-    """Feed frontend tool execution results back into the agent and get the final reply."""
-    thread_id = _thread_id(user_id, exam_id)
-    config = {"configurable": {"thread_id": thread_id}}
-
-    tool_messages = [
-        ToolMessage(content=r.content, tool_call_id=r.tool_call_id)
-        for r in tool_results
-    ]
-
-    human_msg = _make_human_message(
-        "已完成上述工具调用，请根据执行结果继续。", exam_id, current_questions
-    )
-
-    graph = _get_compiled_graph()
-    try:
-        final_state = graph.invoke(
-            {
-                "messages": [*tool_messages, human_msg],
-                "exam_id": exam_id,
-                "current_questions": current_questions,
-                "pending_tool_calls": None,
-            },
-            config,
-        )
-    except (httpx.TimeoutException, httpx.ConnectError) as exc:
-        raise LLMUnavailableError(f"大模型服务无响应或连接失败: {exc}") from exc
-    except Exception as exc:
-        raise LLMUnavailableError(f"大模型服务调用异常: {exc}") from exc
-
-    _touch_thread(session, thread_id)
-
-    last_message = final_state["messages"][-1]
-    response_text = last_message.content if isinstance(last_message, AIMessage) else None
-
-    return {
-        "message": response_text,
-        "thread_id": thread_id,
-    }
-
-
-def _sse_event(event: str, data: dict[str, Any]) -> str:
-    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
 def chat_stream(
@@ -408,18 +295,27 @@ def chat_stream(
     exam_id: str,
     message: str,
     current_questions: list[dict[str, Any]],
+    files: list[UploadFile] | None = None,
 ) -> Iterator[str]:
-    """Stream chat status events and return the final response via SSE."""
+    """Stream chat status events and return the final response via SSE.
+
+    Supports optional file uploads; when files are provided their text content
+    is appended to the user message as context.
+    """
     thread_id = _thread_id(user_id, exam_id)
     config = {"configurable": {"thread_id": thread_id}}
 
-    _ensure_thread_metadata(session, user_id, exam_id, thread_id)
+    _ensure_thread_metadata(session, user_id, exam_id)
 
     graph = _get_compiled_graph()
     existing_state = graph.get_state(config)
     has_history = bool(existing_state and existing_state.values.get("messages"))
 
-    human_msg = _make_human_message(message, exam_id, current_questions)
+    user_prompt = message.strip() if message.strip() else "请根据上传的文件内容生成相关考试题目。"
+    if files:
+        user_prompt += "\n\n" + _build_file_message(files)
+
+    human_msg = _make_human_message(user_prompt, exam_id, current_questions)
     messages: list[BaseMessage] = [SystemMessage(content=_SYSTEM_PROMPT)] if not has_history else []
     messages.append(human_msg)
 
@@ -455,7 +351,7 @@ def chat_stream(
         yield _sse_event("error", {"type": "error", "message": f"大模型服务调用异常: {exc}"})
         return
 
-    _touch_thread(session, thread_id)
+    _touch_thread(session, user_id, exam_id)
     session.commit()
 
     final_state = graph.get_state(config)
@@ -470,33 +366,7 @@ def chat_stream(
             "type": "done",
             "message": response_text,
             "tool_calls": pending,
-            "thread_id": thread_id,
         },
-    )
-
-
-def chat_with_files_stream(
-    session: Session,
-    user_id: uuid.UUID,
-    exam_id: str,
-    message: str,
-    files: list[UploadFile],
-    current_questions: list[dict[str, Any]],
-) -> Iterator[str]:
-    """Parse uploaded files and stream the agent response via SSE."""
-    file_context = parse_upload_files(files)
-    user_prompt = message.strip() if message.strip() else "请根据上传的文件内容生成相关考试题目。"
-    combined_message = (
-        f"{user_prompt}\n\n"
-        f"以下是从上传文件中提取到的参考内容（文件未保存，仅用于本次出题）：\n\n"
-        f"{file_context}"
-    )
-    yield from chat_stream(
-        session=session,
-        user_id=user_id,
-        exam_id=exam_id,
-        message=combined_message,
-        current_questions=current_questions,
     )
 
 
@@ -543,7 +413,7 @@ def submit_tool_results_stream(
         yield _sse_event("error", {"type": "error", "message": f"大模型服务调用异常: {exc}"})
         return
 
-    _touch_thread(session, thread_id)
+    _touch_thread(session, user_id, exam_id)
     session.commit()
 
     final_state = graph.get_state(config)
@@ -558,7 +428,6 @@ def submit_tool_results_stream(
             "type": "done",
             "message": response_text,
             "tool_calls": pending,
-            "thread_id": thread_id,
         },
     )
 
@@ -574,7 +443,12 @@ def clear_thread(
     # Ensure PostgresSaver tables exist before trying to delete from them.
     _get_compiled_graph()
 
-    session.exec(delete(AIAssistantThread).where(AIAssistantThread.thread_id == thread_id))
+    session.exec(
+        delete(AIAssistantThread).where(
+            AIAssistantThread.user_id == user_id,
+            AIAssistantThread.exam_id == uuid.UUID(exam_id),
+        )
+    )
     session.execute(
         text("DELETE FROM checkpoints WHERE thread_id = :thread_id").bindparams(
             thread_id=thread_id
@@ -592,24 +466,5 @@ def clear_thread(
     )
 
 
-def get_thread_status(
-    session: Session,
-    user_id: uuid.UUID,
-    exam_id: str,
-) -> dict[str, Any]:
-    thread_id = _thread_id(user_id, exam_id)
-    config = {"configurable": {"thread_id": thread_id}}
-
-    row = session.exec(
-        select(AIAssistantThread).where(AIAssistantThread.thread_id == thread_id)
-    ).first()
-
-    graph = _get_compiled_graph()
-    state = graph.get_state(config)
-    messages = state.values.get("messages", []) if state else []
-
-    return {
-        "thread_id": thread_id,
-        "message_count": len(messages),
-        "exists": row is not None,
-    }
+def _sse_event(event: str, data: dict[str, Any]) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"

@@ -2,12 +2,9 @@
 
 import type {
   ChatRequest,
-  ChatResponse,
   ClearThreadRequest,
   SSEEvent,
-  ThreadStatusResponse,
   ToolResultsRequest,
-  ToolResultsResponse,
 } from "./types"
 
 const BASE = "/api/v1/ai-assistant"
@@ -29,58 +26,6 @@ async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
-async function apiFetchMultipart<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    ...init,
-    headers: { ...authHeaders(), ...init?.headers },
-  })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body?.detail ?? `HTTP ${res.status}`)
-  }
-  return res.json() as Promise<T>
-}
-
-export function chat(
-  request: ChatRequest,
-  signal?: AbortSignal,
-): Promise<ChatResponse> {
-  return apiFetch(`${BASE}/chat`, {
-    method: "POST",
-    body: JSON.stringify(request),
-    signal,
-  })
-}
-
-export function chatWithFiles(
-  request: ChatRequest,
-  files: File[],
-  signal?: AbortSignal,
-): Promise<ChatResponse> {
-  const formData = new FormData()
-  formData.append("exam_id", request.exam_id)
-  formData.append("message", request.message)
-  formData.append("current_questions", JSON.stringify(request.current_questions))
-  files.forEach((file) => formData.append("files", file))
-
-  return apiFetchMultipart(`${BASE}/chat-with-files`, {
-    method: "POST",
-    body: formData,
-    signal,
-  })
-}
-
-export function submitToolResults(
-  request: ToolResultsRequest,
-  signal?: AbortSignal,
-): Promise<ToolResultsResponse> {
-  return apiFetch(`${BASE}/tool-results`, {
-    method: "POST",
-    body: JSON.stringify(request),
-    signal,
-  })
-}
-
 export function clearThread(
   request: ClearThreadRequest,
   signal?: AbortSignal,
@@ -90,16 +35,6 @@ export function clearThread(
     body: JSON.stringify(request),
     signal,
   })
-}
-
-export function getThreadStatus(
-  examId: string,
-  signal?: AbortSignal,
-): Promise<ThreadStatusResponse> {
-  return apiFetch(
-    `${BASE}/thread?exam_id=${encodeURIComponent(examId)}`,
-    { signal },
-  )
 }
 
 async function* sseStream(url: string, init?: RequestInit): AsyncGenerator<SSEEvent> {
@@ -146,18 +81,6 @@ async function* sseStream(url: string, init?: RequestInit): AsyncGenerator<SSEEv
 
 export function chatStream(
   request: ChatRequest,
-  signal?: AbortSignal,
-): AsyncGenerator<SSEEvent> {
-  return sseStream(`${BASE}/chat/stream`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-    signal,
-  })
-}
-
-export function chatWithFilesStream(
-  request: ChatRequest,
   files: File[],
   signal?: AbortSignal,
 ): AsyncGenerator<SSEEvent> {
@@ -167,7 +90,7 @@ export function chatWithFilesStream(
   formData.append("current_questions", JSON.stringify(request.current_questions))
   files.forEach((file) => formData.append("files", file))
 
-  return sseStream(`${BASE}/chat-with-files/stream`, {
+  return sseStream(`${BASE}/chat/stream`, {
     method: "POST",
     body: formData,
     signal,
