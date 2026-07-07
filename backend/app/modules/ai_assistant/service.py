@@ -23,7 +23,6 @@ from typing import Annotated, Any, TypedDict
 
 import httpx
 import psycopg
-from fastapi import UploadFile
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tools import StructuredTool
@@ -36,7 +35,6 @@ from sqlmodel import Session, delete, select
 from app.core.config import settings
 from app.modules.ai_assistant.llm import MyVLLMChatModel
 from app.modules.ai_assistant.models import AIAssistantThread
-from app.modules.ai_assistant.parser import parse_upload_files
 from app.modules.ai_assistant.schemas import (
     BatchCreateQuestionsArgs,
     CreateQuestionArgs,
@@ -338,8 +336,7 @@ def _finalize_response(
 
 
 
-def _build_file_message(files: list[UploadFile]) -> str:
-    file_context = parse_upload_files(files)
+def _build_file_message(file_context: str) -> str:
     return (
         "以下是从上传文件中提取到的参考内容（文件未保存，仅用于本次出题）：\n\n"
         f"{file_context}"
@@ -352,7 +349,7 @@ def chat_stream(
     exam_id: str,
     message: str,
     current_questions: list[dict[str, Any]],
-    files: list[UploadFile] | None = None,
+    file_context: str | None = None,
 ) -> Iterator[str]:
     """Stream chat events (reasoning, content, tool-calls, done) via SSE."""
     thread_id = _thread_id(user_id, exam_id)
@@ -365,8 +362,8 @@ def chat_stream(
     has_history = bool(existing_state and existing_state.values.get("messages"))
 
     user_prompt = message.strip() if message.strip() else "请根据上传的文件内容生成相关考试题目。"
-    if files:
-        user_prompt += "\n\n" + _build_file_message(files)
+    if file_context:
+        user_prompt += "\n\n" + _build_file_message(file_context)
 
     human_msg = _make_human_message(user_prompt, exam_id, current_questions)
     messages: list[BaseMessage] = [SystemMessage(content=_SYSTEM_PROMPT)] if not has_history else []

@@ -19,7 +19,7 @@ from fastapi.responses import StreamingResponse
 
 from app.api.deps import SessionDep
 from app.modules.ai_assistant.deps import RequireAIAssistantAccess
-from app.modules.ai_assistant.parser import FileContentTooLargeError, FileParseError
+from app.modules.ai_assistant.parser import FileContentTooLargeError, FileParseError, parse_upload_files
 from app.modules.ai_assistant.schemas import ClearThreadRequest, ToolResultsRequest
 from app.modules.ai_assistant.service import (
     LLMUnavailableError,
@@ -46,6 +46,27 @@ def chat_stream_endpoint(
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=400, detail="current_questions 格式错误") from exc
 
+    file_context: str | None = None
+    if files:
+        try:
+            file_context = parse_upload_files(files)
+        except FileParseError as exc:
+            def _error_gen(msg: str = str(exc)):
+                yield _sse_event("error", {"type": "error", "message": msg})
+            return StreamingResponse(
+                _error_gen(),
+                media_type="text/event-stream",
+                headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+            )
+        except FileContentTooLargeError as exc:
+            def _error_gen(msg: str = str(exc)):
+                yield _sse_event("error", {"type": "error", "message": msg})
+            return StreamingResponse(
+                _error_gen(),
+                media_type="text/event-stream",
+                headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+            )
+
     def event_generator():
         try:
             yield from chat_stream(
@@ -54,11 +75,9 @@ def chat_stream_endpoint(
                 exam_id=exam_id,
                 message=message,
                 current_questions=questions,
-                files=files,
+                file_context=file_context,
             )
-        except FileParseError as exc:
-            yield _sse_event("error", {"type": "error", "message": str(exc)})
-        except FileContentTooLargeError as exc:
+        except LLMUnavailableError as exc:
             yield _sse_event("error", {"type": "error", "message": str(exc)})
         except Exception as exc:
             yield _sse_event("error", {"type": "error", "message": f"AI 助手调用失败: {exc}"})

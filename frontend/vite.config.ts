@@ -30,15 +30,15 @@ export default defineConfig({
     //   2. WeCom H5 (cloudflare tunnel → Vite → backend works on mobile)
     proxy: {
       "/api": {
-        target: process.env.BACKEND_URL ?? "http://localhost:8000",
+        target: process.env.BACKEND_URL ?? "http://localhost:10205",
         changeOrigin: true,
       },
       "/WW_verify_": {
-        target: process.env.BACKEND_URL ?? "http://localhost:8000",
+        target: process.env.BACKEND_URL ?? "http://localhost:10205",
         changeOrigin: true,
       },
       "/uploads": {
-        target: process.env.BACKEND_URL ?? "http://localhost:8000",
+        target: process.env.BACKEND_URL ?? "http://localhost:10205",
         changeOrigin: true,
       },
     },
