@@ -298,6 +298,7 @@ def _stream_model_output(graph: Any, input_state: dict[str, Any], config: dict[s
     for item in graph.stream(input_state, config, stream_mode="messages"):
         for msg in _extract_message_chunks(item):
             if isinstance(msg, AIMessageChunk):
+                # 提取返回的msg中的reasoning部分.如果不存在会优雅返回None而不是抛出错误.
                 reasoning = msg.additional_kwargs.get("reasoning")
                 if reasoning:
                     yield "reasoning", reasoning
@@ -360,7 +361,7 @@ def chat_stream(
     graph = _get_compiled_graph()
     existing_state = graph.get_state(config)
     has_history = bool(existing_state and existing_state.values.get("messages"))
-
+    # message.strip():将字符串的首尾空白字符去掉
     user_prompt = message.strip() if message.strip() else "请根据上传的文件内容生成相关考试题目。"
     if file_context:
         user_prompt += "\n\n" + _build_file_message(file_context)
