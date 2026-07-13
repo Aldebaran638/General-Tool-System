@@ -26,8 +26,6 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.tools import StructuredTool
 
-from app.core.config import settings
-
 
 def _convert_message_to_openai_dict(message: BaseMessage) -> dict[str, Any]:
     """Convert a LangChain message to the OpenAI / vLLM chat format."""
@@ -68,9 +66,9 @@ class MyVLLMChatModel(BaseChatModel):
     ``AIMessage.additional_kwargs["reasoning"]``.
     """
 
-    model: str = settings.LLM_MODEL
-    base_url: str = settings.LLM_BASE_URL.rstrip("/")
-    api_key: str = settings.LLM_API_KEY
+    model: str = ""
+    base_url: str = ""
+    api_key: str = ""
     temperature: float = 0.2
     timeout: float = 120.0
     tools: list[dict[str, Any]] | None = None
