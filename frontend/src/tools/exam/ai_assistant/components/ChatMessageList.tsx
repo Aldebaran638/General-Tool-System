@@ -53,6 +53,9 @@ export function ChatMessageList({
     endRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, isLoading])
 
+  const lastMsg = messages[messages.length - 1]
+  const lastIsAssistant = lastMsg?.role === "assistant"
+
   return (
     <div
       className="flex-1 overflow-y-auto p-4 space-y-5
@@ -82,6 +85,9 @@ export function ChatMessageList({
           )
         }
 
+        const isLast = idx === messages.length - 1
+        const showThinking = isLast && isLoading && !msg.content
+
         return (
           <div key={idx} className="flex gap-3 animate-fade-in-up">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -94,6 +100,17 @@ export function ChatMessageList({
 
               {msg.reasoning && msg.reasoning.trim().length > 0 && (
                 <ReasoningBlock reasoning={msg.reasoning} />
+              )}
+
+              {showThinking && (
+                <div className="inline-flex items-center gap-2 rounded-2xl rounded-tl-none border bg-muted/40 px-4 py-3 text-sm text-muted-foreground shadow-sm">
+                  <span>{status === "tool-calling" ? "正在调用工具" : "正在思考"}</span>
+                  <span className="flex gap-0.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.2s]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.1s]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce" />
+                  </span>
+                </div>
               )}
 
               {msg.content && (
@@ -110,7 +127,7 @@ export function ChatMessageList({
         )
       })}
 
-      {isLoading && (
+      {isLoading && !lastIsAssistant && (
         <ThinkingIndicator status={status} />
       )}
 
