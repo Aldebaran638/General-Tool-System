@@ -1,6 +1,7 @@
 /** API calls for AI assistant */
 
 import type {
+  ChatMessage,
   ChatRequest,
   ClearThreadRequest,
   SSEEvent,
@@ -24,6 +25,10 @@ async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
     throw new Error(body?.detail ?? `HTTP ${res.status}`)
   }
   return res.json() as Promise<T>
+}
+
+export function fetchHistory(examId: string): Promise<ChatMessage[]> {
+  return apiFetch(`${BASE}/history?exam_id=${encodeURIComponent(examId)}`)
 }
 
 export function clearThread(

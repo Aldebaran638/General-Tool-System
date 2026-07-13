@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { AetherSpectrum } from "./AetherSpectrum"
 import { ChatInput } from "./ChatInput"
 import { ChatMessageList } from "./ChatMessageList"
-import { chatStream, clearThread, submitToolResultsStream } from "../api"
+import { chatStream, clearThread, fetchHistory, submitToolResultsStream } from "../api"
 import type {
   AIStatus,
   AIToolCall,
@@ -175,6 +175,16 @@ export function AIAssistantPanel({
   const [aiStatus, setAiStatus] = useState<AIStatus | null>(null)
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const abortControllerRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    fetchHistory(examId)
+      .then((history) => {
+        if (history.length > 0) {
+          setMessages(history)
+        }
+      })
+      .catch(() => {})
+  }, [examId])
 
   function cancelCurrentRequest() {
     if (abortControllerRef.current) {

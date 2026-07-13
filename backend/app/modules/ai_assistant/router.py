@@ -4,6 +4,7 @@ AI Assistant API Router  (/api/v1/ai-assistant/*)
 Endpoints:
   POST /ai-assistant/chat/stream         — send a chat message (optional files), SSE stream
   POST /ai-assistant/tool-results/stream — feed tool execution results from the frontend, SSE stream
+  GET  /ai-assistant/history             — load conversation history for (user, exam)
   POST /ai-assistant/clear               — delete the thread context for (user, exam)
 
 All endpoints require exam admin or superuser.
@@ -26,6 +27,7 @@ from app.modules.ai_assistant.service import (
     _sse_event,
     chat_stream,
     clear_thread,
+    load_thread_history,
     submit_tool_results_stream,
 )
 
@@ -112,6 +114,22 @@ def tool_results_stream_endpoint(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
     )
+
+
+@router.get("/history")
+def get_thread_history(
+    session: SessionDep,
+    current_user: RequireAIAssistantAccess,
+    exam_id: str,
+) -> list[dict]:
+    try:
+        return load_thread_history(
+            session=session,
+            user_id=current_user.id,
+            exam_id=exam_id,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"加载历史失败: {exc}") from exc
 
 
 @router.post("/clear")

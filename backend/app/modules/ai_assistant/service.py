@@ -471,6 +471,56 @@ def submit_tool_results_stream(
     )
 
 
+def load_thread_history(
+    session: Session,
+    user_id: uuid.UUID,
+    exam_id: str,
+) -> list[dict[str, Any]]:
+    """Load conversation history from the LangGraph checkpoint for display."""
+    thread_id = _thread_id(user_id, exam_id)
+    config = {"configurable": {"thread_id": thread_id}}
+
+    graph = _get_compiled_graph()
+    state = graph.get_state(config)
+
+    if not state or not state.values.get("messages"):
+        return []
+
+    result: list[dict[str, Any]] = []
+    for msg in state.values["messages"]:
+        if isinstance(msg, (SystemMessage, ToolMessage)):
+            continue
+        if isinstance(msg, HumanMessage):
+            content = msg.content if isinstance(msg.content, str) else str(msg.content)
+            if "用户请求: " in content:
+                content = content.split("用户请求: ", 1)[1]
+            file_ctx_marker = "\n\n以下是从上传文件中提取到的参考内容"
+            if file_ctx_marker in content:
+                content = content.split(file_ctx_marker, 1)[0]
+            result.append({"role": "user", "content": content})
+        elif isinstance(msg, AIMessage):
+            item: dict[str, Any] = {
+                "role": "assistant",
+                "content": msg.content or "",
+            }
+            reasoning = msg.additional_kwargs.get("reasoning")
+            if reasoning:
+                item["reasoning"] = reasoning
+            raw_tool_calls = getattr(msg, "tool_calls", None) or []
+            if raw_tool_calls:
+                item["tool_calls"] = [
+                    {
+                        "id": tc.get("id") or str(uuid.uuid4()),
+                        "name": tc["name"],
+                        "arguments": tc.get("args", {}),
+                    }
+                    for tc in raw_tool_calls
+                ]
+            result.append(item)
+
+    return result
+
+
 def clear_thread(
     session: Session,
     user_id: uuid.UUID,
