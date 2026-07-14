@@ -1,139 +1,83 @@
 # 课程培训及考核管理平台
 
-这是一个基于 FastAPI + React + Docker Compose 的课程培训及考核管理平台。
+基于 FastAPI + React + Docker Compose 的课程培训及考核管理平台。
 
-## 一句话结论
+## 技术栈
 
-- 只想把项目跑起来：优先按 [docs/本地启动与排障说明.md](docs/%E6%9C%AC%E5%9C%B0%E5%90%AF%E5%8A%A8%E4%B8%8E%E6%8E%92%E9%9A%9C%E8%AF%B4%E6%98%8E.md) 执行。
-- 当前已经验证可走通的本地启动命令是 `docker compose watch`。
-- 当前仓库要求根目录存在 `.env`，不能只放 `.env-example`。
-- 为了让容器名称保持统一前缀，建议在 `.env` 中保留 `COMPOSE_PROJECT_NAME=course-training-assessment`。
+- **后端**：Python 3.11+、FastAPI、SQLModel、PostgreSQL
+- **前端**：React、TypeScript、Vite、Bun
+- **运维/工具**：Docker Compose、Traefik、Adminer、MailCatcher、ChartDB、uv、pre-commit
+- **测试**：Playwright（前端 E2E）、pytest（后端）
 
-## 1. 推荐阅读顺序
+## 快速启动
 
-如果你是第一次接手这个仓库，按下面顺序看：
+1. 准备环境文件：
 
-1. [docs/本地启动与排障说明.md](docs/%E6%9C%AC%E5%9C%B0%E5%90%AF%E5%8A%A8%E4%B8%8E%E6%8E%92%E9%9A%9C%E8%AF%B4%E6%98%8E.md)
-2. [development.md](development.md)
-3. [deployment.md](deployment.md)
+   ```bash
+   cp .env-example .env
+   ```
 
-说明：
+2. 启动完整本地栈（会自动监听代码变更并热重载）：
 
-- 第一份是当前仓库已经实际验证可跑通的本地流程。
-- 第二份是项目的通用开发说明。
-- 第三份更接近模板化生产部署说明，不代表当前仓库所有步骤都已经逐项验证。
+   ```bash
+   docker compose watch
+   ```
 
-## 2. 当前已验证可走通的本地流程
+3. 首次启动可能需要等待数据库初始化完成，可通过 `prestart` 服务执行迁移和种子数据。
 
-### 第一步：准备环境文件
+## 本地服务地址
 
-如果根目录还没有 `.env`，先执行：
+默认端口来自 `compose.override.yml`：
 
-```bash
-cp .env-example .env
-```
+| 服务 | 地址 |
+|---|---|
+| 前端 | http://localhost:10106 |
+| 后端 API | http://localhost:10105 |
+| Swagger 文档 | http://localhost:10105/docs |
+| ReDoc 文档 | http://localhost:10105/redoc |
+| Adminer | http://localhost:10104 |
+| MailCatcher | http://localhost:10108 |
+| ChartDB | http://localhost:10107 |
+| Traefik Dashboard | http://localhost:10102 |
 
-### 第二步：启动
-
-在项目根目录执行：
-
-```bash
-docker compose watch
-```
-
-### 第三步：验证是否真的跑通
+## 验证
 
 ```bash
 docker compose ps -a
-curl http://localhost:8000/api/v1/utils/health-check/
+curl http://localhost:10105/api/v1/utils/health-check/
 ```
 
-成功后可访问：
+## 常用命令
 
-- 前端：http://localhost:15173
-- 后端：http://localhost:8000
-- Swagger：http://localhost:8000/docs
-- Adminer：http://localhost:18081
-- MailCatcher：http://localhost:1180
-- MailCatcher SMTP（宿主机）：localhost:11025
-- Traefik UI：http://localhost:18090
+| 操作 | 命令 |
+|---|---|
+| 启动项目 | `docker compose watch` |
+| 停止并清理容器 | `docker compose down --remove-orphans` |
+| 查看日志 | `docker compose logs -f backend` |
+| 生成前端 API 客户端 | `bash scripts/generate-client.sh` |
+| 前端 lint | `bun run lint` |
+| 后端 lint / 格式化 | `uv run ruff check .` / `uv run ruff format .` |
+| 后端测试 | `uv run pytest` |
+| 前端测试 | `bun run --filter frontend test` |
 
-补充：
+Windows 开发者可运行 `bootstrap-dev.ps1` 初始化本机 Python 虚拟环境、安装依赖与 Playwright 浏览器。
 
-- 当前数据库宿主机端口使用 15432，不再占用本机 5432。
-- `prestart` 容器退出码为 0 属于正常现象。
+## 目录说明
 
-## 3. 开发者初始化
+- `backend/`：后端源码、测试、Dockerfile、依赖配置
+- `frontend/`：前端源码、测试、Playwright 配置
+- `hooks/`：copier 模板生成后钩子
+- `scripts/`：开发/CI 辅助脚本
+- `compose.yml`：生产型 Docker Compose 主配置
+- `compose.override.yml`：本地开发覆盖配置（端口映射、热重载、额外工具）
+- `compose.traefik.yml`：使用外部 Traefik 的部署配置
+- `development.md`：通用开发说明
+- `deployment.md`：部署说明
+- `prompt.md`：项目架构师/AI 协作规范
 
-如果你要参与开发，可以在项目根目录执行：
+## 注意事项
 
-```powershell
-.\bootstrap-dev.ps1
-```
-
-执行前需要先满足以下条件：
-
-- 已安装 `Python 3.11`
-- 已安装 `Node.js` 与 `npm`
-- 已安装 `Docker Desktop`
-
-说明：
-
-- 后端开发环境固定使用 `Python 3.11`
-- `bootstrap-dev.ps1` 会使用本机 Python 创建 `backend/.venv`
-- 如果你只是运行项目，不需要本机安装 Python，直接按本 README 上面的本地流程启动
-
-## 4. 常用命令
-
-启动项目：
-
-```bash
-docker compose watch
-```
-
-清理旧容器并重启：
-
-```bash
-docker compose down --remove-orphans
-docker compose watch
-```
-
-初始化开发环境：
-
-```powershell
-.\bootstrap-dev.ps1
-```
-
-运行前端构建：
-
-```bash
-npm --prefix frontend run build
-```
-
-运行前端 Playwright 测试：
-
-```bash
-cd frontend
-npx playwright test --reporter=line
-```
-
-运行后端测试：
-
-```powershell
-backend\.venv\Scripts\python.exe -m pytest
-```
-
-## 5. 目录说明
-
-- `frontend/`：前端代码
-- `backend/`：后端代码
-- `docs/`：运行说明与模板文档
-- `skills/`：架构师、前端、后端、测试 AI 的工作规范
-- `bootstrap-dev.ps1`：开发者初始化脚本
-
-## 6. 说明
-
-- 如果只是使用项目，不需要手动创建后端虚拟环境。
-- 如果只是运行项目，不需要手动安装 Playwright 浏览器。
-- 只有参与开发和测试时，才需要执行 `.\bootstrap-dev.ps1`。
-- 本地启动优先以 [docs/本地启动与排障说明.md](docs/%E6%9C%AC%E5%9C%B0%E5%90%AF%E5%8A%A8%E4%B8%8E%E6%8E%92%E9%9A%9C%E8%AF%B4%E6%98%8E.md) 为准。
+- 根目录必须存在 `.env`，不能只放 `.env-example`。
+- 建议保留 `.env` 中的 `COMPOSE_PROJECT_NAME=course-training-assessment`，让容器名称保持统一前缀。
+- `docker-ps-check.err.log` 等临时日志已忽略，无需手动清理。
+- 生产部署请参考 `deployment.md` 和 `compose.traefik.yml`。
