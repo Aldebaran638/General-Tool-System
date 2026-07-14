@@ -48,7 +48,7 @@ header "启动 Docker 容器"
 docker network inspect traefik-public &>/dev/null || docker network create traefik-public 2>/dev/null || true
 
 # 如果容器已在运行，询问是否重启
-RUNNING=$(docker ps --filter "name=course-training-assessment" --filter "status=running" -q | wc -l)
+RUNNING=$(docker ps --filter "name=project-management-board" --filter "status=running" -q | wc -l)
 if [ "$RUNNING" -gt 0 ]; then
     warn "检测到已有 ${RUNNING} 个容器在运行"
     read -p "是否先停止再重新启动？(y/N): " confirm
@@ -66,7 +66,7 @@ success "容器已启动"
 # 等待数据库健康
 info "等待数据库就绪..."
 for i in {1..30}; do
-    HEALTH=$(docker inspect --format='{{.State.Health.Status}}' course-training-assessment-db-1 2>/dev/null || echo "unknown")
+    HEALTH=$(docker inspect --format='{{.State.Health.Status}}' project-management-board-db-1 2>/dev/null || echo "unknown")
     if [ "$HEALTH" = "healthy" ]; then
         success "数据库已就绪"
         break

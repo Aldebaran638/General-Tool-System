@@ -48,7 +48,7 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       {
-        title: "Log In - 课程培训及考核管理平台",
+        title: "Log In - 项目管理面板",
       },
     ],
   }),

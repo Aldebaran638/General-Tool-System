@@ -115,8 +115,8 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               <Logo variant="full" className="h-12" asLink={false} />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white tracking-wider">课程培训及考核管理平台</h1>
-              <p className="mt-2 text-blue-100">数据驱动的培训与考核管理</p>
+              <h1 className="text-3xl font-bold text-white tracking-wider">项目管理面板</h1>
+              <p className="mt-2 text-blue-100">数据驱动的项目管理</p>
             </div>
           </div>
 

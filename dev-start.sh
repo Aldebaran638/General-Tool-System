@@ -62,7 +62,7 @@ check_port() {
     local port=$1 name=$2
     # 检查是否有非本项目容器占用端口
     local occupant
-    occupant=$(docker ps --format '{{.Names}}\t{{.Ports}}' 2>/dev/null | grep ":${port}->" | grep -v "course-training-assessment" | head -1)
+    occupant=$(docker ps --format '{{.Names}}\t{{.Ports}}' 2>/dev/null | grep ":${port}->" | grep -v "project-management-board" | head -1)
     if [ -n "$occupant" ]; then
         local cname=$(echo "$occupant" | cut -f1)
         error "端口 ${port} 被其他容器占用: ${cname}"
@@ -87,7 +87,7 @@ success "端口检查通过"
 # ── 启动基础设施（db + adminer + mailcatcher）────────────────────────────────
 header "启动基础设施"
 
-DB_RUNNING=$(docker ps --filter "name=course-training-assessment-db" --filter "status=running" -q)
+DB_RUNNING=$(docker ps --filter "name=project-management-board-db" --filter "status=running" -q)
 
 if [ -n "$DB_RUNNING" ]; then
     success "数据库容器已在运行，跳过启动"
@@ -101,7 +101,7 @@ fi
 if [ -z "$DB_RUNNING" ]; then
     info "等待数据库就绪..."
     for i in {1..30}; do
-        HEALTH=$(docker inspect --format='{{.State.Health.Status}}' course-training-assessment-db-1 2>/dev/null || echo "unknown")
+        HEALTH=$(docker inspect --format='{{.State.Health.Status}}' project-management-board-db-1 2>/dev/null || echo "unknown")
         if [ "$HEALTH" = "healthy" ]; then
             success "数据库已就绪"
             break
@@ -226,7 +226,7 @@ header "检查前端依赖"
 check_frontend_deps() {
     # 获取容器内 package.json 的依赖数量
     local container_deps
-    container_deps=$(docker exec course-training-assessment-frontend-1 sh -c \
+    container_deps=$(docker exec project-management-board-frontend-1 sh -c \
         'cat /app/frontend/package.json' 2>/dev/null | grep -c '"' || echo "0")
 
     # 检查几个关键依赖是否存在
@@ -238,7 +238,7 @@ check_frontend_deps() {
         "@tanstack/react-router"
     )
     for dep in "${critical_deps[@]}"; do
-        if ! docker exec course-training-assessment-frontend-1 sh -c \
+        if ! docker exec project-management-board-frontend-1 sh -c \
             "test -d /app/frontend/node_modules/${dep}" 2>/dev/null; then
             missing+=("$dep")
         fi
@@ -247,7 +247,7 @@ check_frontend_deps() {
     if [ ${#missing[@]} -gt 0 ]; then
         warn "前端缺少 ${#missing[@]} 个依赖: ${missing[*]}"
         info "正在安装缺失依赖..."
-        docker exec course-training-assessment-frontend-1 sh -c \
+        docker exec project-management-board-frontend-1 sh -c \
             'cd /app/frontend && bun install --no-verify' 2>&1 | tail -3
         success "前端依赖已补全"
 
@@ -310,7 +310,7 @@ else
     if [ "$FRONTEND_STATUS" = "200" ]; then
         success "前端重启后可访问"
     else
-        error "前端仍无法访问 (HTTP $FRONTEND_STATUS)，请检查日志: docker logs course-training-assessment-frontend-1"
+        error "前端仍无法访问 (HTTP $FRONTEND_STATUS)，请检查日志: docker logs project-management-board-frontend-1"
     fi
 fi
 

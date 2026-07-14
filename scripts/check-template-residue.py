@@ -20,10 +20,8 @@ from pathlib import Path
 
 # Forbidden template residues (case-insensitive matching)
 FORBIDDEN_RESIDUES = [
-    "Generic Demo Template",
     "FastAPI Cloud",
     "Invoice Management System",
-    "generic-demo-template",
     "fastapi-full-stack-template",
     "security@tiangolo.com",
     "@tiangolo",

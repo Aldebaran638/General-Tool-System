@@ -37,7 +37,7 @@ export const Route = createFileRoute("/_layout/")({
   head: () => ({
     meta: [
       {
-        title: "Dashboard - 通用工具系统",
+        title: "Dashboard - 项目管理面板",
       },
     ],
   }),
@@ -435,7 +435,7 @@ function Dashboard() {
               欢迎回来，{currentUser?.full_name || currentUser?.email || "用户"}
             </h1>
             <p className="text-teal-100 text-sm mt-1">
-              课程培训及考核管理平台
+              项目管理面板
             </p>
           </div>
           <div className="flex items-center gap-2 text-teal-100 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/10">
