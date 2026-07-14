@@ -34,7 +34,7 @@ interface MarkdownContentProps {
 
 export function MarkdownContent({ text, className = "" }: MarkdownContentProps) {
   if (!text) return null
-  const lines = text.split("\n")
+  const lines = text.replace(/^\n+|\n+$/g, "").split("\n")
 
   return (
     <div className={`space-y-2 ${className}`}>

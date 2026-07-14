@@ -22,9 +22,8 @@ function ReasoningBlock({ reasoning }: { reasoning: string }) {
           <span>思考过程</span>
         </div>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-amber-600/70 transition-transform duration-300 ${
-            isExpanded ? "rotate-180" : ""
-          }`}
+          className={`w-3.5 h-3.5 text-amber-600/70 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""
+            }`}
         />
       </button>
       {isExpanded && (
@@ -93,7 +92,7 @@ export function ChatMessageList({
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Bot className="h-4 w-4" />
             </div>
-            <div className="flex-1 min-w-0 space-y-2">
+            <div className="flex-1 min-w-0 space-y-1">
               <div className="text-xs font-medium text-muted-foreground">
                 AI 组卷助手
               </div>
