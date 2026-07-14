@@ -26,7 +26,6 @@ from app.modules.question_bank_management.schemas import (
     BankQuestionPublic,
     BankQuestionUpdate,
     QuestionBankSetCreate,
-    QuestionBankSetDetailPublic,
     QuestionBankSetPublic,
     QuestionBankSetsPublic,
     QuestionBankSetUpdate,
@@ -142,22 +141,44 @@ def create_set_endpoint(
 
 @router.get(
     "/sets/{set_id}",
-    response_model=QuestionBankSetDetailPublic,
     summary="题库集详情",
 )
 def get_set_detail_endpoint(
     session: SessionDep,
     current_user: RequireExamAdmin,
     set_id: uuid.UUID,
-) -> QuestionBankSetDetailPublic:
+) -> dict:
     result = get_set_with_questions(session, set_id)
     if not result:
         raise HTTPException(status_code=404, detail="题库集不存在")
     bank_set, questions = result
-    return QuestionBankSetDetailPublic(
-        **_set_to_public(bank_set).model_dump(),
-        questions=[BankQuestionPublic(**q) for q in questions],
-    )
+    return {
+        "set": _set_to_public(bank_set).model_dump(),
+        "questions": [
+            {
+                "id": q["id"],
+                "set_id": q["set_id"],
+                "question_type": q["question_type"],
+                "stem": q["stem"],
+                "score": q["score"],
+                "difficulty": q["difficulty"],
+                "sort_no": q["sort_no"],
+                "analysis": q["analysis"],
+                "options": [
+                    {
+                        "id": o["id"],
+                        "question_id": o["question_id"],
+                        "option_key": o["option_key"],
+                        "option_text": o["option_text"],
+                        "is_correct": o["is_correct"],
+                        "sort_no": o["sort_no"],
+                    }
+                    for o in q["options"]
+                ],
+            }
+            for q in questions
+        ],
+    }
 
 
 @router.put(
