@@ -13,29 +13,6 @@ export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
 
-export type ItemCreate = {
-    title: string;
-    description?: (string | null);
-};
-
-export type ItemPublic = {
-    title: string;
-    description?: (string | null);
-    id: string;
-    owner_id: string;
-    created_at?: (string | null);
-};
-
-export type ItemsPublic = {
-    data: Array<ItemPublic>;
-    count: number;
-};
-
-export type ItemUpdate = {
-    title?: (string | null);
-    description?: (string | null);
-};
-
 export type Message = {
     message: string;
 };
@@ -43,6 +20,21 @@ export type Message = {
 export type NewPassword = {
     token: string;
     new_password: string;
+};
+
+export type NotificationPublic = {
+    id: string;
+    title: string;
+    content: string;
+    notification_type: string;
+    is_read: boolean;
+    created_at: string;
+    read_at: (string | null);
+};
+
+export type NotificationsPublic = {
+    data: Array<NotificationPublic>;
+    count: number;
 };
 
 export type PrivateUserCreate = {
@@ -55,6 +47,10 @@ export type PrivateUserCreate = {
 export type Token = {
     access_token: string;
     token_type?: string;
+};
+
+export type UnreadCountResponse = {
+    count: number;
 };
 
 export type UpdatePassword = {
@@ -109,38 +105,6 @@ export type ValidationError = {
     type: string;
 };
 
-export type ItemsReadItemsData = {
-    limit?: number;
-    skip?: number;
-};
-
-export type ItemsReadItemsResponse = (ItemsPublic);
-
-export type ItemsCreateItemData = {
-    requestBody: ItemCreate;
-};
-
-export type ItemsCreateItemResponse = (ItemPublic);
-
-export type ItemsReadItemData = {
-    id: string;
-};
-
-export type ItemsReadItemResponse = (ItemPublic);
-
-export type ItemsUpdateItemData = {
-    id: string;
-    requestBody: ItemUpdate;
-};
-
-export type ItemsUpdateItemResponse = (ItemPublic);
-
-export type ItemsDeleteItemData = {
-    id: string;
-};
-
-export type ItemsDeleteItemResponse = (Message);
-
 export type LoginLoginAccessTokenData = {
     formData: Body_login_login_access_token;
 };
@@ -167,6 +131,35 @@ export type LoginRecoverPasswordHtmlContentData = {
 
 export type LoginRecoverPasswordHtmlContentResponse = (string);
 
+export type NotificationsListNotificationsEndpointData = {
+    /**
+     * 筛选已读/未读
+     */
+    isRead?: (boolean | null);
+    limit?: number;
+    page?: number;
+};
+
+export type NotificationsListNotificationsEndpointResponse = (NotificationsPublic);
+
+export type NotificationsMarkReadEndpointData = {
+    notificationId: string;
+};
+
+export type NotificationsMarkReadEndpointResponse = (NotificationPublic);
+
+export type NotificationsMarkAllReadEndpointResponse = ({
+    [key: string]: unknown;
+});
+
+export type NotificationsDeleteNotificationEndpointData = {
+    notificationId: string;
+};
+
+export type NotificationsDeleteNotificationEndpointResponse = (void);
+
+export type NotificationsUnreadCountEndpointResponse = (UnreadCountResponse);
+
 export type PrivateCreateUserData = {
     requestBody: PrivateUserCreate;
 };
@@ -175,6 +168,10 @@ export type PrivateCreateUserResponse = (UserPublic);
 
 export type UsersReadUsersData = {
     limit?: number;
+    /**
+     * Search by name or email
+     */
+    q?: (string | null);
     skip?: number;
 };
 
@@ -234,3 +231,7 @@ export type UtilsTestEmailData = {
 export type UtilsTestEmailResponse = (Message);
 
 export type UtilsHealthCheckResponse = (boolean);
+
+export type UtilsStorageInfoEndpointResponse = ({
+    [key: string]: unknown;
+});

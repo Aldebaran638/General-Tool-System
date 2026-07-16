@@ -23,7 +23,6 @@ from app.models import (
     UserUpdate,
     UserUpdateMe,
 )
-from app.modules.workbench.project_management.models import Item
 from app.utils import generate_new_account_email, send_email
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -38,7 +37,7 @@ def read_users(
     session: SessionDep,
     skip: int = 0,
     limit: int = 100,
-    q: str | None = Query(default=None, description="Search by name, email, or wecom_userid"),
+    q: str | None = Query(default=None, description="Search by name or email"),
 ) -> Any:
     """
     Retrieve users, optionally filtered by search query.
@@ -51,7 +50,6 @@ def read_users(
             or_(
                 col(User.full_name).ilike(pattern),
                 col(User.email).ilike(pattern),
-                col(User.wecom_userid).ilike(pattern),
             )
         )
 
@@ -238,8 +236,6 @@ def delete_user(
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
-    statement = delete(Item).where(col(Item.owner_id) == user_id)
-    session.exec(statement)  # type: ignore
     session.delete(user)
     session.commit()
     return Message(message="User deleted successfully")

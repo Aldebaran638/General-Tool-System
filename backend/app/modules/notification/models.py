@@ -27,13 +27,8 @@ class Notification(SQLModel, table=True):
     title: str = Field(max_length=255)
     content: str = Field(sa_column=Column(Text, nullable=False))
     notification_type: str = Field(max_length=32, index=True)
-    # EXAM_UPCOMING / EXAM_STARTED / EXAM_INCOMPLETE / EXAM_FAILED / ADMIN_BROADCAST
 
     is_read: bool = Field(default=False)
-
-    # Related exam info (snapshot to preserve info if exam is deleted)
-    exam_id: uuid.UUID | None = Field(default=None, foreign_key="exam.id")
-    exam_name: str | None = Field(default=None, max_length=255)
 
     created_at: datetime = Field(
         default_factory=_utcnow, sa_type=DateTime(timezone=True)  # type: ignore[call-arg]

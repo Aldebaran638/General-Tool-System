@@ -109,9 +109,7 @@ class ToolRegistry {
   }
 
   private readonly _groupTitles: Record<string, string> = {
-    data_sync: "数据同步",
-    workbench: "工作台",
-    exam: "考试管理",
+    core: "核心",
   }
 
   private _formatGroupName(name: string): string {

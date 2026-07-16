@@ -95,10 +95,6 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
 
-    WECOM_CORP_ID: str | None = None
-    WECOM_AGENT_ID: str | None = None
-    WECOM_SECRET: str | None = None
-
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (

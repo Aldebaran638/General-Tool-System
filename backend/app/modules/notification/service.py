@@ -113,7 +113,7 @@ def get_unread_count(session: Session, user_id: uuid.UUID) -> int:
     ).one()
 
 
-# ─── Batch creation (used by scheduler / admin actions) ─────────────────────
+# ─── Batch creation (used by admin actions) ─────────────────────────────────
 
 def create_notification(
     session: Session,
@@ -122,8 +122,6 @@ def create_notification(
     title: str,
     content: str,
     notification_type: str,
-    exam_id: uuid.UUID | None = None,
-    exam_name: str | None = None,
 ) -> Notification:
     """Create a single notification."""
     notification = Notification(
@@ -131,8 +129,6 @@ def create_notification(
         title=title,
         content=content,
         notification_type=notification_type,
-        exam_id=exam_id,
-        exam_name=exam_name,
     )
     session.add(notification)
     session.commit()
@@ -145,7 +141,7 @@ def bulk_create_notifications(
     notifications_data: list[dict],
 ) -> int:
     """Bulk create notifications. Each dict must contain:
-    user_id, title, content, notification_type, exam_id (optional), exam_name (optional).
+    user_id, title, content, notification_type.
 
     Returns count created.
     """
@@ -156,8 +152,6 @@ def bulk_create_notifications(
             title=data["title"],
             content=data["content"],
             notification_type=data["notification_type"],
-            exam_id=data.get("exam_id"),
-            exam_name=data.get("exam_name"),
         )
         notifications.append(n)
 
@@ -166,31 +160,27 @@ def bulk_create_notifications(
     return len(notifications)
 
 
-# ─── Deduplication helpers ──────────────────────────────────────────────────
+# ─── Deduplication helpers ───────────────────────────────────────────────────
 
 def has_notification(
     session: Session,
     user_id: uuid.UUID,
     notification_type: str,
-    exam_id: uuid.UUID | None,
 ) -> bool:
-    """Check if a notification of the given type already exists for the user and exam."""
+    """Check if a notification of the given type already exists for the user."""
     stmt = select(Notification).where(
         Notification.user_id == user_id,
         Notification.notification_type == notification_type,
     )
-    if exam_id is not None:
-        stmt = stmt.where(Notification.exam_id == exam_id)
     return session.exec(stmt).first() is not None
 
 
 def bulk_has_notification(
     session: Session,
     notification_type: str,
-    exam_id: uuid.UUID | None,
     user_ids: list[uuid.UUID],
 ) -> set[uuid.UUID]:
-    """Return the set of user_ids that already have notifications of the given type for the exam."""
+    """Return the set of user_ids that already have notifications of the given type."""
     if not user_ids:
         return set()
 
@@ -198,8 +188,6 @@ def bulk_has_notification(
         Notification.notification_type == notification_type,
         Notification.user_id.in_(user_ids),
     )
-    if exam_id is not None:
-        stmt = stmt.where(Notification.exam_id == exam_id)
 
     results = session.exec(stmt).all()
     return set(results)

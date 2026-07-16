@@ -8,17 +8,6 @@ export type { NavigationEntry, NavigationGroup, NavigationTool }
 import { Home, Settings, Users } from "lucide-react"
 import { toolRegistry } from "@/tools/registry"
 
-// Import all tool modules to trigger their self-registration
-// This is the ONLY place where tool modules should be explicitly imported.
-import "@/tools/data_sync/wecom_department_sync"
-import "@/tools/data_sync/wecom_member_sync"
-import "@/tools/exam/exam_management"
-import "@/tools/exam/exam_participation"
-import "@/tools/exam/category_management"
-import "@/tools/exam/question_bank"
-import "@/tools/workbench/system_dashboard"
-import "@/tools/workbench/trainer_summary"
-
 /**
  * Platform-level navigation entries.
  * These are NOT tool modules; they are core platform features
@@ -68,7 +57,7 @@ export function getNavigationEntries(
     }
   }
 
-  // Add tool entries from registry
+  // Add tool entries from registry (e.g. notification if it registers navigation)
   const toolEntries = toolRegistry.getNavigationEntries(context)
   entries.push(...toolEntries)
 

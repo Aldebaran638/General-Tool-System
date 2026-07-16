@@ -36,8 +36,6 @@ def _to_public(n) -> NotificationPublic:
         content=n.content,
         notification_type=n.notification_type,
         is_read=n.is_read,
-        exam_id=n.exam_id,
-        exam_name=n.exam_name,
         created_at=n.created_at,
         read_at=n.read_at,
     )

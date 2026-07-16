@@ -16,8 +16,6 @@ class NotificationPublic(BaseModel):
     content: str
     notification_type: str
     is_read: bool
-    exam_id: uuid.UUID | None
-    exam_name: str | None
     created_at: datetime
     read_at: datetime | None
 

@@ -8,7 +8,7 @@ from app.modules.registry import registry
 
 registry.register(
     name="notification",
-    group="exam",
+    group="core",
     router=router,
     models=[Notification],
 )

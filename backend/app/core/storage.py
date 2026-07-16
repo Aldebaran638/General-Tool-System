@@ -65,33 +65,32 @@ def resolve_papers_dir() -> Path:
 
 
 def ensure_upload_dir() -> Path:
-    """Create the upload directory (and ``papers/`` sub-directory) if
-    they don't exist yet, then return the upload root path.
+    """Create the upload directory if it doesn't exist yet, then return the
+    upload root path.
 
     Raises ``RuntimeError`` if the directory cannot be created or is not
     writable — this surfaces as a loud startup failure rather than a
-    silent permission error at generation time.
+    silent permission error at runtime.
     """
     upload_root = resolve_upload_dir()
-    papers_dir = upload_root / "papers"
 
     try:
-        papers_dir.mkdir(parents=True, exist_ok=True)
+        upload_root.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
         raise RuntimeError(
-            f"Cannot create upload directory {papers_dir}: {exc}\n"
+            f"Cannot create upload directory {upload_root}: {exc}\n"
             "Check that UPLOAD_DIR is correctly configured and that the "
             "process has write permission to that path."
         ) from exc
 
     # Write-access probe
-    probe = papers_dir / ".write_probe"
+    probe = upload_root / ".write_probe"
     try:
         probe.touch()
         probe.unlink()
     except OSError as exc:
         raise RuntimeError(
-            f"Upload directory {papers_dir} is not writable: {exc}\n"
+            f"Upload directory {upload_root} is not writable: {exc}\n"
             "Check file system permissions for UPLOAD_DIR."
         ) from exc
 
@@ -102,11 +101,10 @@ def ensure_upload_dir() -> Path:
 def storage_info() -> dict:
     """Return a summary dict for diagnostics / admin endpoints."""
     upload_root = resolve_upload_dir()
-    papers_dir = upload_root / "papers"
-    exists = papers_dir.exists()
+    exists = upload_root.exists()
     writable = False
     if exists:
-        probe = papers_dir / ".write_probe"
+        probe = upload_root / ".write_probe"
         try:
             probe.touch()
             probe.unlink()
@@ -114,14 +112,9 @@ def storage_info() -> dict:
         except OSError:
             pass
 
-    # Count generated docx files
-    docx_count = len(list(papers_dir.glob("*.docx"))) if exists else 0
-
     return {
         "upload_dir": str(upload_root),
-        "papers_dir": str(papers_dir),
         "configured_value": settings.UPLOAD_DIR,
-        "papers_dir_exists": exists,
-        "papers_dir_writable": writable,
-        "docx_file_count": docx_count,
+        "upload_dir_exists": exists,
+        "upload_dir_writable": writable,
     }

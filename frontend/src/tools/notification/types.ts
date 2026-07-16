@@ -4,10 +4,8 @@ export interface Notification {
   id: string
   title: string
   content: string
-  notification_type: "EXAM_UPCOMING" | "EXAM_STARTED" | "EXAM_INCOMPLETE" | "EXAM_FAILED" | "ADMIN_BROADCAST"
+  notification_type: string
   is_read: boolean
-  exam_id: string | null
-  exam_name: string | null
   created_at: string
   read_at: string | null
 }

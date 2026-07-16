@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
-import useAuth, { isLoggedIn, redirectToWecomOAuth } from "@/hooks/useAuth"
+import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 
 const formSchema = z.object({
   username: z.email(),
@@ -110,7 +110,7 @@ function Login() {
             </div>
             <h1 className="text-3xl font-bold tracking-tight">欢迎回来</h1>
             <p className="text-sm text-muted-foreground/80">
-              登录您的账户以继续学习
+              登录您的账户以继续
             </p>
           </div>
 
@@ -183,38 +183,6 @@ function Login() {
               登录
             </LoadingButton>
           </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                或者
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={redirectToWecomOAuth}
-            className="group flex w-full items-center justify-center gap-3 rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium shadow-sm transition-all hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:border-primary/20"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-5 w-5 transition-transform group-hover:scale-110"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M9.5 13.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm5 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
-              <path
-                fillRule="evenodd"
-                d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2Zm-4.5 7a4.5 4.5 0 1 0 9 0 4.5 4.5 0 0 0-9 0Z"
-                clipRule="evenodd"
-              />
-            </svg>
-            企业微信一键登录
-          </button>
 
           <div className="text-center text-sm text-muted-foreground">
             还没有账户?{" "}

@@ -4,12 +4,9 @@ import { useState } from "react"
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
 import {
   Bell,
-  Clock,
   Trash2,
   CheckCheck,
-  AlertCircle,
-  CalendarClock,
-  FileWarning,
+  Clock,
   Megaphone,
   Loader2,
 } from "lucide-react"
@@ -32,18 +29,10 @@ import {
 import type { Notification } from "@/tools/notification/types"
 
 const NOTIFICATION_ICONS: Record<string, React.ReactNode> = {
-  EXAM_UPCOMING: <CalendarClock className="h-4 w-4 text-blue-500" />,
-  EXAM_STARTED: <Bell className="h-4 w-4 text-green-500" />,
-  EXAM_INCOMPLETE: <AlertCircle className="h-4 w-4 text-amber-500" />,
-  EXAM_FAILED: <FileWarning className="h-4 w-4 text-red-500" />,
   ADMIN_BROADCAST: <Megaphone className="h-4 w-4 text-purple-500" />,
 }
 
 const NOTIFICATION_LABELS: Record<string, string> = {
-  EXAM_UPCOMING: "即将开始",
-  EXAM_STARTED: "已开始",
-  EXAM_INCOMPLETE: "未完成",
-  EXAM_FAILED: "未及格",
   ADMIN_BROADCAST: "系统公告",
 }
 
