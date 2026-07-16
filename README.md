@@ -31,7 +31,7 @@
 
 | 服务 | 地址 |
 |---|---|
-| 前端 | http://localhost:10106 |
+| 前端 | http://localhost:10116 |
 | 后端 API | http://localhost:10105 |
 | Swagger 文档 | http://localhost:10105/docs |
 | ReDoc 文档 | http://localhost:10105/redoc |

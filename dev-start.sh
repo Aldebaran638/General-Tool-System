@@ -3,8 +3,8 @@
 #
 # 功能：
 #   1. 启动 docker compose 服务（若已运行则跳过）
-#   2. 等待前端(10106)和后端(10105)就绪
-#   3. 启动 Cloudflare 临时隧道（指向前端 localhost:10106）
+#   2. 等待前端(10116)和后端(10105)就绪
+#   3. 启动 Cloudflare 临时隧道（指向前端 localhost:10116）
 #   4. 自动更新 .env 中的 DOMAIN / FRONTEND_HOST / BACKEND_CORS_ORIGINS
 #   5. 重启后端使新 CORS 配置生效
 #   6. 验证公网可达性
@@ -74,7 +74,7 @@ check_port() {
 
 PORT_CONFLICT=0
 check_port 10105 "后端" || PORT_CONFLICT=1
-check_port 10106 "前端" || PORT_CONFLICT=1
+check_port 10116 "前端" || PORT_CONFLICT=1
 check_port 10103 "数据库" || PORT_CONFLICT=1
 check_port 10107 "ChartDB" || PORT_CONFLICT=1
 
@@ -128,7 +128,7 @@ for f in "$CLOUDFLARE_DIR"/*.json; do
 done
 
 # 隧道先指向前端端口（稍后前端启动后就能连上）
-TUNNEL_PORT=10106
+TUNNEL_PORT=10116
 info "隧道目标: http://localhost:${TUNNEL_PORT} (Vite dev server)"
 
 TMPFILE=$(mktemp)
@@ -183,7 +183,7 @@ update_env() {
 }
 
 # BACKEND_CORS_ORIGINS：保留 localhost 条目，新增隧道域名
-CORS_VALUE="${URL},http://localhost:10106,http://localhost:5173"
+CORS_VALUE="${URL},http://localhost:10116,http://localhost:5173"
 
 # 更新根 .env
 update_env ".env" "DOMAIN"               "$HOST"
@@ -282,7 +282,7 @@ wait_for_port() {
     warn "${name} 在 $((max * 2)) 秒内未响应，继续执行..."
 }
 
-wait_for_port 10106 "前端(Vite)"
+wait_for_port 10116 "前端(Vite)"
 wait_for_port 10105 "后端(FastAPI)"
 
 # 后端健康检查（带 /api/v1 前缀）
@@ -299,14 +299,14 @@ echo ""
 
 # ── 最终验证：前端页面可访问 ───────────────────────────────────────────────────
 info "验证前端页面..."
-FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "http://localhost:10106" 2>/dev/null || echo "000")
+FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "http://localhost:10116" 2>/dev/null || echo "000")
 if [ "$FRONTEND_STATUS" = "200" ]; then
     success "前端页面可访问 (HTTP 200)"
 else
     warn "前端返回 HTTP $FRONTEND_STATUS，尝试重启前端..."
     docker compose restart frontend
     sleep 5
-    FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "http://localhost:10106" 2>/dev/null || echo "000")
+    FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "http://localhost:10116" 2>/dev/null || echo "000")
     if [ "$FRONTEND_STATUS" = "200" ]; then
         success "前端重启后可访问"
     else
@@ -369,7 +369,7 @@ echo -e "${YELLOW}⑥ PC 端调试登录（浏览器直接访问）${NC}"
 echo -e "   ${GREEN}${URL}/api/auth/wecom/login${NC}"
 echo ""
 echo -e "${BOLD}本地服务地址：${NC}"
-echo -e "  前端:    ${GREEN}http://localhost:10106${NC}"
+echo -e "  前端:    ${GREEN}http://localhost:10116${NC}"
 echo -e "  后端:    ${GREEN}http://localhost:10105${NC}"
 echo -e "  Swagger: ${GREEN}http://localhost:10105/api/v1/docs${NC}"
 echo -e "  Adminer: ${GREEN}http://localhost:10104${NC}  (DB 管理)"

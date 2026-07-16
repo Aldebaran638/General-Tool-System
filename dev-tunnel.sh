@@ -79,7 +79,7 @@ echo ""
 # 等待前后端端口
 info "等待前后端服务就绪..."
 for i in {1..60}; do
-    FRONTEND_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:10106 2>/dev/null || echo "000")
+    FRONTEND_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:10116 2>/dev/null || echo "000")
     BACKEND_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:10105/api/v1/utils/health-check/ 2>/dev/null || echo "000")
     if [ "$FRONTEND_OK" = "200" ] && [ "$BACKEND_OK" = "200" ]; then
         success "前后端均已就绪"
@@ -106,7 +106,7 @@ for f in "$CLOUDFLARE_DIR"/*.json; do
 done
 
 # 启动 Quick Tunnel（指向前端 Vite dev server）
-TUNNEL_PORT=10106
+TUNNEL_PORT=10116
 TMPFILE=$(mktemp)
 info "正在建立隧道 → http://localhost:${TUNNEL_PORT} ..."
 
@@ -161,7 +161,7 @@ update_env() {
     fi
 }
 
-CORS_VALUE="${URL},http://localhost:10106,http://localhost:5173"
+CORS_VALUE="${URL},http://localhost:10116,http://localhost:5173"
 
 update_env ".env"               "DOMAIN"               "$HOST"
 update_env ".env"               "FRONTEND_HOST"        "$URL"
@@ -199,7 +199,7 @@ header "🚀 开发环境已就绪"
 
 echo ""
 echo -e "${BOLD}本地访问地址：${NC}"
-echo -e "  前端:    ${GREEN}http://localhost:10106${NC}"
+echo -e "  前端:    ${GREEN}http://localhost:10116${NC}"
 echo -e "  后端:    ${GREEN}http://localhost:10105${NC}"
 echo -e "  Swagger: ${GREEN}http://localhost:10105/api/v1/docs${NC}"
 echo -e "  Adminer: ${GREEN}http://localhost:10104${NC}  (DB 管理)"
