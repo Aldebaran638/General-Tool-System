@@ -10,8 +10,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "10101:80"
-      - "10102:8080"
+      - "10131:80"
+      - "10132:8080"
     # Duplicate the command from compose.yml to add --api.insecure=true
     command:
       # Enable Docker in Traefik, so that it reads labels from Docker services
@@ -48,17 +48,17 @@ services:
   db:
     restart: "no"
     ports:
-      - "10103:5432"
+      - "10133:5432"
 
   adminer:
     restart: "no"
     ports:
-      - "10104:8080"
+      - "10134:8080"
 
   backend:
     restart: "no"
     ports:
-      - "10105:8000"
+      - "10135:8000"
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -99,13 +99,13 @@ services:
   mailcatcher:
     image: schickling/mailcatcher
     ports:
-      - "10108:1080"
-      - "10109:1025"
+      - "10138:1080"
+      - "10139:1025"
 
   frontend:
     restart: "no"
     ports:
-      - "10116:5173"
+      - "10136:5173"
     build:
       context: .
       dockerfile: frontend/Dockerfile.dev
@@ -148,7 +148,7 @@ services:
     image: ghcr.io/chartdb/chartdb:latest
     restart: "no"
     ports:
-      - "10107:80"
+      - "10137:80"
 
   playwright:
     profiles:
@@ -175,7 +175,7 @@ services:
       - ./frontend/blob-report:/app/frontend/blob-report
       - ./frontend/test-results:/app/frontend/test-results
     ports:
-      - 10110:9323
+      - 10140:9323
 
 networks:
   traefik-public:
