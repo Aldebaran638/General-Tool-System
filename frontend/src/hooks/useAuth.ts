@@ -8,6 +8,7 @@ import {
   LoginService,
   type UserPublic,
   type UserRegister,
+  type UserUpdateMe,
   UsersService,
 } from "@/client"
 import { handleError } from "@/utils"
@@ -58,10 +59,22 @@ const useAuth = () => {
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: async () => {
+      const selectedLanguage = SUPPORTED_LANGUAGES.includes(i18n.language)
+        ? i18n.language
+        : "zh"
+
+      try {
+        const data: UserUpdateMe = { language: selectedLanguage }
+        await UsersService.updateUserMe({ requestBody: data })
+      } catch {
+        // Non-blocking: language sync failure shouldn't prevent login.
+      }
+
       const currentUser = await UsersService.readUserMe()
       if (currentUser.language && SUPPORTED_LANGUAGES.includes(currentUser.language)) {
         i18n.changeLanguage(currentUser.language)
       }
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] })
       navigate({ to: "/" })
     },
     onError: handleError.bind(showErrorToast),
