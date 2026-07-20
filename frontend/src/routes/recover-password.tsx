@@ -8,8 +8,6 @@ import {
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
-
-import i18n from "@/i18n"
 import { LoginService } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
@@ -18,12 +16,16 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
+import {
+  toastFirstFormError,
+  useFormErrorToast,
+} from "@/hooks/useFormErrorToast"
+import i18n from "@/i18n"
 import { handleError } from "@/utils"
 
 export const Route = createFileRoute("/recover-password")({
@@ -47,14 +49,17 @@ export const Route = createFileRoute("/recover-password")({
 function RecoverPassword() {
   const { t } = useTranslation()
   const form = useForm<{ email: string }>({
-    resolver: zodResolver(z.object({
-      email: z.email({ message: t("errors.invalidEmail") }),
-    })),
+    resolver: zodResolver(
+      z.object({
+        email: z.email({ message: t("errors.invalidEmail") }),
+      }),
+    ),
     defaultValues: {
       email: "",
     },
   })
   const { showSuccessToast, showErrorToast } = useCustomToast()
+  useFormErrorToast(form.formState.errors)
 
   const recoverPassword = async (data: { email: string }) => {
     await LoginService.recoverPassword({
@@ -80,11 +85,13 @@ function RecoverPassword() {
     <AuthLayout>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={form.handleSubmit(onSubmit, toastFirstFormError)}
           className="flex flex-col gap-6"
         >
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="title-with-line text-heading text-[#2A2A2A]">{t("auth.passwordRecovery")}</h1>
+            <h1 className="title-with-line text-heading text-foreground">
+              {t("auth.passwordRecovery")}
+            </h1>
             <p className="text-sm font-light text-muted-foreground">
               {t("auth.passwordRecoveryDescription")}
             </p>
@@ -105,7 +112,6 @@ function RecoverPassword() {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />

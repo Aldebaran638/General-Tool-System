@@ -53,7 +53,9 @@ const DeleteConfirmation = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>{t("deleteAccount.confirmTitle")}</DialogTitle>
-            <DialogDescription>{t("deleteAccount.confirmDescription")}</DialogDescription>
+            <DialogDescription>
+              {t("deleteAccount.confirmDescription")}
+            </DialogDescription>
           </DialogHeader>
 
           <DialogFooter className="mt-4">

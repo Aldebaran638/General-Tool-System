@@ -1,16 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useEffect } from "react"
-import i18n from "@/i18n"
-
 import {
   type Body_login_login_access_token as AccessToken,
   LoginService,
   type UserPublic,
   type UserRegister,
-  type UserUpdateMe,
   UsersService,
+  type UserUpdateMe,
 } from "@/client"
+import i18n from "@/i18n"
 import { handleError } from "@/utils"
 import useCustomToast from "./useCustomToast"
 
@@ -71,7 +70,10 @@ const useAuth = () => {
       }
 
       const currentUser = await UsersService.readUserMe()
-      if (currentUser.language && SUPPORTED_LANGUAGES.includes(currentUser.language)) {
+      if (
+        currentUser.language &&
+        SUPPORTED_LANGUAGES.includes(currentUser.language)
+      ) {
         i18n.changeLanguage(currentUser.language)
       }
       queryClient.invalidateQueries({ queryKey: ["currentUser"] })

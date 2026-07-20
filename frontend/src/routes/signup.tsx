@@ -7,8 +7,6 @@ import {
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
-
-import i18n from "@/i18n"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
   Form,
@@ -16,12 +14,16 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
+import {
+  toastFirstFormError,
+  useFormErrorToast,
+} from "@/hooks/useFormErrorToast"
+import i18n from "@/i18n"
 
 export const Route = createFileRoute("/signup")({
   component: SignUp,
@@ -73,6 +75,7 @@ function SignUp() {
       confirm_password: "",
     },
   })
+  useFormErrorToast(form.formState.errors)
 
   const onSubmit = (data: FormData) => {
     if (signUpMutation.isPending) return
@@ -85,11 +88,13 @@ function SignUp() {
     <AuthLayout>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={form.handleSubmit(onSubmit, toastFirstFormError)}
           className="flex flex-col gap-6"
         >
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="title-with-line text-heading text-[#2A2A2A]">{t("auth.signUp")}</h1>
+            <h1 className="title-with-line text-heading text-foreground">
+              {t("auth.signUp")}
+            </h1>
           </div>
 
           <div className="grid gap-4">
@@ -107,7 +112,6 @@ function SignUp() {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -126,7 +130,6 @@ function SignUp() {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -144,7 +147,6 @@ function SignUp() {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -162,7 +164,6 @@ function SignUp() {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />

@@ -8,7 +8,11 @@ export function authHeaders(): Record<string, string> {
 export async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...init,
-    headers: { "Content-Type": "application/json", ...authHeaders(), ...init?.headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+      ...init?.headers,
+    },
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))

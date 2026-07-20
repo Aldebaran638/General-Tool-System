@@ -28,7 +28,11 @@ interface FilterPopoverProps {
   onChange: (values: FilterValues) => void
 }
 
-export function FilterPopover({ groups, values, onChange }: FilterPopoverProps) {
+export function FilterPopover({
+  groups,
+  values,
+  onChange,
+}: FilterPopoverProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [draftValues, setDraftValues] = useState<FilterValues>(values)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -37,7 +41,10 @@ export function FilterPopover({ groups, values, onChange }: FilterPopoverProps) 
     if (!isOpen) return
 
     function handleClick(event: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false)
       }
     }
@@ -158,7 +165,9 @@ export function FilterPopover({ groups, values, onChange }: FilterPopoverProps) 
                     const isActive =
                       group.type === "single"
                         ? (draftValues[group.key] as string) === option.value
-                        : ((draftValues[group.key] as string[]) || []).includes(option.value)
+                        : ((draftValues[group.key] as string[]) || []).includes(
+                            option.value,
+                          )
 
                     return (
                       <button

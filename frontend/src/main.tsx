@@ -31,7 +31,8 @@ const handleApiError = (error: Error) => {
   const isExpiredSession =
     [401, 403].includes(error.status) ||
     (error.status === 404 &&
-      (error.body as { detail?: string } | undefined)?.detail === "User not found")
+      (error.body as { detail?: string } | undefined)?.detail ===
+        "User not found")
 
   if (isExpiredSession) {
     localStorage.removeItem("access_token")

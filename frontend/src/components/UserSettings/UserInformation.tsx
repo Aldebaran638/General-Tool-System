@@ -1,10 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { Check, Mail, Pencil, User, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
-import { User, Mail, Pencil, Check, X } from "lucide-react"
 
 import { UsersService, type UserUpdateMe } from "@/client"
 import { Button } from "@/components/ui/button"
@@ -21,12 +21,15 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useAuth from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
+import {
+  toastFirstFormError,
+  useFormErrorToast,
+} from "@/hooks/useFormErrorToast"
 import { cn } from "@/lib/utils"
 import { handleError } from "@/utils"
 import { LanguageSwitcher } from "./LanguageSwitcher"
@@ -54,6 +57,7 @@ const UserInformation = () => {
       email: currentUser?.email,
     },
   })
+  useFormErrorToast(form.formState.errors)
 
   useEffect(() => {
     form.reset({
@@ -110,7 +114,7 @@ const UserInformation = () => {
         <LanguageSwitcher />
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit(onSubmit)}
+            onSubmit={form.handleSubmit(onSubmit, toastFirstFormError)}
             className="flex flex-col gap-5"
           >
             <FormField
@@ -121,9 +125,12 @@ const UserInformation = () => {
                   <FormItem>
                     <FormLabel>{t("profile.name")}</FormLabel>
                     <FormControl>
-                      <Input type="text" placeholder={t("auth.fullNamePlaceholder")} {...field} />
+                      <Input
+                        type="text"
+                        placeholder={t("auth.fullNamePlaceholder")}
+                        {...field}
+                      />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 ) : (
                   <FormItem>
@@ -152,9 +159,12 @@ const UserInformation = () => {
                   <FormItem>
                     <FormLabel>{t("profile.email")}</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder={t("auth.emailPlaceholder")} {...field} />
+                      <Input
+                        type="email"
+                        placeholder={t("auth.emailPlaceholder")}
+                        {...field}
+                      />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 ) : (
                   <FormItem>

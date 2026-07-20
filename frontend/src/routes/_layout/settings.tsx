@@ -1,18 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { User, Lock, AlertTriangle } from "lucide-react"
+import { AlertTriangle, Lock, User } from "lucide-react"
 import { useTranslation } from "react-i18next"
-
-import i18n from "@/i18n"
 import ChangePassword from "@/components/UserSettings/ChangePassword"
 import DeleteAccount from "@/components/UserSettings/DeleteAccount"
 import UserInformation from "@/components/UserSettings/UserInformation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import useAuth from "@/hooks/useAuth"
+import i18n from "@/i18n"
 
 const tabsConfig = [
-  { value: "my-profile", titleKey: "settings.tabs.profile", component: UserInformation, icon: User },
-  { value: "password", titleKey: "settings.tabs.password", component: ChangePassword, icon: Lock },
-  { value: "danger-zone", titleKey: "settings.tabs.dangerZone", component: DeleteAccount, icon: AlertTriangle },
+  {
+    value: "my-profile",
+    titleKey: "settings.tabs.profile",
+    component: UserInformation,
+    icon: User,
+  },
+  {
+    value: "password",
+    titleKey: "settings.tabs.password",
+    component: ChangePassword,
+    icon: Lock,
+  },
+  {
+    value: "danger-zone",
+    titleKey: "settings.tabs.dangerZone",
+    component: DeleteAccount,
+    icon: AlertTriangle,
+  },
 ]
 
 export const Route = createFileRoute("/_layout/settings")({
@@ -40,10 +54,10 @@ function UserSettings() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("settings.title")}</h1>
-        <p className="text-muted-foreground">
-          {t("settings.description")}
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {t("settings.title")}
+        </h1>
+        <p className="text-muted-foreground">{t("settings.description")}</p>
       </div>
 
       <Tabs defaultValue="my-profile">

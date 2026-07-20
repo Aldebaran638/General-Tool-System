@@ -9,8 +9,6 @@ import {
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
-
-import i18n from "@/i18n"
 import { LoginService } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
@@ -19,12 +17,16 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
+import {
+  toastFirstFormError,
+  useFormErrorToast,
+} from "@/hooks/useFormErrorToast"
+import i18n from "@/i18n"
 import { handleError } from "@/utils"
 
 const searchSchema = z.object({
@@ -81,6 +83,7 @@ function ResetPassword() {
       confirm_password: "",
     },
   })
+  useFormErrorToast(form.formState.errors)
 
   const mutation = useMutation({
     mutationFn: (data: { new_password: string; token: string }) =>
@@ -101,11 +104,13 @@ function ResetPassword() {
     <AuthLayout>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={form.handleSubmit(onSubmit, toastFirstFormError)}
           className="flex flex-col gap-6"
         >
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="title-with-line text-heading text-[#2A2A2A]">{t("auth.resetPassword")}</h1>
+            <h1 className="title-with-line text-heading text-foreground">
+              {t("auth.resetPassword")}
+            </h1>
           </div>
 
           <div className="grid gap-4">
@@ -122,7 +127,6 @@ function ResetPassword() {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -140,7 +144,6 @@ function ResetPassword() {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />

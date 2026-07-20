@@ -1,7 +1,7 @@
 "use client"
 
-import { Bell } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
+import { Bell } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { getUnreadCount } from "@/tools/notification/api"

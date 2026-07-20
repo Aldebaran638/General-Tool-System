@@ -8,7 +8,7 @@ interface CardProps extends React.ComponentProps<"div"> {
 
 const cardVariants = {
   default: "bg-card text-card-foreground border",
-  elevated: "bg-surface-elevated text-card-foreground border hover:border-[#C27A5B]/20 transition-colors duration-200",
+  elevated: "bg-surface-elevated text-card-foreground border hover:border-primary/20 transition-colors duration-200",
   ghost: "bg-transparent text-card-foreground border-transparent shadow-none",
 }
 

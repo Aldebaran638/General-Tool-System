@@ -10,7 +10,9 @@ const DeleteAccount = () => {
       <div className="flex items-start gap-3">
         <Trash2 className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
         <div className="flex-1">
-          <h3 className="font-semibold text-destructive">{t("deleteAccount.title")}</h3>
+          <h3 className="font-semibold text-destructive">
+            {t("deleteAccount.title")}
+          </h3>
           <p className="mt-1 text-sm text-muted-foreground">
             {t("deleteAccount.description")}
           </p>

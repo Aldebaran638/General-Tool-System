@@ -4,13 +4,11 @@ import {
   Link as RouterLink,
   redirect,
 } from "@tanstack/react-router"
-import { AlertCircle, Globe } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
-
-import i18n from "@/i18n"
 import type { Body_login_login_access_token as AccessToken } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -20,19 +18,16 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
+import {
+  toastFirstFormError,
+  useFormErrorToast,
+} from "@/hooks/useFormErrorToast"
+import i18n from "@/i18n"
 
 const SESSION_EXPIRED_NOTICE_KEY = "session_expired_notice"
 
@@ -79,6 +74,7 @@ function Login() {
       password: "",
     },
   })
+  useFormErrorToast(form.formState.errors)
 
   // Consume the redirect flag once so the user sees a clear re-login notice
   // after the global request layer invalidates an expired session.
@@ -96,33 +92,16 @@ function Login() {
     if (loginMutation.isPending) return
     loginMutation.mutate(data)
   }
-  const submitLogin = form.handleSubmit(onSubmit)
-
-  const handleLanguageChange = (value: string) => {
-    i18n.changeLanguage(value)
-  }
+  const submitLogin = form.handleSubmit(onSubmit, toastFirstFormError)
 
   return (
     <AuthLayout>
       <Form {...form}>
         <form onSubmit={submitLogin} noValidate className="flex flex-col gap-6">
-          <div className="flex justify-end">
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-muted-foreground" />
-              <Select value={i18n.language} onValueChange={handleLanguageChange}>
-                <SelectTrigger className="h-8 w-28 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="zh">{t("settings.chinese")}</SelectItem>
-                  <SelectItem value="en">{t("settings.english")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="title-with-line text-heading text-[#2A2A2A]">{t("auth.welcomeBack")}</h1>
+            <h1 className="title-with-line text-heading text-foreground">
+              {t("auth.welcomeBack")}
+            </h1>
             <p className="text-sm font-light text-muted-foreground">
               {t("auth.loginToContinue")}
             </p>
@@ -135,7 +114,9 @@ function Login() {
             >
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>{t("auth.sessionExpired")}</AlertTitle>
-              <AlertDescription>{t("auth.sessionExpiredDescription")}</AlertDescription>
+              <AlertDescription>
+                {t("auth.sessionExpiredDescription")}
+              </AlertDescription>
             </Alert>
           ) : null}
 
@@ -155,7 +136,6 @@ function Login() {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -182,7 +162,6 @@ function Login() {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />

@@ -1,19 +1,17 @@
-import { useState } from "react"
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Footer } from "@/components/Common/Footer"
+import { NotificationBell } from "@/components/NotificationBell"
+import { NotificationDrawer } from "@/components/NotificationDrawer"
 import AppSidebar from "@/components/Sidebar/AppSidebar"
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import {
-  isLoggedIn,
-} from "@/hooks/useAuth"
-import { NotificationBell } from "@/components/NotificationBell"
-import { NotificationDrawer } from "@/components/NotificationDrawer"
+import { isLoggedIn } from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/_layout")({
   component: Layout,
@@ -34,7 +32,9 @@ function Layout() {
       <SidebarInset className="min-h-svh bg-background">
         <header className="bg-background sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">{t("nav.menu")}</span>
+          <span className="text-sm font-medium text-foreground">
+            {t("nav.menu")}
+          </span>
           <div className="ml-auto flex items-center gap-2">
             <NotificationBell onClick={() => setDrawerOpen(true)} />
           </div>

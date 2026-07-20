@@ -24,11 +24,14 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
+import {
+  toastFirstFormError,
+  useFormErrorToast,
+} from "@/hooks/useFormErrorToast"
 import { handleError } from "@/utils"
 
 const formSchema = z
@@ -118,6 +121,7 @@ const AddUser = () => {
       is_active: true,
     },
   })
+  useFormErrorToast(form.formState.errors)
 
   const mutation = useMutation({
     mutationFn: createUser,
@@ -136,7 +140,7 @@ const AddUser = () => {
     const { confirm_password: _confirm_password, ...submitData } = data
     mutation.mutate(submitData)
   }
-  const submitUser = form.handleSubmit(onSubmit)
+  const submitUser = form.handleSubmit(onSubmit, toastFirstFormError)
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -172,7 +176,6 @@ const AddUser = () => {
                         required
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -186,7 +189,6 @@ const AddUser = () => {
                     <FormControl>
                       <Input placeholder="Full name" type="text" {...field} />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -207,7 +209,6 @@ const AddUser = () => {
                         required
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -229,7 +230,6 @@ const AddUser = () => {
                         required
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />

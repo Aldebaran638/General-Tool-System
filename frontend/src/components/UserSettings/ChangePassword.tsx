@@ -1,9 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
+import { KeyRound, Lock, ShieldCheck } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
-import { Lock, KeyRound, ShieldCheck } from "lucide-react"
 
 import { type UpdatePassword, UsersService } from "@/client"
 import {
@@ -19,11 +19,14 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import useCustomToast from "@/hooks/useCustomToast"
+import {
+  toastFirstFormError,
+  useFormErrorToast,
+} from "@/hooks/useFormErrorToast"
 import { handleError } from "@/utils"
 
 const ChangePassword = () => {
@@ -59,6 +62,7 @@ const ChangePassword = () => {
       confirm_password: "",
     },
   })
+  useFormErrorToast(form.formState.errors)
 
   const mutation = useMutation({
     mutationFn: (data: UpdatePassword) =>
@@ -86,7 +90,7 @@ const ChangePassword = () => {
       <CardContent>
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit(onSubmit)}
+            onSubmit={form.handleSubmit(onSubmit, toastFirstFormError)}
             className="flex flex-col gap-5"
           >
             <FormField
@@ -106,7 +110,6 @@ const ChangePassword = () => {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -128,7 +131,6 @@ const ChangePassword = () => {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -150,7 +152,6 @@ const ChangePassword = () => {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />

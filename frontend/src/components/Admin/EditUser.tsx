@@ -24,11 +24,14 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
+import {
+  toastFirstFormError,
+  useFormErrorToast,
+} from "@/hooks/useFormErrorToast"
 import { handleError } from "@/utils"
 
 const formSchema = z
@@ -72,6 +75,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
       is_active: user.is_active,
     },
   })
+  useFormErrorToast(form.formState.errors)
 
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
@@ -107,7 +111,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
       </DropdownMenuItem>
       <DialogContent className="sm:max-w-md">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={form.handleSubmit(onSubmit, toastFirstFormError)}>
             <DialogHeader>
               <DialogTitle>Edit User</DialogTitle>
               <DialogDescription>
@@ -131,7 +135,6 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                         required
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -145,7 +148,6 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                     <FormControl>
                       <Input placeholder="Full name" type="text" {...field} />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -163,7 +165,6 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -181,7 +182,6 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />

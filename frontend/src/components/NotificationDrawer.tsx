@@ -1,18 +1,17 @@
 "use client"
 
-import { useState } from "react"
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Bell,
-  Trash2,
   CheckCheck,
   Clock,
-  Megaphone,
   Loader2,
+  Megaphone,
+  Trash2,
 } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import {
   Sheet,
@@ -21,10 +20,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import {
-  getNotifications,
-  markNotificationRead,
-  markAllNotificationsRead,
   deleteNotification,
+  getNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
 } from "@/tools/notification/api"
 import type { Notification } from "@/tools/notification/types"
 
@@ -78,7 +77,10 @@ function NotificationItem({
         <div className="flex items-center gap-2">
           <p className="text-sm font-medium truncate">{notification.title}</p>
           {!notification.is_read && (
-            <Badge variant="default" className="h-1.5 w-1.5 rounded-full p-0 shrink-0" />
+            <Badge
+              variant="default"
+              className="h-1.5 w-1.5 rounded-full p-0 shrink-0"
+            />
           )}
         </div>
         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
@@ -127,7 +129,10 @@ interface NotificationDrawerProps {
   onOpenChange: (open: boolean) => void
 }
 
-export function NotificationDrawer({ open, onOpenChange }: NotificationDrawerProps) {
+export function NotificationDrawer({
+  open,
+  onOpenChange,
+}: NotificationDrawerProps) {
   const queryClient = useQueryClient()
   const [page] = useState(1)
   const limit = 20
@@ -142,7 +147,9 @@ export function NotificationDrawer({ open, onOpenChange }: NotificationDrawerPro
     mutationFn: (id: string) => markNotificationRead(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] })
-      queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] })
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", "unread-count"],
+      })
     },
   })
 
@@ -150,7 +157,9 @@ export function NotificationDrawer({ open, onOpenChange }: NotificationDrawerPro
     mutationFn: () => markAllNotificationsRead(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] })
-      queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] })
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", "unread-count"],
+      })
     },
   })
 
@@ -158,7 +167,9 @@ export function NotificationDrawer({ open, onOpenChange }: NotificationDrawerPro
     mutationFn: (id: string) => deleteNotification(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] })
-      queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] })
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", "unread-count"],
+      })
     },
   })
 

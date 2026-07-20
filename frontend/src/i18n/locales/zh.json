@@ -97,6 +97,12 @@
     "dark": "深色",
     "system": "跟随系统"
   },
+  "notFound": {
+    "title": "页面走丢了",
+    "description": "您访问的页面不存在或已被移除",
+    "backHome": "返回首页",
+    "backPrevious": "返回上一页"
+  },
   "errors": {
     "required": "必填项",
     "invalidEmail": "请输入有效的邮箱地址",
