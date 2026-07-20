@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Pencil } from "lucide-react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import type { KeyResultPublic } from "@/client"
+import type { KeyResultPublic, KeyResultsPublic } from "@/client"
 import { OkrService } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -24,14 +25,43 @@ interface KrTableProps {
   enabled: boolean
 }
 
+/** 与 index.css 的 .animate-fade-out-down 时长保持一致 */
+const KR_EXIT_ANIMATION_MS = 350
+
 const KrTable = ({ objectiveId, enabled }: KrTableProps) => {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [leavingIds, setLeavingIds] = useState<ReadonlySet<string>>(new Set())
 
   const { data, isPending } = useQuery({
     queryKey: ["objective-krs", objectiveId],
     queryFn: () => OkrService.readObjectiveKrs({ objectiveId }),
     enabled,
   })
+
+  // 删除成功后先播退场动画，动画结束再把该行从缓存中移除
+  const handleKrDeleted = (krId: string) => {
+    setLeavingIds((prev) => new Set(prev).add(krId))
+    setTimeout(() => {
+      queryClient.setQueryData<KeyResultsPublic>(
+        ["objective-krs", objectiveId],
+        (old) =>
+          old
+            ? {
+                ...old,
+                data: old.data.filter((kr) => kr.id !== krId),
+                count: Math.max(0, old.count - 1),
+              }
+            : old,
+      )
+      queryClient.invalidateQueries({ queryKey: ["objectives"] })
+      setLeavingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(krId)
+        return next
+      })
+    }, KR_EXIT_ANIMATION_MS)
+  }
 
   // 收起时保持内容挂载（数据已缓存），grid-rows 收起动画才不会跳动
   if (isPending) {
@@ -74,7 +104,14 @@ const KrTable = ({ objectiveId, enabled }: KrTableProps) => {
       </TableHeader>
       <TableBody>
         {krs.map((kr: KeyResultPublic) => (
-          <TableRow key={kr.id}>
+          <TableRow
+            key={kr.id}
+            className={
+              leavingIds.has(kr.id)
+                ? "animate-fade-out-down pointer-events-none"
+                : "animate-fade-in-up"
+            }
+          >
             <TableCell className="max-w-48">
               <span className="block truncate font-medium" title={kr.title}>
                 {kr.title}
@@ -122,8 +159,8 @@ const KrTable = ({ objectiveId, enabled }: KrTableProps) => {
                 />
                 <DeleteKr
                   id={kr.id}
-                  objectiveId={objectiveId}
                   title={kr.title}
+                  onDeleted={() => handleKrDeleted(kr.id)}
                 />
               </div>
             </TableCell>

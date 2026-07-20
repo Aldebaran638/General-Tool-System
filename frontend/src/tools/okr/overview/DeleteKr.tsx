@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
@@ -22,14 +22,14 @@ import { handleError } from "@/utils"
 
 interface DeleteKrProps {
   id: string
-  objectiveId: string
   title: string
+  /** 删除成功后回调（父组件负责退场动画与列表缓存更新） */
+  onDeleted?: () => void
 }
 
-const DeleteKr = ({ id, objectiveId, title }: DeleteKrProps) => {
+const DeleteKr = ({ id, title, onDeleted }: DeleteKrProps) => {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
-  const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const { handleSubmit } = useForm()
 
@@ -38,14 +38,9 @@ const DeleteKr = ({ id, objectiveId, title }: DeleteKrProps) => {
     onSuccess: () => {
       showSuccessToast(t("okr.delete.krDeleted", "KR 已删除"))
       setIsOpen(false)
+      onDeleted?.()
     },
     onError: handleError.bind(showErrorToast),
-    onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["objective-krs", objectiveId],
-      })
-      queryClient.invalidateQueries({ queryKey: ["objectives"] })
-    },
   })
 
   const onSubmit = async () => {
