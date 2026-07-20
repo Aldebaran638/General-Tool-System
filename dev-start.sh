@@ -97,6 +97,9 @@ else
     success "基础设施已启动"
 fi
 
+# ChartDB 是无状态的可视化工具，单独确保已启动（幂等，不强制重建）
+docker compose up -d chartdb
+
 # 确保 db 容器健康
 if [ -z "$DB_RUNNING" ]; then
     info "等待数据库就绪..."

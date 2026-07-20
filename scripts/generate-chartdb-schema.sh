@@ -9,8 +9,9 @@ cd "$ROOT_DIR"
 
 if [ -f ".env" ]; then
     set -a
+    # 兼容 CRLF 换行的 .env（Windows 编辑过的文件 source 时会报 $'\r': command not found）
     # shellcheck disable=SC1091
-    source ".env"
+    source <(tr -d '\r' < ".env")
     set +a
 fi
 
