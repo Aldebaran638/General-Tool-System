@@ -1,6 +1,6 @@
 """
 backend/tests/modules/okr/test_stats.py
-聚合视图：GET /okr/stats/by-department、GET /okr/stats/by-user
+聚合视图：GET /okr/overview/departments、GET /okr/overview/members
 """
 
 from datetime import date, timedelta
@@ -60,7 +60,7 @@ def test_stats_by_department(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     ctx = _setup(client, superuser_token_headers, db)
-    r = client.get(f"{OKR_URL}/stats/by-department", headers=superuser_token_headers)
+    r = client.get(f"{OKR_URL}/overview/departments", headers=superuser_token_headers)
     assert r.status_code == 200, r.text
     entries = [e for e in r.json()["data"] if e["department"]["id"] == ctx["dept"]["id"]]
     assert len(entries) == 1
@@ -87,7 +87,7 @@ def test_stats_by_department_empty_department(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     dept = create_department(client, superuser_token_headers)
-    r = client.get(f"{OKR_URL}/stats/by-department", headers=superuser_token_headers)
+    r = client.get(f"{OKR_URL}/overview/departments", headers=superuser_token_headers)
     assert r.status_code == 200, r.text
     entries = [e for e in r.json()["data"] if e["department"]["id"] == dept["id"]]
     assert len(entries) == 1
@@ -103,7 +103,7 @@ def test_stats_by_user(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     ctx = _setup(client, superuser_token_headers, db)
-    r = client.get(f"{OKR_URL}/stats/by-user", headers=superuser_token_headers)
+    r = client.get(f"{OKR_URL}/overview/members", headers=superuser_token_headers)
     assert r.status_code == 200, r.text
     by_id = {e["user"]["id"]: e for e in r.json()["data"]}
 
@@ -123,7 +123,7 @@ def test_stats_by_user_no_krs(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     _, user_id = new_user_headers(client, db)
-    r = client.get(f"{OKR_URL}/stats/by-user", headers=superuser_token_headers)
+    r = client.get(f"{OKR_URL}/overview/members", headers=superuser_token_headers)
     assert r.status_code == 200, r.text
     by_id = {e["user"]["id"]: e for e in r.json()["data"]}
     entry = by_id[user_id]
@@ -137,8 +137,8 @@ def test_stats_normal_user_forbidden(
     client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     r = client.get(
-        f"{OKR_URL}/stats/by-department", headers=normal_user_token_headers
+        f"{OKR_URL}/overview/departments", headers=normal_user_token_headers
     )
     assert r.status_code == 403
-    r = client.get(f"{OKR_URL}/stats/by-user", headers=normal_user_token_headers)
+    r = client.get(f"{OKR_URL}/overview/members", headers=normal_user_token_headers)
     assert r.status_code == 403
