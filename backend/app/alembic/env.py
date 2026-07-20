@@ -23,6 +23,12 @@ import app.models  # noqa  – registers all core models with SQLModel.metadata
 import app.models_core  # noqa  – ensures core User models are included
 from app.core.config import settings  # noqa
 
+# 注册所有工具模块的模型（notification、okr 等），
+# 否则 autogenerate 会因 metadata 缺表而误生成 drop_table
+from app.modules.registry import auto_discover_modules  # noqa
+
+auto_discover_modules("app.modules")
+
 target_metadata = SQLModel.metadata
 
 # other values from the config, defined by the needs of env.py,

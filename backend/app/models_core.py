@@ -35,6 +35,8 @@ class UserBase(SQLModel):
     is_superuser: bool = False
     full_name: str | None = Field(default=None, max_length=255)
     language: str = Field(default="zh", max_length=10)
+    # 所属部门（OKR 模块）：超管可空，普通成员由管理界面强制选择
+    department_id: uuid.UUID | None = Field(default=None, foreign_key="department.id")
 
 
 class UserCreate(UserBase):
