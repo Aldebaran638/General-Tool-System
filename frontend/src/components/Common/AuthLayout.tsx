@@ -1,7 +1,7 @@
 import { Appearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
 import { Footer } from "./Footer"
-import { Building2, ClipboardList, Trophy, Users } from "lucide-react"
+import { Briefcase, ListTodo, CheckCircle2, Users } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 interface AuthLayoutProps {
@@ -18,10 +18,10 @@ interface StatItemProps {
 }
 
 interface PublicStats {
-  total_trainees: number
-  total_exams: number
-  passed_exams: number
-  total_departments: number
+  total_projects: number
+  total_tasks: number
+  completed_tasks: number
+  total_members: number
 }
 
 function useCountUp(end: number, duration = 1500) {
@@ -69,10 +69,10 @@ const STAT_CONFIG: {
   icon: React.ReactNode
   gradient: string
 }[] = [
-  { key: "total_trainees", suffix: "+", label: "累计培训人次", icon: <Users className="h-5 w-5" />, gradient: "from-white/15 to-blue-400/10" },
-  { key: "total_exams", suffix: "", label: "考试场次", icon: <ClipboardList className="h-5 w-5" />, gradient: "from-white/15 to-indigo-400/10" },
-  { key: "passed_exams", suffix: "+", label: "考核通过", icon: <Trophy className="h-5 w-5" />, gradient: "from-white/15 to-emerald-400/10" },
-  { key: "total_departments", suffix: "", label: "参与部门", icon: <Building2 className="h-5 w-5" />, gradient: "from-white/15 to-violet-400/10" },
+  { key: "total_projects", suffix: "+", label: "项目总数", icon: <Briefcase className="h-5 w-5" />, gradient: "from-white/15 to-blue-400/10" },
+  { key: "total_tasks", suffix: "", label: "任务总数", icon: <ListTodo className="h-5 w-5" />, gradient: "from-white/15 to-indigo-400/10" },
+  { key: "completed_tasks", suffix: "+", label: "已完成任务", icon: <CheckCircle2 className="h-5 w-5" />, gradient: "from-white/15 to-emerald-400/10" },
+  { key: "total_members", suffix: "", label: "团队成员", icon: <Users className="h-5 w-5" />, gradient: "from-white/15 to-violet-400/10" },
 ]
 
 async function fetchPublicStats(): Promise<PublicStats> {

@@ -17,7 +17,6 @@ os.environ["POSTGRES_DB"] = os.getenv("POSTGRES_TEST_DB", "app_test")
 from app.core.config import settings
 from app.core.db import engine, init_db
 from app.main import app
-from app.modules.workbench.project_management.models import Item
 from tests.utils.user import authentication_token_from_email
 from tests.utils.utils import get_superuser_token_headers
 
@@ -70,12 +69,6 @@ def db() -> Generator[Session, None, None]:
     with Session(engine) as session:
         init_db(session)
         yield session
-        try:
-            statement = delete(Item)
-            session.execute(statement)
-            session.commit()
-        except Exception:
-            session.rollback()
 
 
 @pytest.fixture(scope="module")
