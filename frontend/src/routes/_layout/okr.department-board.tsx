@@ -5,16 +5,16 @@ import { useTranslation } from "react-i18next"
 import { OkrService, UsersService } from "@/client"
 import { Skeleton } from "@/components/ui/skeleton"
 import i18n from "@/i18n"
-import { DepartmentPanel } from "@/tools/okr/department-board/DepartmentPanel"
+import { DepartmentPanel } from "@/tools/okr/overview/department-board/DepartmentPanel"
 import {
   ALL_DEPARTMENTS_ID,
   DepartmentTabs,
-} from "@/tools/okr/department-board/DepartmentTabs"
+} from "@/tools/okr/overview/department-board/DepartmentTabs"
 
 function getDepartmentStatsQueryOptions() {
   return {
-    queryFn: () => OkrService.readStatsByDepartment(),
-    queryKey: ["okr", "stats", "by-department"],
+    queryFn: () => OkrService.readOverviewDepartments(),
+    queryKey: ["okr", "overview", "departments"],
   }
 }
 

@@ -325,33 +325,6 @@ export type NotificationsDeleteNotificationEndpointResponse = (void);
 
 export type NotificationsUnreadCountEndpointResponse = (UnreadCountResponse);
 
-export type OkrReadDepartmentsResponse = (DepartmentsPublic);
-
-export type OkrCreateDepartmentData = {
-    requestBody: DepartmentCreate;
-};
-
-export type OkrCreateDepartmentResponse = (DepartmentPublic);
-
-export type OkrUpdateDepartmentData = {
-    departmentId: string;
-    requestBody: DepartmentUpdate;
-};
-
-export type OkrUpdateDepartmentResponse = (DepartmentPublic);
-
-export type OkrDeleteDepartmentData = {
-    departmentId: string;
-};
-
-export type OkrDeleteDepartmentResponse = (Message);
-
-export type OkrReorderDepartmentsData = {
-    requestBody: DepartmentReorder;
-};
-
-export type OkrReorderDepartmentsResponse = (Message);
-
 export type OkrReadObjectivesResponse = (ObjectivesPublic);
 
 export type OkrCreateObjectiveData = {
@@ -378,6 +351,10 @@ export type OkrReadObjectiveKrsData = {
 };
 
 export type OkrReadObjectiveKrsResponse = (KeyResultsPublic);
+
+export type OkrReadOverviewDepartmentsResponse = (DepartmentStatsList);
+
+export type OkrReadOverviewMembersResponse = (UserStatsList);
 
 export type OkrCreateKeyResultData = {
     requestBody: KeyResultCreate;
@@ -411,9 +388,32 @@ export type OkrUpdateKrProgressData = {
 
 export type OkrUpdateKrProgressResponse = (KeyResultPublic);
 
-export type OkrReadStatsByDepartmentResponse = (DepartmentStatsList);
+export type OkrReadDepartmentsResponse = (DepartmentsPublic);
 
-export type OkrReadStatsByUserResponse = (UserStatsList);
+export type OkrCreateDepartmentData = {
+    requestBody: DepartmentCreate;
+};
+
+export type OkrCreateDepartmentResponse = (DepartmentPublic);
+
+export type OkrUpdateDepartmentData = {
+    departmentId: string;
+    requestBody: DepartmentUpdate;
+};
+
+export type OkrUpdateDepartmentResponse = (DepartmentPublic);
+
+export type OkrDeleteDepartmentData = {
+    departmentId: string;
+};
+
+export type OkrDeleteDepartmentResponse = (Message);
+
+export type OkrReorderDepartmentsData = {
+    requestBody: DepartmentReorder;
+};
+
+export type OkrReorderDepartmentsResponse = (Message);
 
 export type PrivateCreateUserData = {
     requestBody: PrivateUserCreate;

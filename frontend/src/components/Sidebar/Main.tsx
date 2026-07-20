@@ -90,23 +90,57 @@ export function Main({ items }: MainProps) {
                   key={item.title}
                   className="transition-[transform,margin] duration-300 ease-out"
                 >
-                  <SidebarMenuButton
-                    tooltip={t(item.title)}
-                    className={cn(
-                      groupHasActiveChild &&
-                        "text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground",
-                    )}
-                    onClick={() => handleGroupToggle(item)}
-                  >
-                    <item.icon />
-                    <span>{t(item.title)}</span>
-                    <ChevronRight
+                  {item.path ? (
+                    // 组行本体是链接，右侧 chevron 按钮独立控制子菜单展开
+                    <div className="relative flex items-center">
+                      <SidebarMenuButton
+                        tooltip={t(item.title)}
+                        asChild
+                        className={cn(
+                          "pr-8",
+                          groupHasActiveChild &&
+                            "text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground",
+                        )}
+                      >
+                        <RouterLink to={item.path} onClick={handleMenuClick}>
+                          <item.icon />
+                          <span>{t(item.title)}</span>
+                        </RouterLink>
+                      </SidebarMenuButton>
+                      <button
+                        type="button"
+                        aria-label={t(item.title)}
+                        aria-expanded={isOpen}
+                        onClick={() => handleGroupToggle(item)}
+                        className="absolute right-1 flex h-6 w-6 items-center justify-center rounded-md text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      >
+                        <ChevronRight
+                          className={cn(
+                            "h-4 w-4 transition-transform duration-300 ease-out",
+                            isOpen ? "rotate-90" : "",
+                          )}
+                        />
+                      </button>
+                    </div>
+                  ) : (
+                    <SidebarMenuButton
+                      tooltip={t(item.title)}
                       className={cn(
-                        "ml-auto transition-transform duration-300 ease-out",
-                        isOpen ? "rotate-90" : "",
+                        groupHasActiveChild &&
+                          "text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground",
                       )}
-                    />
-                  </SidebarMenuButton>
+                      onClick={() => handleGroupToggle(item)}
+                    >
+                      <item.icon />
+                      <span>{t(item.title)}</span>
+                      <ChevronRight
+                        className={cn(
+                          "ml-auto transition-transform duration-300 ease-out",
+                          isOpen ? "rotate-90" : "",
+                        )}
+                      />
+                    </SidebarMenuButton>
+                  )}
                   <div
                     className={cn(
                       "grid min-h-0 transition-[grid-template-rows,opacity] duration-300 ease-out",

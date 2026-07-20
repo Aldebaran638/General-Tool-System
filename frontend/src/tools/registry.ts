@@ -137,7 +137,10 @@ export type NavigationGroup = {
   kind: "group"
   icon: LucideIcon
   title: string
+  // 可选：设置后组行本体是可跳转链接，右侧 chevron 按钮独立控制子菜单展开
+  path?: string
   children: NavigationTool[]
+  requiresSuperuser?: boolean
   defaultExpanded?: boolean
 }
 

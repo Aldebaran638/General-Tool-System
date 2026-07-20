@@ -5,12 +5,12 @@ import { useTranslation } from "react-i18next"
 import { OkrService, UsersService } from "@/client"
 import { Skeleton } from "@/components/ui/skeleton"
 import i18n from "@/i18n"
-import { PeopleBoard } from "@/tools/okr/people-board/PeopleBoard"
+import { PeopleBoard } from "@/tools/okr/overview/people-board/PeopleBoard"
 
 function getUserStatsQueryOptions() {
   return {
-    queryFn: () => OkrService.readStatsByUser(),
-    queryKey: ["okr", "stats", "by-user"],
+    queryFn: () => OkrService.readOverviewMembers(),
+    queryKey: ["okr", "overview", "members"],
   }
 }
 

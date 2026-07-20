@@ -30,31 +30,33 @@ const PLATFORM_NAVIGATION: NavigationEntry[] = [
     path: "/",
   },
   {
-    kind: "tool",
+    kind: "group",
     icon: Target,
     title: "nav.okrOverview",
     path: "/okr",
     requiresSuperuser: true,
+    children: [
+      {
+        kind: "tool",
+        icon: FolderKanban,
+        title: "nav.departmentBoard",
+        path: "/okr/department-board",
+        requiresSuperuser: true,
+      },
+      {
+        kind: "tool",
+        icon: UsersRound,
+        title: "nav.peopleBoard",
+        path: "/okr/people-board",
+        requiresSuperuser: true,
+      },
+    ],
   },
   {
     kind: "tool",
     icon: ListTodo,
     title: "nav.myTasks",
     path: "/okr/my",
-  },
-  {
-    kind: "tool",
-    icon: FolderKanban,
-    title: "nav.departmentBoard",
-    path: "/okr/department-board",
-    requiresSuperuser: true,
-  },
-  {
-    kind: "tool",
-    icon: UsersRound,
-    title: "nav.peopleBoard",
-    path: "/okr/people-board",
-    requiresSuperuser: true,
   },
   {
     kind: "tool",
@@ -92,12 +94,20 @@ export function getNavigationEntries(
 
   // Add platform entries that pass permission check
   for (const entry of PLATFORM_NAVIGATION) {
-    if (entry.kind === "tool") {
-      if (entry.requiresSuperuser && !context.isSuperuser) {
-        continue
-      }
-      entries.push(entry)
+    if (entry.requiresSuperuser && !context.isSuperuser) {
+      continue
     }
+    if (entry.kind === "group") {
+      // 组内子项也按权限过滤；过滤后为空则不显示该组
+      const children = entry.children.filter(
+        (child) => !child.requiresSuperuser || context.isSuperuser,
+      )
+      if (children.length > 0) {
+        entries.push({ ...entry, children })
+      }
+      continue
+    }
+    entries.push(entry)
   }
 
   // Add tool entries from registry (e.g. notification if it registers navigation)
