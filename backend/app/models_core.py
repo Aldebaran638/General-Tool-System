@@ -29,6 +29,7 @@ def get_datetime_utc() -> datetime:
 # =============================================================================
 
 class UserBase(SQLModel):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     email: EmailStr = Field(unique=True, index=True, max_length=255)
     is_active: bool = True
     is_superuser: bool = False
@@ -47,6 +48,8 @@ class UserRegister(SQLModel):
 
 
 class UserUpdate(UserBase):
+    # id 仅用于表字段排序（id 永远第一列），更新时禁止序列化出去
+    id: uuid.UUID | None = Field(default=None, exclude=True)
     email: EmailStr | None = Field(default=None, max_length=255)  # type: ignore
     password: str | None = Field(default=None, min_length=8, max_length=128)
 
@@ -63,8 +66,8 @@ class UpdatePassword(SQLModel):
 
 
 # Database model - this stays in core because authentication is platform-level
+# id 定义在 UserBase 顶部，保证落库后永远是表的第一列
 class User(UserBase, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
