@@ -91,25 +91,8 @@ function Login() {
       <Form {...form}>
         <form onSubmit={submitLogin} noValidate className="flex flex-col gap-6">
           <div className="flex flex-col items-center gap-2 text-center">
-            <div className="lg:hidden rounded-full bg-primary/10 p-3 mb-2">
-              <svg
-                className="h-8 w-8 text-primary"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M12 14l9-5-9-5-9 5 9 5z" />
-                <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"
-                />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight">欢迎回来</h1>
-            <p className="text-sm text-muted-foreground/80">
+            <h1 className="title-with-line text-heading text-[#2A2A2A]">欢迎回来</h1>
+            <p className="text-sm font-light text-muted-foreground">
               登录您的账户以继续
             </p>
           </div>
@@ -137,7 +120,7 @@ function Login() {
                       data-testid="email-input"
                       placeholder="请输入邮箱地址"
                       type="email"
-                      className="h-11 transition-all focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/50"
+                      className="h-11 bg-transparent transition-all"
                       {...field}
                     />
                   </FormControl>
@@ -164,7 +147,7 @@ function Login() {
                     <PasswordInput
                       data-testid="password-input"
                       placeholder="请输入密码"
-                      className="h-11 transition-all focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/50"
+                      className="h-11 bg-transparent transition-all"
                       {...field}
                     />
                   </FormControl>
@@ -178,7 +161,7 @@ function Login() {
               loading={loginMutation.isPending}
               onClick={submitLogin}
               data-testid="login-submit"
-              className="h-11 font-medium transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
+              className="h-11 font-normal tracking-wide transition-colors"
             >
               登录
             </LoadingButton>

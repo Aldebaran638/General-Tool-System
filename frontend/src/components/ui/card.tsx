@@ -7,8 +7,8 @@ interface CardProps extends React.ComponentProps<"div"> {
 }
 
 const cardVariants = {
-  default: "bg-card text-card-foreground border shadow-sm",
-  elevated: "bg-surface-elevated text-card-foreground border shadow-md hover:shadow-lg transition-shadow duration-200",
+  default: "bg-card text-card-foreground border",
+  elevated: "bg-surface-elevated text-card-foreground border hover:border-[#C27A5B]/20 transition-colors duration-200",
   ghost: "bg-transparent text-card-foreground border-transparent shadow-none",
 }
 
@@ -17,7 +17,7 @@ function Card({ className, variant = "default", ...props }: CardProps) {
     <div
       data-slot="card"
       className={cn(
-        "flex flex-col gap-6 rounded-xl py-6",
+        "flex flex-col gap-6 rounded-md py-6",
         cardVariants[variant],
         className
       )}
