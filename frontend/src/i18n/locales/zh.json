@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "项目管理面板",
+    "subtitle": "数据驱动的项目管理"
+  },
+  "nav": {
+    "dashboard": "仪表盘",
+    "settings": "个人设置",
+    "users": "用户管理",
+    "menu": "菜单",
+    "theme": "主题"
+  },
+  "auth": {
+    "welcomeBack": "欢迎回来",
+    "loginToContinue": "登录您的账户以继续",
+    "email": "邮箱地址",
+    "emailPlaceholder": "请输入邮箱地址",
+    "password": "密码",
+    "passwordPlaceholder": "请输入密码",
+    "confirmPassword": "确认密码",
+    "confirmPasswordPlaceholder": "请再次输入密码",
+    "forgotPassword": "忘记密码?",
+    "login": "登录",
+    "logout": "退出登录",
+    "signUp": "注册",
+    "noAccount": "还没有账户?",
+    "haveAccount": "已有账户?",
+    "sessionExpired": "登录已过期",
+    "sessionExpiredDescription": "当前登录已经过期，请重新登录",
+    "fullName": "姓名",
+    "fullNamePlaceholder": "请输入姓名",
+    "passwordRecovery": "密码找回",
+    "passwordRecoveryDescription": "请输入您的邮箱地址，我们将向您发送重置密码的链接。",
+    "continue": "继续",
+    "rememberPassword": "记起密码了?",
+    "resetPassword": "重置密码",
+    "newPassword": "新密码",
+    "passwordRecoveryEmailSent": "密码重置邮件已发送",
+    "passwordUpdated": "密码已更新"
+  },
+  "dashboard": {
+    "welcome": "欢迎回来，{{name}}",
+    "subtitle": "项目管理面板",
+    "liveData": "实时数据",
+    "user": "用户"
+  },
+  "stats": {
+    "totalProjects": "项目总数",
+    "totalTasks": "任务总数",
+    "completedTasks": "已完成任务",
+    "teamMembers": "团队成员"
+  },
+  "settings": {
+    "title": "个人设置",
+    "description": "管理您的账户信息和偏好设置",
+    "language": "语言",
+    "chinese": "中文",
+    "english": "English",
+    "tabs": {
+      "profile": "个人信息",
+      "password": "修改密码",
+      "dangerZone": "危险区域"
+    }
+  },
+  "profile": {
+    "title": "个人信息",
+    "description": "查看和修改您的基本资料",
+    "name": "姓名",
+    "email": "邮箱",
+    "edit": "编辑",
+    "save": "保存",
+    "cancel": "取消",
+    "updated": "个人信息已更新"
+  },
+  "password": {
+    "title": "修改密码",
+    "description": "定期更换密码有助于保护账户安全",
+    "current": "当前密码",
+    "new": "新密码",
+    "confirm": "确认新密码",
+    "update": "更新密码",
+    "updated": "密码已更新",
+    "sameError": "新密码不能与当前密码相同"
+  },
+  "deleteAccount": {
+    "title": "删除账户",
+    "description": "此操作将永久删除您的账户及所有关联数据，无法恢复。",
+    "button": "删除账户",
+    "confirmTitle": "确认删除",
+    "confirmDescription": "您确定要永久删除您的账户吗？此操作无法撤销。",
+    "cancel": "取消",
+    "confirm": "确认删除",
+    "success": "您的账户已成功删除"
+  },
+  "theme": {
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统"
+  },
+  "errors": {
+    "required": "必填项",
+    "invalidEmail": "请输入有效的邮箱地址",
+    "passwordMin": "密码至少需要 {{count}} 个字符",
+    "passwordMatch": "两次输入的密码不一致"
+  }
+}

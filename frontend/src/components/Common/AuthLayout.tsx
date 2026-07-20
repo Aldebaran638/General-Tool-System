@@ -3,6 +3,7 @@ import { Logo } from "@/components/Common/Logo"
 import { Footer } from "./Footer"
 import { Briefcase, ListTodo, CheckCircle2, Users } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 interface AuthLayoutProps {
   children: React.ReactNode
@@ -64,13 +65,13 @@ function StatItem({ value, suffix = "", label, duration = 1500, icon }: StatItem
 const STAT_CONFIG: {
   key: keyof PublicStats
   suffix: string
-  label: string
+  translationKey: string
   icon: React.ReactNode
 }[] = [
-  { key: "total_projects", suffix: "+", label: "项目总数", icon: <Briefcase className="h-5 w-5" strokeWidth={1.5} /> },
-  { key: "total_tasks", suffix: "", label: "任务总数", icon: <ListTodo className="h-5 w-5" strokeWidth={1.5} /> },
-  { key: "completed_tasks", suffix: "+", label: "已完成任务", icon: <CheckCircle2 className="h-5 w-5" strokeWidth={1.5} /> },
-  { key: "total_members", suffix: "", label: "团队成员", icon: <Users className="h-5 w-5" strokeWidth={1.5} /> },
+  { key: "total_projects", suffix: "+", translationKey: "stats.totalProjects", icon: <Briefcase className="h-5 w-5" strokeWidth={1.5} /> },
+  { key: "total_tasks", suffix: "", translationKey: "stats.totalTasks", icon: <ListTodo className="h-5 w-5" strokeWidth={1.5} /> },
+  { key: "completed_tasks", suffix: "+", translationKey: "stats.completedTasks", icon: <CheckCircle2 className="h-5 w-5" strokeWidth={1.5} /> },
+  { key: "total_members", suffix: "", translationKey: "stats.teamMembers", icon: <Users className="h-5 w-5" strokeWidth={1.5} /> },
 ]
 
 async function fetchPublicStats(): Promise<PublicStats> {
@@ -83,6 +84,7 @@ async function fetchPublicStats(): Promise<PublicStats> {
 }
 
 export function AuthLayout({ children }: AuthLayoutProps) {
+  const { t } = useTranslation()
   const [stats, setStats] = useState<PublicStats | null>(null)
 
   useEffect(() => {
@@ -101,19 +103,19 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           <div className="flex flex-col items-center gap-5 text-center">
             <Logo variant="full" className="h-10" asLink={false} />
             <div>
-              <h1 className="title-with-line text-display text-[#2A2A2A]">项目管理面板</h1>
-              <p className="mt-3 text-base font-light text-[#6B6B6B] tracking-wide">数据驱动的项目管理</p>
+              <h1 className="title-with-line text-display text-[#2A2A2A]">{t("app.name")}</h1>
+              <p className="mt-3 text-base font-light text-[#6B6B6B] tracking-wide">{t("app.subtitle")}</p>
             </div>
           </div>
 
           {/* Stats highlights */}
           <div className="grid grid-cols-2 gap-4 w-full">
-            {STAT_CONFIG.map(({ key, suffix, label, icon }) => (
+            {STAT_CONFIG.map(({ key, suffix, translationKey, icon }) => (
               <StatItem
                 key={key}
                 value={stats?.[key] ?? 0}
                 suffix={suffix}
-                label={label}
+                label={t(translationKey)}
                 icon={icon}
               />
             ))}
@@ -121,7 +123,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
           <p className="flex items-center gap-2 text-sm font-light text-[#6B6B6B]">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#C27A5B]" />
-            实时数据
+            {t("dashboard.liveData")}
           </p>
         </div>
       </div>

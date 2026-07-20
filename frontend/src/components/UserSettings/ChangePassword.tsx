@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 import { Lock, KeyRound, ShieldCheck } from "lucide-react"
 
@@ -25,29 +26,29 @@ import { PasswordInput } from "@/components/ui/password-input"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
-const formSchema = z
-  .object({
-    current_password: z
-      .string()
-      .min(1, { message: "请输入当前密码" })
-      .min(8, { message: "密码至少需要 8 位字符" }),
-    new_password: z
-      .string()
-      .min(1, { message: "请输入新密码" })
-      .min(8, { message: "密码至少需要 8 位字符" }),
-    confirm_password: z
-      .string()
-      .min(1, { message: "请确认新密码" }),
-  })
-  .refine((data) => data.new_password === data.confirm_password, {
-    message: "两次输入的密码不一致",
-    path: ["confirm_password"],
-  })
-
-type FormData = z.infer<typeof formSchema>
-
 const ChangePassword = () => {
+  const { t } = useTranslation()
   const { showSuccessToast, showErrorToast } = useCustomToast()
+
+  const formSchema = z
+    .object({
+      current_password: z
+        .string()
+        .min(1, { message: t("errors.required") })
+        .min(8, { message: t("errors.passwordMin", { count: 8 }) }),
+      new_password: z
+        .string()
+        .min(1, { message: t("errors.required") })
+        .min(8, { message: t("errors.passwordMin", { count: 8 }) }),
+      confirm_password: z.string().min(1, { message: t("errors.required") }),
+    })
+    .refine((data) => data.new_password === data.confirm_password, {
+      message: t("errors.passwordMatch"),
+      path: ["confirm_password"],
+    })
+
+  type FormData = z.infer<typeof formSchema>
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     mode: "onSubmit",
@@ -63,7 +64,7 @@ const ChangePassword = () => {
     mutationFn: (data: UpdatePassword) =>
       UsersService.updatePasswordMe({ requestBody: data }),
     onSuccess: () => {
-      showSuccessToast("密码已更新")
+      showSuccessToast(t("password.updated"))
       form.reset()
     },
     onError: handleError.bind(showErrorToast),
@@ -78,9 +79,9 @@ const ChangePassword = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Lock className="h-5 w-5 text-primary" />
-          修改密码
+          {t("password.title")}
         </CardTitle>
-        <CardDescription>定期更换密码有助于保护账户安全</CardDescription>
+        <CardDescription>{t("password.description")}</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -95,12 +96,12 @@ const ChangePassword = () => {
                 <FormItem>
                   <FormLabel className="flex items-center gap-1.5">
                     <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
-                    当前密码
+                    {t("password.current")}
                   </FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="current-password-input"
-                      placeholder="请输入当前密码"
+                      placeholder={t("password.current")}
                       aria-invalid={fieldState.invalid}
                       {...field}
                     />
@@ -117,12 +118,12 @@ const ChangePassword = () => {
                 <FormItem>
                   <FormLabel className="flex items-center gap-1.5">
                     <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
-                    新密码
+                    {t("password.new")}
                   </FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="new-password-input"
-                      placeholder="请输入新密码（至少 8 位）"
+                      placeholder={t("password.new")}
                       aria-invalid={fieldState.invalid}
                       {...field}
                     />
@@ -139,12 +140,12 @@ const ChangePassword = () => {
                 <FormItem>
                   <FormLabel className="flex items-center gap-1.5">
                     <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
-                    确认新密码
+                    {t("password.confirm")}
                   </FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="confirm-password-input"
-                      placeholder="请再次输入新密码"
+                      placeholder={t("password.confirm")}
                       aria-invalid={fieldState.invalid}
                       {...field}
                     />
@@ -159,7 +160,7 @@ const ChangePassword = () => {
               loading={mutation.isPending}
               className="self-start"
             >
-              更新密码
+              {t("password.update")}
             </LoadingButton>
           </form>
         </Form>

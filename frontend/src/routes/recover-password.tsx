@@ -6,8 +6,10 @@ import {
   redirect,
 } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
+import i18n from "@/i18n"
 import { LoginService } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
@@ -24,12 +26,6 @@ import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
-const formSchema = z.object({
-  email: z.email(),
-})
-
-type FormData = z.infer<typeof formSchema>
-
 export const Route = createFileRoute("/recover-password")({
   component: RecoverPassword,
   beforeLoad: async () => {
@@ -42,22 +38,25 @@ export const Route = createFileRoute("/recover-password")({
   head: () => ({
     meta: [
       {
-        title: "Recover Password - 项目管理面板",
+        title: `${i18n.t("auth.passwordRecovery")} - ${i18n.t("app.name")}`,
       },
     ],
   }),
 })
 
 function RecoverPassword() {
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+  const { t } = useTranslation()
+  const form = useForm<{ email: string }>({
+    resolver: zodResolver(z.object({
+      email: z.email({ message: t("errors.invalidEmail") }),
+    })),
     defaultValues: {
       email: "",
     },
   })
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
-  const recoverPassword = async (data: FormData) => {
+  const recoverPassword = async (data: { email: string }) => {
     await LoginService.recoverPassword({
       email: data.email,
     })
@@ -66,13 +65,13 @@ function RecoverPassword() {
   const mutation = useMutation({
     mutationFn: recoverPassword,
     onSuccess: () => {
-      showSuccessToast("Password recovery email sent successfully")
+      showSuccessToast(t("auth.passwordRecoveryEmailSent"))
       form.reset()
     },
     onError: handleError.bind(showErrorToast),
   })
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: { email: string }) => {
     if (mutation.isPending) return
     mutation.mutate(data)
   }
@@ -85,7 +84,10 @@ function RecoverPassword() {
           className="flex flex-col gap-6"
         >
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold">Password Recovery</h1>
+            <h1 className="title-with-line text-heading text-[#2A2A2A]">{t("auth.passwordRecovery")}</h1>
+            <p className="text-sm font-light text-muted-foreground">
+              {t("auth.passwordRecoveryDescription")}
+            </p>
           </div>
 
           <div className="grid gap-4">
@@ -94,11 +96,11 @@ function RecoverPassword() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t("auth.email")}</FormLabel>
                   <FormControl>
                     <Input
                       data-testid="email-input"
-                      placeholder="user@example.com"
+                      placeholder={t("auth.emailPlaceholder")}
                       type="email"
                       {...field}
                     />
@@ -113,14 +115,14 @@ function RecoverPassword() {
               className="w-full"
               loading={mutation.isPending}
             >
-              Continue
+              {t("auth.continue")}
             </LoadingButton>
           </div>
 
           <div className="text-center text-sm">
-            Remember your password?{" "}
+            {t("auth.rememberPassword")}{" "}
             <RouterLink to="/login" className="underline underline-offset-4">
-              Log in
+              {t("auth.login")}
             </RouterLink>
           </div>
         </form>

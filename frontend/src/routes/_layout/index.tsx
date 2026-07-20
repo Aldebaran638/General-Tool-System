@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
+import i18n from "@/i18n"
 import useAuth from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/_layout/")({
@@ -7,21 +9,27 @@ export const Route = createFileRoute("/_layout/")({
   head: () => ({
     meta: [
       {
-        title: "Dashboard - 项目管理面板",
+        title: `${i18n.t("nav.dashboard")} - ${i18n.t("app.name")}`,
       },
     ],
   }),
 })
 
-function formatToday(): string {
+function formatToday(locale: string): string {
   const now = new Date()
-  const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return `${now.getFullYear()}年${pad(now.getMonth() + 1)}月${pad(now.getDate())}日 ${weekdays[now.getDay()]}`
+  return new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : "en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  }).format(now)
 }
 
 function Dashboard() {
+  const { t, i18n: i18nInstance } = useTranslation()
   const { user: currentUser } = useAuth()
+
+  const displayName = currentUser?.full_name || currentUser?.email || t("dashboard.user")
 
   return (
     <div className="flex flex-col gap-6">
@@ -29,12 +37,12 @@ function Dashboard() {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-xl md:text-2xl font-semibold text-[#2A2A2A] tracking-wide">
-              欢迎回来，{currentUser?.full_name || currentUser?.email || "用户"}
+              {t("dashboard.welcome", { name: displayName })}
             </h1>
-            <p className="text-sm font-light text-[#6B6B6B] mt-2">项目管理面板</p>
+            <p className="text-sm font-light text-[#6B6B6B] mt-2">{t("dashboard.subtitle")}</p>
           </div>
           <div className="flex items-center gap-2 text-[#6B6B6B] bg-[#FAF8F5] rounded-md px-4 py-2 border border-[#EAE6DF]">
-            <span className="text-sm font-light">{formatToday()}</span>
+            <span className="text-sm font-light">{formatToday(i18nInstance.language)}</span>
           </div>
         </div>
       </div>

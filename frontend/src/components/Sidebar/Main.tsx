@@ -1,6 +1,7 @@
 import { Link as RouterLink, useRouterState } from "@tanstack/react-router"
 import { ChevronRight } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import {
   SidebarGroup,
@@ -25,6 +26,7 @@ interface MainProps {
 }
 
 export function Main({ items }: MainProps) {
+  const { t } = useTranslation()
   const { isMobile, setOpen, setOpenMobile, state } = useSidebar()
   const router = useRouterState()
   const currentPath = router.location.pathname
@@ -89,7 +91,7 @@ export function Main({ items }: MainProps) {
                   className="transition-[transform,margin] duration-300 ease-out"
                 >
                   <SidebarMenuButton
-                    tooltip={item.title}
+                    tooltip={t(item.title)}
                     className={cn(
                       groupHasActiveChild &&
                         "text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground",
@@ -97,7 +99,7 @@ export function Main({ items }: MainProps) {
                     onClick={() => handleGroupToggle(item)}
                   >
                     <item.icon />
-                    <span>{item.title}</span>
+                    <span>{t(item.title)}</span>
                     <ChevronRight
                       className={cn(
                         "ml-auto transition-transform duration-300 ease-out",
@@ -163,16 +165,17 @@ function ToolMenuItem({
   currentPath: string
   onClick: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
-        tooltip={item.title}
+        tooltip={t(item.title)}
         isActive={isPathActive(item.path, currentPath)}
         asChild
       >
         <RouterLink to={item.path} onClick={onClick}>
           <item.icon />
-          <span>{item.title}</span>
+          <span>{t(item.title)}</span>
         </RouterLink>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -192,6 +195,7 @@ function ToolMenuSubItem({
   isOpen: boolean
   index: number
 }) {
+  const { t } = useTranslation()
   return (
     <SidebarMenuSubItem
       className={cn(
@@ -208,7 +212,7 @@ function ToolMenuSubItem({
       >
         <RouterLink to={item.path} onClick={onClick}>
           <item.icon />
-          <span>{item.title}</span>
+          <span>{t(item.title)}</span>
         </RouterLink>
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>

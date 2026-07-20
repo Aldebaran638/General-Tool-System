@@ -270,6 +270,12 @@ export const UserCreateSchema = {
             ],
             title: 'Full Name'
         },
+        language: {
+            type: 'string',
+            maxLength: 10,
+            title: 'Language',
+            default: 'zh'
+        },
         password: {
             type: 'string',
             maxLength: 128,
@@ -311,6 +317,12 @@ export const UserPublicSchema = {
                 }
             ],
             title: 'Full Name'
+        },
+        language: {
+            type: 'string',
+            maxLength: 10,
+            title: 'Language',
+            default: 'zh'
         },
         id: {
             type: 'string',
@@ -404,6 +416,12 @@ export const UserUpdateSchema = {
             ],
             title: 'Full Name'
         },
+        language: {
+            type: 'string',
+            maxLength: 10,
+            title: 'Language',
+            default: 'zh'
+        },
         password: {
             anyOf: [
                 {
@@ -448,6 +466,18 @@ export const UserUpdateMeSchema = {
                 }
             ],
             title: 'Email'
+        },
+        language: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 10
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language'
         }
     },
     type: 'object',

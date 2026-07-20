@@ -2,6 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, redirect } from "@tanstack/react-router"
 import { Suspense } from "react"
 
+import i18n from "@/i18n"
 import { type UserPublic, UsersService } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
 import { columns, type UserTableData } from "@/components/Admin/columns"
@@ -29,7 +30,7 @@ export const Route = createFileRoute("/_layout/admin")({
   head: () => ({
     meta: [
       {
-        title: "Admin - 通用工具系统",
+        title: `${i18n.t("nav.users")} - ${i18n.t("app.name")}`,
       },
     ],
   }),

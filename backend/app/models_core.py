@@ -33,6 +33,7 @@ class UserBase(SQLModel):
     is_active: bool = True
     is_superuser: bool = False
     full_name: str | None = Field(default=None, max_length=255)
+    language: str = Field(default="zh", max_length=10)
 
 
 class UserCreate(UserBase):
@@ -53,6 +54,7 @@ class UserUpdate(UserBase):
 class UserUpdateMe(SQLModel):
     full_name: str | None = Field(default=None, max_length=255)
     email: EmailStr | None = Field(default=None, max_length=255)
+    language: str | None = Field(default=None, max_length=10)
 
 
 class UpdatePassword(SQLModel):

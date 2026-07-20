@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "Project Management Board",
+    "subtitle": "Data-driven project management"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "users": "Users",
+    "menu": "Menu",
+    "theme": "Theme"
+  },
+  "auth": {
+    "welcomeBack": "Welcome back",
+    "loginToContinue": "Sign in to your account to continue",
+    "email": "Email address",
+    "emailPlaceholder": "Enter your email address",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "confirmPassword": "Confirm password",
+    "confirmPasswordPlaceholder": "Enter your password again",
+    "forgotPassword": "Forgot password?",
+    "login": "Sign in",
+    "logout": "Log out",
+    "signUp": "Sign up",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "sessionExpired": "Session expired",
+    "sessionExpiredDescription": "Your session has expired. Please sign in again.",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "Enter your full name",
+    "passwordRecovery": "Password recovery",
+    "passwordRecoveryDescription": "Enter your email address and we'll send you a link to reset your password.",
+    "continue": "Continue",
+    "rememberPassword": "Remember your password?",
+    "resetPassword": "Reset password",
+    "newPassword": "New password",
+    "passwordRecoveryEmailSent": "Password recovery email sent",
+    "passwordUpdated": "Password updated"
+  },
+  "dashboard": {
+    "welcome": "Welcome back, {{name}}",
+    "subtitle": "Project Management Board",
+    "liveData": "Live data",
+    "user": "User"
+  },
+  "stats": {
+    "totalProjects": "Total projects",
+    "totalTasks": "Total tasks",
+    "completedTasks": "Completed tasks",
+    "teamMembers": "Team members"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your account information and preferences",
+    "language": "Language",
+    "chinese": "中文",
+    "english": "English",
+    "tabs": {
+      "profile": "Profile",
+      "password": "Password",
+      "dangerZone": "Danger zone"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "description": "View and edit your basic information",
+    "name": "Full name",
+    "email": "Email",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "updated": "Profile updated"
+  },
+  "password": {
+    "title": "Change password",
+    "description": "Regularly changing your password helps keep your account secure",
+    "current": "Current password",
+    "new": "New password",
+    "confirm": "Confirm new password",
+    "update": "Update password",
+    "updated": "Password updated",
+    "sameError": "New password cannot be the same as the current one"
+  },
+  "deleteAccount": {
+    "title": "Delete account",
+    "description": "This will permanently delete your account and all associated data. This action cannot be undone.",
+    "button": "Delete account",
+    "confirmTitle": "Confirm deletion",
+    "confirmDescription": "Are you sure you want to permanently delete your account? This action cannot be undone.",
+    "cancel": "Cancel",
+    "confirm": "Delete",
+    "success": "Your account has been successfully deleted"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "errors": {
+    "required": "Required",
+    "invalidEmail": "Please enter a valid email address",
+    "passwordMin": "Password must be at least {{count}} characters",
+    "passwordMatch": "Passwords do not match"
+  }
+}

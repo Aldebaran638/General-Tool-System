@@ -17,19 +17,19 @@ const PLATFORM_NAVIGATION: NavigationEntry[] = [
   {
     kind: "tool",
     icon: Home,
-    title: "仪表盘",
+    title: "nav.dashboard",
     path: "/",
   },
   {
     kind: "tool",
     icon: Settings,
-    title: "个人设置",
+    title: "nav.settings",
     path: "/settings",
   },
   {
     kind: "tool",
     icon: Users,
-    title: "用户管理",
+    title: "nav.users",
     path: "/admin",
     requiresSuperuser: true,
   },

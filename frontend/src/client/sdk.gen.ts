@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, NotificationsListNotificationsEndpointData, NotificationsListNotificationsEndpointResponse, NotificationsMarkReadEndpointData, NotificationsMarkReadEndpointResponse, NotificationsMarkAllReadEndpointResponse, NotificationsDeleteNotificationEndpointData, NotificationsDeleteNotificationEndpointResponse, NotificationsUnreadCountEndpointResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, UtilsStorageInfoEndpointResponse } from './types.gen';
+import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, NotificationsListNotificationsEndpointData, NotificationsListNotificationsEndpointResponse, NotificationsMarkReadEndpointData, NotificationsMarkReadEndpointResponse, NotificationsMarkAllReadEndpointResponse, NotificationsDeleteNotificationEndpointData, NotificationsDeleteNotificationEndpointResponse, NotificationsUnreadCountEndpointResponse, PrivateCreateUserData, PrivateCreateUserResponse, PublicGetPublicStatsResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, UtilsStorageInfoEndpointResponse } from './types.gen';
 
 export class LoginService {
     /**
@@ -210,6 +210,24 @@ export class PrivateService {
             errors: {
                 422: 'Validation Error'
             }
+        });
+    }
+}
+
+export class PublicService {
+    /**
+     * Get Public Stats
+     * Return public-facing platform statistics for the auth landing page.
+     *
+     * Project and task counts are placeholders until the project-management
+     * module is implemented; active user count is returned for team members.
+     * @returns number Successful Response
+     * @throws ApiError
+     */
+    public static getPublicStats(): CancelablePromise<PublicGetPublicStatsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/public/stats'
         });
     }
 }

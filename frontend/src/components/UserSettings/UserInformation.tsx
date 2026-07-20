@@ -1,8 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useEffect } from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 import { User, Mail, Pencil, Check, X } from "lucide-react"
 
@@ -29,19 +29,21 @@ import useAuth from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import { cn } from "@/lib/utils"
 import { handleError } from "@/utils"
-
-const formSchema = z.object({
-  full_name: z.string().max(30).optional(),
-  email: z.email({ message: "请输入有效的邮箱地址" }),
-})
-
-type FormData = z.infer<typeof formSchema>
+import { LanguageSwitcher } from "./LanguageSwitcher"
 
 const UserInformation = () => {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const [editMode, setEditMode] = useState(false)
   const { user: currentUser } = useAuth()
+
+  const formSchema = z.object({
+    full_name: z.string().max(30).optional(),
+    email: z.email({ message: t("errors.invalidEmail") }),
+  })
+
+  type FormData = z.infer<typeof formSchema>
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -68,7 +70,7 @@ const UserInformation = () => {
     mutationFn: (data: UserUpdateMe) =>
       UsersService.updateUserMe({ requestBody: data }),
     onSuccess: () => {
-      showSuccessToast("个人信息已更新")
+      showSuccessToast(t("profile.updated"))
       toggleEditMode()
     },
     onError: handleError.bind(showErrorToast),
@@ -80,7 +82,6 @@ const UserInformation = () => {
   const onSubmit = (data: FormData) => {
     const updateData: UserUpdateMe = {}
 
-    // only include fields that have changed
     if (data.full_name !== currentUser?.full_name) {
       updateData.full_name = data.full_name
     }
@@ -101,11 +102,12 @@ const UserInformation = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <User className="h-5 w-5 text-primary" />
-          个人信息
+          {t("profile.title")}
         </CardTitle>
-        <CardDescription>查看和修改您的基本资料</CardDescription>
+        <CardDescription>{t("profile.description")}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col gap-5">
+        <LanguageSwitcher />
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
@@ -117,9 +119,9 @@ const UserInformation = () => {
               render={({ field }) =>
                 editMode ? (
                   <FormItem>
-                    <FormLabel>姓名</FormLabel>
+                    <FormLabel>{t("profile.name")}</FormLabel>
                     <FormControl>
-                      <Input type="text" placeholder="请输入姓名" {...field} />
+                      <Input type="text" placeholder={t("auth.fullNamePlaceholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -127,7 +129,7 @@ const UserInformation = () => {
                   <FormItem>
                     <FormLabel className="flex items-center gap-1.5">
                       <User className="h-3.5 w-3.5 text-muted-foreground" />
-                      姓名
+                      {t("profile.name")}
                     </FormLabel>
                     <div
                       className={cn(
@@ -135,7 +137,7 @@ const UserInformation = () => {
                         !field.value && "text-muted-foreground",
                       )}
                     >
-                      {field.value || "未设置"}
+                      {field.value || "—"}
                     </div>
                   </FormItem>
                 )
@@ -148,9 +150,9 @@ const UserInformation = () => {
               render={({ field }) =>
                 editMode ? (
                   <FormItem>
-                    <FormLabel>邮箱</FormLabel>
+                    <FormLabel>{t("profile.email")}</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="请输入邮箱" {...field} />
+                      <Input type="email" placeholder={t("auth.emailPlaceholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -158,7 +160,7 @@ const UserInformation = () => {
                   <FormItem>
                     <FormLabel className="flex items-center gap-1.5">
                       <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                      邮箱
+                      {t("profile.email")}
                     </FormLabel>
                     <div className="rounded-md border bg-muted/30 px-3 py-2.5 text-sm">
                       {field.value}
@@ -177,7 +179,7 @@ const UserInformation = () => {
                     disabled={!form.formState.isDirty}
                   >
                     <Check className="mr-1.5 h-4 w-4" />
-                    保存
+                    {t("profile.save")}
                   </LoadingButton>
                   <Button
                     type="button"
@@ -186,13 +188,13 @@ const UserInformation = () => {
                     disabled={mutation.isPending}
                   >
                     <X className="mr-1.5 h-4 w-4" />
-                    取消
+                    {t("profile.cancel")}
                   </Button>
                 </>
               ) : (
                 <Button type="button" onClick={toggleEditMode}>
                   <Pencil className="mr-1.5 h-4 w-4" />
-                  编辑
+                  {t("profile.edit")}
                 </Button>
               )}
             </div>

@@ -63,6 +63,7 @@ export type UserCreate = {
     is_active?: boolean;
     is_superuser?: boolean;
     full_name?: (string | null);
+    language?: string;
     password: string;
 };
 
@@ -71,6 +72,7 @@ export type UserPublic = {
     is_active?: boolean;
     is_superuser?: boolean;
     full_name?: (string | null);
+    language?: string;
     id: string;
     created_at?: (string | null);
 };
@@ -91,12 +93,14 @@ export type UserUpdate = {
     is_active?: boolean;
     is_superuser?: boolean;
     full_name?: (string | null);
+    language?: string;
     password?: (string | null);
 };
 
 export type UserUpdateMe = {
     full_name?: (string | null);
     email?: (string | null);
+    language?: (string | null);
 };
 
 export type ValidationError = {
@@ -165,6 +169,10 @@ export type PrivateCreateUserData = {
 };
 
 export type PrivateCreateUserResponse = (UserPublic);
+
+export type PublicGetPublicStatsResponse = ({
+    [key: string]: (number);
+});
 
 export type UsersReadUsersData = {
     limit?: number;

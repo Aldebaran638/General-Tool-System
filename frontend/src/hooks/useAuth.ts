@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { useEffect } from "react"
+import i18n from "@/i18n"
 
 import {
   type Body_login_login_access_token as AccessToken,
@@ -15,6 +17,8 @@ const isLoggedIn = () => {
   return localStorage.getItem("access_token") !== null
 }
 
+const SUPPORTED_LANGUAGES = ["zh", "en"]
+
 const useAuth = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -25,6 +29,12 @@ const useAuth = () => {
     queryFn: UsersService.readUserMe,
     enabled: isLoggedIn(),
   })
+
+  useEffect(() => {
+    if (user?.language && SUPPORTED_LANGUAGES.includes(user.language)) {
+      i18n.changeLanguage(user.language)
+    }
+  }, [user?.language])
 
   const signUpMutation = useMutation({
     mutationFn: (data: UserRegister) =>
@@ -47,7 +57,11 @@ const useAuth = () => {
 
   const loginMutation = useMutation({
     mutationFn: login,
-    onSuccess: () => {
+    onSuccess: async () => {
+      const currentUser = await UsersService.readUserMe()
+      if (currentUser.language && SUPPORTED_LANGUAGES.includes(currentUser.language)) {
+        i18n.changeLanguage(currentUser.language)
+      }
       navigate({ to: "/" })
     },
     onError: handleError.bind(showErrorToast),
