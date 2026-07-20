@@ -320,10 +320,6 @@
   [role="button"] {
     cursor: pointer;
   }
-  /* Button micro-interaction */
-  button:active:not(:disabled) {
-    transform: scale(0.98);
-  }
   /* Skeleton shimmer */
   [data-slot="skeleton"] {
     position: relative;

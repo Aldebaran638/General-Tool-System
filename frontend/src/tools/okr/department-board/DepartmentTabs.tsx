@@ -21,8 +21,9 @@ interface DepartmentTabsProps {
  * the second tab, each tab overlaps the previous one by 28px via a negative
  * left margin, and z-index rises from left to right so a tab always covers
  * the right edge of its predecessor. The selected tab sits above all others
- * and merges with the content panel below; hovering any other tab lifts it
- * to the very top and nudges it up by 4px so it can be read in full.
+ * and merges with the content panel below. Hovering a tab pushes its right
+ * neighbour (the tab covering it) away so it can be read in full — the tab
+ * itself stays in place, never floats up.
  */
 export function DepartmentTabs({
   departments,
@@ -50,6 +51,12 @@ export function DepartmentTabs({
         {tabs.map((tab, index) => {
           const isSelected = tab.id === selectedId
           const isHovered = tab.id === hoveredId
+          // 前一个 tab 被悬停时，本 tab 是被推开的“右侧遮挡者”
+          const isPushed =
+            hoveredId !== null &&
+            hoveredId !== selectedId &&
+            index > 0 &&
+            tabs[index - 1]?.id === hoveredId
           return (
             <button
               key={tab.id}
@@ -62,11 +69,10 @@ export function DepartmentTabs({
               onMouseLeave={() => setHoveredId(null)}
               className={cn(
                 "text-body relative h-11 w-[180px] flex-shrink-0 rounded-t-lg border border-b-0 border-border px-4 text-left transition-all duration-200",
-                index > 0 && "ml-[-28px]",
+                index > 0 && (isPushed ? "ml-[4px]" : "ml-[-28px]"),
                 isSelected
                   ? "bg-card text-foreground"
                   : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground",
-                isHovered && !isSelected && "-translate-y-1",
               )}
               style={{
                 zIndex: isHovered

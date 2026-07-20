@@ -32,7 +32,7 @@ const ObjectiveCard = ({ objective }: ObjectiveCardProps) => {
           type="button"
           aria-expanded={expanded}
           onClick={toggle}
-          className="flex min-w-0 flex-1 cursor-pointer items-center gap-4 text-left"
+          className="flex min-w-0 flex-1 cursor-pointer items-center gap-4 rounded-md text-left transition-colors hover:bg-muted/40"
         >
           <ChevronRight
             className={cn(
