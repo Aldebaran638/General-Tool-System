@@ -31,20 +31,20 @@
 
 | 服务 | 地址 |
 |---|---|
-| 前端 | http://localhost:10136 |
-| 后端 API | http://localhost:10135 |
-| Swagger 文档 | http://localhost:10135/docs |
-| ReDoc 文档 | http://localhost:10135/redoc |
-| Adminer | http://localhost:10134 |
-| MailCatcher | http://localhost:10138 |
-| ChartDB | http://localhost:10137 |
-| Traefik Dashboard | http://localhost:10132 |
+| 前端 | http://localhost:10305 |
+| 后端 API | http://localhost:10304 |
+| Swagger 文档 | http://localhost:10304/docs |
+| ReDoc 文档 | http://localhost:10304/redoc |
+| Adminer | http://localhost:10303 |
+| MailCatcher | http://localhost:10307 |
+| ChartDB | http://localhost:10306 |
+| Traefik Dashboard | http://localhost:10301 |
 
 ## 验证
 
 ```bash
 docker compose ps -a
-curl http://localhost:10135/api/v1/utils/health-check/
+curl http://localhost:10304/api/v1/utils/health-check/
 ```
 
 ## 常用命令
