@@ -5,7 +5,16 @@ import type {
 } from "@/tools/registry"
 export type { NavigationEntry, NavigationGroup, NavigationTool }
 
-import { Home, Settings, Users } from "lucide-react"
+import {
+  Building2,
+  FolderKanban,
+  Home,
+  ListTodo,
+  Settings,
+  Target,
+  Users,
+  UsersRound,
+} from "lucide-react"
 import { toolRegistry } from "@/tools/registry"
 
 /**
@@ -19,6 +28,40 @@ const PLATFORM_NAVIGATION: NavigationEntry[] = [
     icon: Home,
     title: "nav.dashboard",
     path: "/",
+  },
+  {
+    kind: "tool",
+    icon: Target,
+    title: "nav.okrOverview",
+    path: "/okr",
+    requiresSuperuser: true,
+  },
+  {
+    kind: "tool",
+    icon: ListTodo,
+    title: "nav.myTasks",
+    path: "/okr/my",
+  },
+  {
+    kind: "tool",
+    icon: FolderKanban,
+    title: "nav.departmentBoard",
+    path: "/okr/department-board",
+    requiresSuperuser: true,
+  },
+  {
+    kind: "tool",
+    icon: UsersRound,
+    title: "nav.peopleBoard",
+    path: "/okr/people-board",
+    requiresSuperuser: true,
+  },
+  {
+    kind: "tool",
+    icon: Building2,
+    title: "nav.departments",
+    path: "/okr/departments",
+    requiresSuperuser: true,
   },
   {
     kind: "tool",

@@ -1,11 +1,13 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import type { UserCreate } from "@/client"
+import { OkrService } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -27,6 +29,13 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import useCustomToast from "@/hooks/useCustomToast"
 import {
   toastFirstFormError,
@@ -34,26 +43,7 @@ import {
 } from "@/hooks/useFormErrorToast"
 import { handleError } from "@/utils"
 
-const formSchema = z
-  .object({
-    email: z.email({ message: "Invalid email address" }),
-    full_name: z.string().optional(),
-    password: z
-      .string()
-      .min(1, { message: "Password is required" })
-      .min(8, { message: "Password must be at least 8 characters" }),
-    confirm_password: z
-      .string()
-      .min(1, { message: "Please confirm your password" }),
-    is_superuser: z.boolean(),
-    is_active: z.boolean(),
-  })
-  .refine((data) => data.password === data.confirm_password, {
-    message: "The passwords don't match",
-    path: ["confirm_password"],
-  })
-
-type FormData = z.infer<typeof formSchema>
+const NO_DEPARTMENT = "none"
 
 async function createUser(requestBody: UserCreate) {
   const token = localStorage.getItem("access_token")
@@ -105,8 +95,45 @@ async function findUserByEmail(email: string, headers: Record<string, string>) {
 
 const AddUser = () => {
   const [isOpen, setIsOpen] = useState(false)
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
+
+  const { data: departments } = useQuery({
+    queryFn: () => OkrService.readDepartments(),
+    queryKey: ["departments"],
+  })
+
+  const formSchema = z
+    .object({
+      email: z.email({ message: "Invalid email address" }),
+      full_name: z.string().optional(),
+      password: z
+        .string()
+        .min(1, { message: "Password is required" })
+        .min(8, { message: "Password must be at least 8 characters" }),
+      confirm_password: z
+        .string()
+        .min(1, { message: "Please confirm your password" }),
+      department_id: z.string(),
+      is_superuser: z.boolean(),
+      is_active: z.boolean(),
+    })
+    .refine((data) => data.password === data.confirm_password, {
+      message: "The passwords don't match",
+      path: ["confirm_password"],
+    })
+    .superRefine((data, ctx) => {
+      if (!data.is_superuser && data.department_id === NO_DEPARTMENT) {
+        ctx.addIssue({
+          code: "custom",
+          message: t("admin.departmentRequired"),
+          path: ["department_id"],
+        })
+      }
+    })
+
+  type FormData = z.infer<typeof formSchema>
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -117,6 +144,7 @@ const AddUser = () => {
       full_name: "",
       password: "",
       confirm_password: "",
+      department_id: NO_DEPARTMENT,
       is_superuser: false,
       is_active: true,
     },
@@ -137,7 +165,12 @@ const AddUser = () => {
   })
 
   const onSubmit = (data: FormData) => {
-    const { confirm_password: _confirm_password, ...submitData } = data
+    const { confirm_password: _confirm_password, ...rest } = data
+    const submitData: UserCreate = {
+      ...rest,
+      department_id:
+        data.department_id === NO_DEPARTMENT ? null : data.department_id,
+    }
     mutation.mutate(submitData)
   }
   const submitUser = form.handleSubmit(onSubmit, toastFirstFormError)
@@ -230,6 +263,35 @@ const AddUser = () => {
                         required
                       />
                     </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="department_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("admin.department")}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue
+                            placeholder={t("admin.selectDepartment")}
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={NO_DEPARTMENT}>
+                          {t("admin.noDepartment")}
+                        </SelectItem>
+                        {departments?.data.map((department) => (
+                          <SelectItem key={department.id} value={department.id}>
+                            {department.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormItem>
                 )}
               />

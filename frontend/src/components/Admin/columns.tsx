@@ -1,12 +1,33 @@
+import { useQuery } from "@tanstack/react-query"
 import type { ColumnDef } from "@tanstack/react-table"
-
+import { useTranslation } from "react-i18next"
 import type { UserPublic } from "@/client"
+import { OkrService } from "@/client"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { UserActionsMenu } from "./UserActionsMenu"
 
 export type UserTableData = UserPublic & {
   isCurrentUser: boolean
+}
+
+function DepartmentHeader() {
+  const { t } = useTranslation()
+  return <>{t("admin.department")}</>
+}
+
+function DepartmentCell({ departmentId }: { departmentId?: string | null }) {
+  const { data: departments } = useQuery({
+    queryFn: () => OkrService.readDepartments(),
+    queryKey: ["departments"],
+  })
+
+  const name = departmentId
+    ? departments?.data.find((department) => department.id === departmentId)
+        ?.name
+    : null
+
+  return <span className="text-muted-foreground">{name ?? "—"}</span>
 }
 
 export const columns: ColumnDef<UserTableData>[] = [
@@ -36,6 +57,13 @@ export const columns: ColumnDef<UserTableData>[] = [
     header: "Email",
     cell: ({ row }) => (
       <span className="text-muted-foreground">{row.original.email}</span>
+    ),
+  },
+  {
+    accessorKey: "department_id",
+    header: () => <DepartmentHeader />,
+    cell: ({ row }) => (
+      <DepartmentCell departmentId={row.original.department_id} />
     ),
   },
   {

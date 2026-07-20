@@ -16,7 +16,12 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutOkrRouteImport } from './routes/_layout/okr'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LayoutOkrPeopleBoardRouteImport } from './routes/_layout/okr.people-board'
+import { Route as LayoutOkrMyRouteImport } from './routes/_layout/okr.my'
+import { Route as LayoutOkrDepartmentsRouteImport } from './routes/_layout/okr.departments'
+import { Route as LayoutOkrDepartmentBoardRouteImport } from './routes/_layout/okr.department-board'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -52,11 +57,37 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutOkrRoute = LayoutOkrRouteImport.update({
+  id: '/okr',
+  path: '/okr',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutAdminRoute = LayoutAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutOkrPeopleBoardRoute = LayoutOkrPeopleBoardRouteImport.update({
+  id: '/people-board',
+  path: '/people-board',
+  getParentRoute: () => LayoutOkrRoute,
+} as any)
+const LayoutOkrMyRoute = LayoutOkrMyRouteImport.update({
+  id: '/my',
+  path: '/my',
+  getParentRoute: () => LayoutOkrRoute,
+} as any)
+const LayoutOkrDepartmentsRoute = LayoutOkrDepartmentsRouteImport.update({
+  id: '/departments',
+  path: '/departments',
+  getParentRoute: () => LayoutOkrRoute,
+} as any)
+const LayoutOkrDepartmentBoardRoute =
+  LayoutOkrDepartmentBoardRouteImport.update({
+    id: '/department-board',
+    path: '/department-board',
+    getParentRoute: () => LayoutOkrRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
@@ -65,7 +96,12 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
+  '/okr': typeof LayoutOkrRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
+  '/okr/department-board': typeof LayoutOkrDepartmentBoardRoute
+  '/okr/departments': typeof LayoutOkrDepartmentsRoute
+  '/okr/my': typeof LayoutOkrMyRoute
+  '/okr/people-board': typeof LayoutOkrPeopleBoardRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -73,8 +109,13 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
+  '/okr': typeof LayoutOkrRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
+  '/okr/department-board': typeof LayoutOkrDepartmentBoardRoute
+  '/okr/departments': typeof LayoutOkrDepartmentsRoute
+  '/okr/my': typeof LayoutOkrMyRoute
+  '/okr/people-board': typeof LayoutOkrPeopleBoardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -84,8 +125,13 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
+  '/_layout/okr': typeof LayoutOkrRouteWithChildren
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/okr/department-board': typeof LayoutOkrDepartmentBoardRoute
+  '/_layout/okr/departments': typeof LayoutOkrDepartmentsRoute
+  '/_layout/okr/my': typeof LayoutOkrMyRoute
+  '/_layout/okr/people-board': typeof LayoutOkrPeopleBoardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -96,7 +142,12 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
+    | '/okr'
     | '/settings'
+    | '/okr/department-board'
+    | '/okr/departments'
+    | '/okr/my'
+    | '/okr/people-board'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -104,8 +155,13 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
+    | '/okr'
     | '/settings'
     | '/'
+    | '/okr/department-board'
+    | '/okr/departments'
+    | '/okr/my'
+    | '/okr/people-board'
   id:
     | '__root__'
     | '/_layout'
@@ -114,8 +170,13 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_layout/admin'
+    | '/_layout/okr'
     | '/_layout/settings'
     | '/_layout/'
+    | '/_layout/okr/department-board'
+    | '/_layout/okr/departments'
+    | '/_layout/okr/my'
+    | '/_layout/okr/people-board'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -177,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/okr': {
+      id: '/_layout/okr'
+      path: '/okr'
+      fullPath: '/okr'
+      preLoaderRoute: typeof LayoutOkrRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/admin': {
       id: '/_layout/admin'
       path: '/admin'
@@ -184,17 +252,65 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/okr/people-board': {
+      id: '/_layout/okr/people-board'
+      path: '/people-board'
+      fullPath: '/okr/people-board'
+      preLoaderRoute: typeof LayoutOkrPeopleBoardRouteImport
+      parentRoute: typeof LayoutOkrRoute
+    }
+    '/_layout/okr/my': {
+      id: '/_layout/okr/my'
+      path: '/my'
+      fullPath: '/okr/my'
+      preLoaderRoute: typeof LayoutOkrMyRouteImport
+      parentRoute: typeof LayoutOkrRoute
+    }
+    '/_layout/okr/departments': {
+      id: '/_layout/okr/departments'
+      path: '/departments'
+      fullPath: '/okr/departments'
+      preLoaderRoute: typeof LayoutOkrDepartmentsRouteImport
+      parentRoute: typeof LayoutOkrRoute
+    }
+    '/_layout/okr/department-board': {
+      id: '/_layout/okr/department-board'
+      path: '/department-board'
+      fullPath: '/okr/department-board'
+      preLoaderRoute: typeof LayoutOkrDepartmentBoardRouteImport
+      parentRoute: typeof LayoutOkrRoute
+    }
   }
 }
 
+interface LayoutOkrRouteChildren {
+  LayoutOkrDepartmentBoardRoute: typeof LayoutOkrDepartmentBoardRoute
+  LayoutOkrDepartmentsRoute: typeof LayoutOkrDepartmentsRoute
+  LayoutOkrMyRoute: typeof LayoutOkrMyRoute
+  LayoutOkrPeopleBoardRoute: typeof LayoutOkrPeopleBoardRoute
+}
+
+const LayoutOkrRouteChildren: LayoutOkrRouteChildren = {
+  LayoutOkrDepartmentBoardRoute: LayoutOkrDepartmentBoardRoute,
+  LayoutOkrDepartmentsRoute: LayoutOkrDepartmentsRoute,
+  LayoutOkrMyRoute: LayoutOkrMyRoute,
+  LayoutOkrPeopleBoardRoute: LayoutOkrPeopleBoardRoute,
+}
+
+const LayoutOkrRouteWithChildren = LayoutOkrRoute._addFileChildren(
+  LayoutOkrRouteChildren,
+)
+
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
+  LayoutOkrRoute: typeof LayoutOkrRouteWithChildren
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
+  LayoutOkrRoute: LayoutOkrRouteWithChildren,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }

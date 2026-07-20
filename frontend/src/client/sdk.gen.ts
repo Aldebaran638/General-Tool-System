@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, NotificationsListNotificationsEndpointData, NotificationsListNotificationsEndpointResponse, NotificationsMarkReadEndpointData, NotificationsMarkReadEndpointResponse, NotificationsMarkAllReadEndpointResponse, NotificationsDeleteNotificationEndpointData, NotificationsDeleteNotificationEndpointResponse, NotificationsUnreadCountEndpointResponse, PrivateCreateUserData, PrivateCreateUserResponse, PublicGetPublicStatsResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, UtilsStorageInfoEndpointResponse } from './types.gen';
+import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, NotificationsListNotificationsEndpointData, NotificationsListNotificationsEndpointResponse, NotificationsMarkReadEndpointData, NotificationsMarkReadEndpointResponse, NotificationsMarkAllReadEndpointResponse, NotificationsDeleteNotificationEndpointData, NotificationsDeleteNotificationEndpointResponse, NotificationsUnreadCountEndpointResponse, OkrReadDepartmentsResponse, OkrCreateDepartmentData, OkrCreateDepartmentResponse, OkrUpdateDepartmentData, OkrUpdateDepartmentResponse, OkrDeleteDepartmentData, OkrDeleteDepartmentResponse, OkrReorderDepartmentsData, OkrReorderDepartmentsResponse, OkrReadObjectivesResponse, OkrCreateObjectiveData, OkrCreateObjectiveResponse, OkrUpdateObjectiveData, OkrUpdateObjectiveResponse, OkrDeleteObjectiveData, OkrDeleteObjectiveResponse, OkrReadObjectiveKrsData, OkrReadObjectiveKrsResponse, OkrCreateKeyResultData, OkrCreateKeyResultResponse, OkrUpdateKeyResultData, OkrUpdateKeyResultResponse, OkrDeleteKeyResultData, OkrDeleteKeyResultResponse, OkrReadMyKrsData, OkrReadMyKrsResponse, OkrUpdateKrProgressData, OkrUpdateKrProgressResponse, OkrReadStatsByDepartmentResponse, OkrReadStatsByUserResponse, PrivateCreateUserData, PrivateCreateUserResponse, PublicGetPublicStatsResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, UtilsStorageInfoEndpointResponse } from './types.gen';
 
 export class LoginService {
     /**
@@ -188,6 +188,324 @@ export class NotificationsService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/notifications/unread-count'
+        });
+    }
+}
+
+export class OkrService {
+    /**
+     * Read Departments
+     * @returns DepartmentsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readDepartments(): CancelablePromise<OkrReadDepartmentsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/okr/departments'
+        });
+    }
+    
+    /**
+     * Create Department
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns DepartmentPublic Successful Response
+     * @throws ApiError
+     */
+    public static createDepartment(data: OkrCreateDepartmentData): CancelablePromise<OkrCreateDepartmentResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/okr/departments',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Department
+     * @param data The data for the request.
+     * @param data.departmentId
+     * @param data.requestBody
+     * @returns DepartmentPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateDepartment(data: OkrUpdateDepartmentData): CancelablePromise<OkrUpdateDepartmentResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/okr/departments/{department_id}',
+            path: {
+                department_id: data.departmentId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Department
+     * @param data The data for the request.
+     * @param data.departmentId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteDepartment(data: OkrDeleteDepartmentData): CancelablePromise<OkrDeleteDepartmentResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/okr/departments/{department_id}',
+            path: {
+                department_id: data.departmentId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Reorder Departments
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static reorderDepartments(data: OkrReorderDepartmentsData): CancelablePromise<OkrReorderDepartmentsResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/okr/departments/reorder',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Objectives
+     * @returns ObjectivesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readObjectives(): CancelablePromise<OkrReadObjectivesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/okr/objectives'
+        });
+    }
+    
+    /**
+     * Create Objective
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ObjectivePublic Successful Response
+     * @throws ApiError
+     */
+    public static createObjective(data: OkrCreateObjectiveData): CancelablePromise<OkrCreateObjectiveResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/okr/objectives',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Objective
+     * @param data The data for the request.
+     * @param data.objectiveId
+     * @param data.requestBody
+     * @returns ObjectivePublic Successful Response
+     * @throws ApiError
+     */
+    public static updateObjective(data: OkrUpdateObjectiveData): CancelablePromise<OkrUpdateObjectiveResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/okr/objectives/{objective_id}',
+            path: {
+                objective_id: data.objectiveId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Objective
+     * @param data The data for the request.
+     * @param data.objectiveId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteObjective(data: OkrDeleteObjectiveData): CancelablePromise<OkrDeleteObjectiveResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/okr/objectives/{objective_id}',
+            path: {
+                objective_id: data.objectiveId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Objective Krs
+     * @param data The data for the request.
+     * @param data.objectiveId
+     * @returns KeyResultsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readObjectiveKrs(data: OkrReadObjectiveKrsData): CancelablePromise<OkrReadObjectiveKrsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/okr/objectives/{objective_id}/krs',
+            path: {
+                objective_id: data.objectiveId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Key Result
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns KeyResultPublic Successful Response
+     * @throws ApiError
+     */
+    public static createKeyResult(data: OkrCreateKeyResultData): CancelablePromise<OkrCreateKeyResultResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/okr/krs',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Key Result
+     * @param data The data for the request.
+     * @param data.krId
+     * @param data.requestBody
+     * @returns KeyResultPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateKeyResult(data: OkrUpdateKeyResultData): CancelablePromise<OkrUpdateKeyResultResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/okr/krs/{kr_id}',
+            path: {
+                kr_id: data.krId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Key Result
+     * @param data The data for the request.
+     * @param data.krId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteKeyResult(data: OkrDeleteKeyResultData): CancelablePromise<OkrDeleteKeyResultResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/okr/krs/{kr_id}',
+            path: {
+                kr_id: data.krId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read My Krs
+     * @param data The data for the request.
+     * @param data.filter
+     * @returns KeyResultsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readMyKrs(data: OkrReadMyKrsData = {}): CancelablePromise<OkrReadMyKrsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/okr/krs/my',
+            query: {
+                filter: data.filter
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Kr Progress
+     * @param data The data for the request.
+     * @param data.krId
+     * @param data.requestBody
+     * @returns KeyResultPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateKrProgress(data: OkrUpdateKrProgressData): CancelablePromise<OkrUpdateKrProgressResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/okr/krs/{kr_id}/progress',
+            path: {
+                kr_id: data.krId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Stats By Department
+     * @returns DepartmentStatsList Successful Response
+     * @throws ApiError
+     */
+    public static readStatsByDepartment(): CancelablePromise<OkrReadStatsByDepartmentResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/okr/stats/by-department'
+        });
+    }
+    
+    /**
+     * Read Stats By User
+     * @returns UserStatsList Successful Response
+     * @throws ApiError
+     */
+    public static readStatsByUser(): CancelablePromise<OkrReadStatsByUserResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/okr/stats/by-user'
         });
     }
 }

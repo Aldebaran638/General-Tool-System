@@ -1,11 +1,17 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
-import { type UserPublic, UsersService } from "@/client"
+import {
+  OkrService,
+  type UserPublic,
+  UsersService,
+  type UserUpdate,
+} from "@/client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -21,12 +27,20 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import useCustomToast from "@/hooks/useCustomToast"
 import {
   toastFirstFormError,
@@ -34,25 +48,7 @@ import {
 } from "@/hooks/useFormErrorToast"
 import { handleError } from "@/utils"
 
-const formSchema = z
-  .object({
-    email: z.email({ message: "Invalid email address" }),
-    full_name: z.string().optional(),
-    password: z
-      .string()
-      .min(8, { message: "Password must be at least 8 characters" })
-      .optional()
-      .or(z.literal("")),
-    confirm_password: z.string().optional(),
-    is_superuser: z.boolean().optional(),
-    is_active: z.boolean().optional(),
-  })
-  .refine((data) => !data.password || data.password === data.confirm_password, {
-    message: "The passwords don't match",
-    path: ["confirm_password"],
-  })
-
-type FormData = z.infer<typeof formSchema>
+const NO_DEPARTMENT = "none"
 
 interface EditUserProps {
   user: UserPublic
@@ -61,8 +57,47 @@ interface EditUserProps {
 
 const EditUser = ({ user, onSuccess }: EditUserProps) => {
   const [isOpen, setIsOpen] = useState(false)
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
+
+  const { data: departments } = useQuery({
+    queryFn: () => OkrService.readDepartments(),
+    queryKey: ["departments"],
+  })
+
+  const formSchema = z
+    .object({
+      email: z.email({ message: "Invalid email address" }),
+      full_name: z.string().optional(),
+      password: z
+        .string()
+        .min(8, { message: "Password must be at least 8 characters" })
+        .optional()
+        .or(z.literal("")),
+      confirm_password: z.string().optional(),
+      department_id: z.string(),
+      is_superuser: z.boolean().optional(),
+      is_active: z.boolean().optional(),
+    })
+    .refine(
+      (data) => !data.password || data.password === data.confirm_password,
+      {
+        message: "The passwords don't match",
+        path: ["confirm_password"],
+      },
+    )
+    .superRefine((data, ctx) => {
+      if (!data.is_superuser && data.department_id === NO_DEPARTMENT) {
+        ctx.addIssue({
+          code: "custom",
+          message: t("admin.departmentRequired"),
+          path: ["department_id"],
+        })
+      }
+    })
+
+  type FormData = z.infer<typeof formSchema>
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -71,6 +106,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
     defaultValues: {
       email: user.email,
       full_name: user.full_name ?? undefined,
+      department_id: user.department_id ?? NO_DEPARTMENT,
       is_superuser: user.is_superuser,
       is_active: user.is_active,
     },
@@ -78,7 +114,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
   useFormErrorToast(form.formState.errors)
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) =>
+    mutationFn: (data: UserUpdate) =>
       UsersService.updateUser({ userId: user.id, requestBody: data }),
     onSuccess: () => {
       showSuccessToast("User updated successfully")
@@ -92,12 +128,19 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
   })
 
   const onSubmit = (data: FormData) => {
-    // exclude confirm_password from submission data and remove password if empty
-    const { confirm_password: _, ...submitData } = data
-    if (!submitData.password) {
-      delete submitData.password
+    // build the update payload, omitting password when left blank
+    const payload: UserUpdate = {
+      email: data.email,
+      full_name: data.full_name,
+      department_id:
+        data.department_id === NO_DEPARTMENT ? null : data.department_id,
+      is_superuser: data.is_superuser,
+      is_active: data.is_active,
     }
-    mutation.mutate(submitData)
+    if (data.password) {
+      payload.password = data.password
+    }
+    mutation.mutate(payload)
   }
 
   return (
@@ -157,14 +200,17 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Set Password</FormLabel>
+                    <FormLabel>{t("admin.resetPassword")}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Password"
+                        placeholder={t("admin.newPasswordPlaceholder")}
                         type="password"
                         {...field}
                       />
                     </FormControl>
+                    <FormDescription>
+                      {t("admin.leaveBlankToKeep")}
+                    </FormDescription>
                   </FormItem>
                 )}
               />
@@ -182,6 +228,35 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                         {...field}
                       />
                     </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="department_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("admin.department")}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue
+                            placeholder={t("admin.selectDepartment")}
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={NO_DEPARTMENT}>
+                          {t("admin.noDepartment")}
+                        </SelectItem>
+                        {departments?.data.map((department) => (
+                          <SelectItem key={department.id} value={department.id}>
+                            {department.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormItem>
                 )}
               />

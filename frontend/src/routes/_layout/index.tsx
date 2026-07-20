@@ -1,5 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
+import {
+  Building2,
+  FolderKanban,
+  ListTodo,
+  type LucideIcon,
+  Settings,
+  Target,
+  Users,
+  UsersRound,
+} from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { Card } from "@/components/ui/card"
 import useAuth from "@/hooks/useAuth"
 import i18n from "@/i18n"
 
@@ -13,6 +24,58 @@ export const Route = createFileRoute("/_layout/")({
     ],
   }),
 })
+
+type QuickLink = {
+  to: string
+  icon: LucideIcon
+  titleKey: string
+  superuserOnly?: boolean
+  memberOnly?: boolean
+}
+
+const QUICK_LINKS: QuickLink[] = [
+  {
+    to: "/okr",
+    icon: Target,
+    titleKey: "nav.okrOverview",
+    superuserOnly: true,
+  },
+  {
+    to: "/okr/my",
+    icon: ListTodo,
+    titleKey: "nav.myTasks",
+  },
+  {
+    to: "/okr/department-board",
+    icon: FolderKanban,
+    titleKey: "nav.departmentBoard",
+    superuserOnly: true,
+  },
+  {
+    to: "/okr/people-board",
+    icon: UsersRound,
+    titleKey: "nav.peopleBoard",
+    superuserOnly: true,
+  },
+  {
+    to: "/admin",
+    icon: Users,
+    titleKey: "nav.users",
+    superuserOnly: true,
+  },
+  {
+    to: "/okr/departments",
+    icon: Building2,
+    titleKey: "nav.departments",
+    superuserOnly: true,
+  },
+  {
+    to: "/settings",
+    icon: Settings,
+    titleKey: "nav.settings",
+    memberOnly: true,
+  },
+]
 
 function formatToday(locale: string): string {
   const now = new Date()
@@ -31,6 +94,17 @@ function Dashboard() {
   const displayName =
     currentUser?.full_name || currentUser?.email || t("dashboard.user")
 
+  const isSuperuser = currentUser?.is_superuser ?? false
+  const quickLinks = QUICK_LINKS.filter((link) => {
+    if (link.superuserOnly) {
+      return isSuperuser
+    }
+    if (link.memberOnly) {
+      return !isSuperuser
+    }
+    return true
+  })
+
   return (
     <div className="flex flex-col gap-6">
       <div className="relative overflow-hidden rounded-md bg-card border border-border px-6 py-8 md:px-10 md:py-10">
@@ -48,6 +122,24 @@ function Dashboard() {
               {formatToday(i18nInstance.language)}
             </span>
           </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <h2 className="text-subheading text-foreground">
+          {t("dashboard.quickLinks")}
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {quickLinks.map((link) => (
+            <RouterLink key={link.to} to={link.to}>
+              <Card className="h-full flex-row items-center gap-3 px-4 py-4 transition-colors hover:border-primary/40 hover:bg-accent/50">
+                <link.icon className="size-5 shrink-0 text-primary" />
+                <span className="text-body text-foreground">
+                  {t(link.titleKey)}
+                </span>
+              </Card>
+            </RouterLink>
+          ))}
         </div>
       </div>
     </div>
