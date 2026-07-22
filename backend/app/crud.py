@@ -1,4 +1,3 @@
-import uuid
 from typing import Any
 
 from sqlmodel import Session, select
@@ -30,7 +29,6 @@ def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> Any:
     session.refresh(db_user)
     return db_user
 
-
 def get_user_by_email(*, session: Session, email: str) -> User | None:
     statement = select(User).where(User.email == email)
     session_user = session.exec(statement).first()
@@ -58,8 +56,3 @@ def authenticate(*, session: Session, email: str, password: str) -> User | None:
         session.commit()
         session.refresh(db_user)
     return db_user
-
-
-# NOTE: create_item has been moved to the project_management module.
-# Import it from there instead:
-#   from app.modules.workbench.project_management.repository import create_item

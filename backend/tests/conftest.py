@@ -1,14 +1,14 @@
-from collections.abc import Generator
 import os
+from collections.abc import Generator
 from pathlib import Path
 
-import pytest
 import psycopg
+import pytest
 from alembic import command
 from alembic.config import Config
-from psycopg import sql
 from fastapi.testclient import TestClient
-from sqlmodel import Session, delete
+from psycopg import sql
+from sqlmodel import Session
 
 # Tests must never write to the development database. They use a separate
 # database in the same PostgreSQL service and recreate it for each test session.

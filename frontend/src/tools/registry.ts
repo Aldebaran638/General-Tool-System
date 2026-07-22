@@ -6,7 +6,7 @@ import type { ComponentType } from "react"
 // =============================================================================
 
 export type ToolRouteConfig = {
-  /** Route path, e.g., "/items" */
+  /** Route path, e.g., "/okr" */
   path: string
   /** Page title */
   title: string

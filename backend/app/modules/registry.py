@@ -7,12 +7,12 @@ New tools register themselves instead of being manually imported in legacy route
 Usage:
     # In your module's __init__.py:
     from app.modules.registry import register_module
-    
+
     register_module(
-        name="project_management",
+        name="example_tool",
         group="workbench",
         router=router,
-        models=[Item],  # optional
+        models=[],  # optional
     )
 """
 
@@ -60,7 +60,7 @@ class ModuleRegistry:
         """Register a tool module.
 
         Args:
-            name: Unique module identifier (e.g., "project_management")
+            name: Unique module identifier (e.g., "okr")
             group: Module group (e.g., "workbench")
             router: FastAPI router instance
             models: SQLModel classes defined by this module

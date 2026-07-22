@@ -19,7 +19,7 @@ from sqlmodel import Session, select
 from app import crud
 from app.core.config import settings
 from app.core.db import engine
-from app.models_core import User, UserCreate
+from app.models_core import UserCreate
 from app.modules.okr import crud as okr_crud
 from app.modules.okr.models import Department, KeyResult, Objective
 from app.modules.okr.schemas import (

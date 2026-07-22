@@ -16,7 +16,11 @@ import uuid
 from fastapi import APIRouter, HTTPException, Query
 
 from app.api.deps import CurrentUser, SessionDep
-from app.modules.notification.schemas import NotificationPublic, NotificationsPublic, UnreadCountResponse
+from app.modules.notification.schemas import (
+    NotificationPublic,
+    NotificationsPublic,
+    UnreadCountResponse,
+)
 from app.modules.notification.service import (
     delete_notification,
     get_notification,

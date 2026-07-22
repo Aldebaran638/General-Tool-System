@@ -35,7 +35,7 @@ api_router.include_router(public.router, prefix="/public", tags=["public"])
 auto_discover_modules("app.modules")
 
 # Include all registered module routers
-for module_name, router in registry.get_routers():
+for _module_name, router in registry.get_routers():
     api_router.include_router(router)
 
 

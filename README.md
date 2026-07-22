@@ -56,6 +56,7 @@ curl http://localhost:10304/api/v1/utils/health-check/
 | 查看日志 | `docker compose logs -f backend` |
 | 生成前端 API 客户端 | `bash scripts/generate-client.sh` |
 | 前端 lint | `bun run lint` |
+| 前端类型检查 | `docker compose exec -T frontend bun run typecheck` |
 | 后端 lint / 格式化 | `uv run ruff check .` / `uv run ruff format .` |
 | 后端测试 | `uv run pytest` |
 | 前端测试 | `bun run --filter frontend test` |
