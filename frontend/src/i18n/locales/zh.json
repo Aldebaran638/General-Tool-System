@@ -16,6 +16,8 @@
     "departments": "部门管理",
     "workReports": "工作汇报",
     "fillWorkReport": "填写汇报",
+    "myWorkReports": "我的汇报",
+    "allWorkReports": "全部汇报",
     "workReportConfig": "字段配置"
   },
   "auth": {

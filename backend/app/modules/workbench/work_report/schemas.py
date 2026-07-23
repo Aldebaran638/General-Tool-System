@@ -58,7 +58,7 @@ class WorkReportSubmit(SQLModel):
 
 
 class ReporterBrief(SQLModel):
-    id: uuid.UUID
+    id: uuid.UUID | None
     name: str | None
     email: str
 
@@ -80,6 +80,44 @@ class WorkReportSubmissionResult(SQLModel):
     submitted_at: datetime
     submission_mode: Literal["created", "supplemented"]
     counts: DetailCounts
+
+
+class WorkReportSummary(SQLModel):
+    id: uuid.UUID
+    reporter: ReporterBrief
+    report_type: ReportType
+    period_start: date
+    period_end: date
+    title: str
+    remarks: str | None
+    submitted_at: datetime
+    counts: DetailCounts
+
+
+class WorkReportsPublic(SQLModel):
+    data: list[WorkReportSummary]
+    count: int
+
+
+class WorkPlanPublic(WorkPlanInput):
+    id: uuid.UUID
+    sort_order: int
+
+
+class TaskSummaryPublic(TaskSummaryInput):
+    id: uuid.UUID
+    sort_order: int
+
+
+class WorkReviewPublic(WorkReviewInput):
+    id: uuid.UUID
+    sort_order: int
+
+
+class WorkReportDetail(WorkReportSummary):
+    work_plans: list[WorkPlanPublic]
+    task_summaries: list[TaskSummaryPublic]
+    work_reviews: list[WorkReviewPublic]
 
 
 class FieldConfigPublic(SQLModel):

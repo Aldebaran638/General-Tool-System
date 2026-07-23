@@ -20,7 +20,10 @@ import { Route as LayoutOkrRouteImport } from './routes/_layout/okr'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LoginFeishuCallbackRouteImport } from './routes/login_.feishu.callback'
 import { Route as LayoutWorkReportsNewRouteImport } from './routes/_layout/work-reports.new'
+import { Route as LayoutWorkReportsMineRouteImport } from './routes/_layout/work-reports.mine'
 import { Route as LayoutWorkReportsConfigRouteImport } from './routes/_layout/work-reports.config'
+import { Route as LayoutWorkReportsAdminRouteImport } from './routes/_layout/work-reports.admin'
+import { Route as LayoutWorkReportsReportIdRouteImport } from './routes/_layout/work-reports.$reportId'
 import { Route as LayoutOkrPeopleBoardRouteImport } from './routes/_layout/okr.people-board'
 import { Route as LayoutOkrMyRouteImport } from './routes/_layout/okr.my'
 import { Route as LayoutOkrDepartmentsRouteImport } from './routes/_layout/okr.departments'
@@ -80,11 +83,27 @@ const LayoutWorkReportsNewRoute = LayoutWorkReportsNewRouteImport.update({
   path: '/work-reports/new',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutWorkReportsMineRoute = LayoutWorkReportsMineRouteImport.update({
+  id: '/work-reports/mine',
+  path: '/work-reports/mine',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutWorkReportsConfigRoute = LayoutWorkReportsConfigRouteImport.update({
   id: '/work-reports/config',
   path: '/work-reports/config',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutWorkReportsAdminRoute = LayoutWorkReportsAdminRouteImport.update({
+  id: '/work-reports/admin',
+  path: '/work-reports/admin',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutWorkReportsReportIdRoute =
+  LayoutWorkReportsReportIdRouteImport.update({
+    id: '/work-reports/$reportId',
+    path: '/work-reports/$reportId',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 const LayoutOkrPeopleBoardRoute = LayoutOkrPeopleBoardRouteImport.update({
   id: '/people-board',
   path: '/people-board',
@@ -120,7 +139,10 @@ export interface FileRoutesByFullPath {
   '/okr/departments': typeof LayoutOkrDepartmentsRoute
   '/okr/my': typeof LayoutOkrMyRoute
   '/okr/people-board': typeof LayoutOkrPeopleBoardRoute
+  '/work-reports/$reportId': typeof LayoutWorkReportsReportIdRoute
+  '/work-reports/admin': typeof LayoutWorkReportsAdminRoute
   '/work-reports/config': typeof LayoutWorkReportsConfigRoute
+  '/work-reports/mine': typeof LayoutWorkReportsMineRoute
   '/work-reports/new': typeof LayoutWorkReportsNewRoute
   '/login/feishu/callback': typeof LoginFeishuCallbackRoute
 }
@@ -137,7 +159,10 @@ export interface FileRoutesByTo {
   '/okr/departments': typeof LayoutOkrDepartmentsRoute
   '/okr/my': typeof LayoutOkrMyRoute
   '/okr/people-board': typeof LayoutOkrPeopleBoardRoute
+  '/work-reports/$reportId': typeof LayoutWorkReportsReportIdRoute
+  '/work-reports/admin': typeof LayoutWorkReportsAdminRoute
   '/work-reports/config': typeof LayoutWorkReportsConfigRoute
+  '/work-reports/mine': typeof LayoutWorkReportsMineRoute
   '/work-reports/new': typeof LayoutWorkReportsNewRoute
   '/login/feishu/callback': typeof LoginFeishuCallbackRoute
 }
@@ -156,7 +181,10 @@ export interface FileRoutesById {
   '/_layout/okr/departments': typeof LayoutOkrDepartmentsRoute
   '/_layout/okr/my': typeof LayoutOkrMyRoute
   '/_layout/okr/people-board': typeof LayoutOkrPeopleBoardRoute
+  '/_layout/work-reports/$reportId': typeof LayoutWorkReportsReportIdRoute
+  '/_layout/work-reports/admin': typeof LayoutWorkReportsAdminRoute
   '/_layout/work-reports/config': typeof LayoutWorkReportsConfigRoute
+  '/_layout/work-reports/mine': typeof LayoutWorkReportsMineRoute
   '/_layout/work-reports/new': typeof LayoutWorkReportsNewRoute
   '/login_/feishu/callback': typeof LoginFeishuCallbackRoute
 }
@@ -175,7 +203,10 @@ export interface FileRouteTypes {
     | '/okr/departments'
     | '/okr/my'
     | '/okr/people-board'
+    | '/work-reports/$reportId'
+    | '/work-reports/admin'
     | '/work-reports/config'
+    | '/work-reports/mine'
     | '/work-reports/new'
     | '/login/feishu/callback'
   fileRoutesByTo: FileRoutesByTo
@@ -192,7 +223,10 @@ export interface FileRouteTypes {
     | '/okr/departments'
     | '/okr/my'
     | '/okr/people-board'
+    | '/work-reports/$reportId'
+    | '/work-reports/admin'
     | '/work-reports/config'
+    | '/work-reports/mine'
     | '/work-reports/new'
     | '/login/feishu/callback'
   id:
@@ -210,7 +244,10 @@ export interface FileRouteTypes {
     | '/_layout/okr/departments'
     | '/_layout/okr/my'
     | '/_layout/okr/people-board'
+    | '/_layout/work-reports/$reportId'
+    | '/_layout/work-reports/admin'
     | '/_layout/work-reports/config'
+    | '/_layout/work-reports/mine'
     | '/_layout/work-reports/new'
     | '/login_/feishu/callback'
   fileRoutesById: FileRoutesById
@@ -303,11 +340,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutWorkReportsNewRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/work-reports/mine': {
+      id: '/_layout/work-reports/mine'
+      path: '/work-reports/mine'
+      fullPath: '/work-reports/mine'
+      preLoaderRoute: typeof LayoutWorkReportsMineRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/work-reports/config': {
       id: '/_layout/work-reports/config'
       path: '/work-reports/config'
       fullPath: '/work-reports/config'
       preLoaderRoute: typeof LayoutWorkReportsConfigRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/work-reports/admin': {
+      id: '/_layout/work-reports/admin'
+      path: '/work-reports/admin'
+      fullPath: '/work-reports/admin'
+      preLoaderRoute: typeof LayoutWorkReportsAdminRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/work-reports/$reportId': {
+      id: '/_layout/work-reports/$reportId'
+      path: '/work-reports/$reportId'
+      fullPath: '/work-reports/$reportId'
+      preLoaderRoute: typeof LayoutWorkReportsReportIdRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/okr/people-board': {
@@ -364,7 +422,10 @@ interface LayoutRouteChildren {
   LayoutOkrRoute: typeof LayoutOkrRouteWithChildren
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
+  LayoutWorkReportsReportIdRoute: typeof LayoutWorkReportsReportIdRoute
+  LayoutWorkReportsAdminRoute: typeof LayoutWorkReportsAdminRoute
   LayoutWorkReportsConfigRoute: typeof LayoutWorkReportsConfigRoute
+  LayoutWorkReportsMineRoute: typeof LayoutWorkReportsMineRoute
   LayoutWorkReportsNewRoute: typeof LayoutWorkReportsNewRoute
 }
 
@@ -373,7 +434,10 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutOkrRoute: LayoutOkrRouteWithChildren,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
+  LayoutWorkReportsReportIdRoute: LayoutWorkReportsReportIdRoute,
+  LayoutWorkReportsAdminRoute: LayoutWorkReportsAdminRoute,
   LayoutWorkReportsConfigRoute: LayoutWorkReportsConfigRoute,
+  LayoutWorkReportsMineRoute: LayoutWorkReportsMineRoute,
   LayoutWorkReportsNewRoute: LayoutWorkReportsNewRoute,
 }
 

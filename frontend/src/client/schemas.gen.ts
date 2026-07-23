@@ -964,8 +964,15 @@ export const ReportTypeSchema = {
 export const ReporterBriefSchema = {
     properties: {
         id: {
-            type: 'string',
-            format: 'uuid',
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             title: 'Id'
         },
         name: {
@@ -1052,6 +1059,81 @@ export const TaskSummaryInputSchema = {
     },
     type: 'object',
     title: 'TaskSummaryInput'
+} as const;
+
+export const TaskSummaryPublicSchema = {
+    properties: {
+        work_goal: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Work Goal'
+        },
+        completion_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Completion Date'
+        },
+        progress_description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Progress Description'
+        },
+        progress: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 100,
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Progress'
+        },
+        incomplete_reason: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Incomplete Reason'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        sort_order: {
+            type: 'integer',
+            title: 'Sort Order'
+        }
+    },
+    type: 'object',
+    required: ['id', 'sort_order'],
+    title: 'TaskSummaryPublic'
 } as const;
 
 export const TokenSchema = {
@@ -1575,6 +1657,152 @@ export const WorkPlanInputSchema = {
     title: 'WorkPlanInput'
 } as const;
 
+export const WorkPlanPublicSchema = {
+    properties: {
+        plan_content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Plan Content'
+        },
+        planned_completion_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Planned Completion Date'
+        },
+        expected_result: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Expected Result'
+        },
+        support_needed: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Support Needed'
+        },
+        remarks: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Remarks'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        sort_order: {
+            type: 'integer',
+            title: 'Sort Order'
+        }
+    },
+    type: 'object',
+    required: ['id', 'sort_order'],
+    title: 'WorkPlanPublic'
+} as const;
+
+export const WorkReportDetailSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        reporter: {
+            '$ref': '#/components/schemas/ReporterBrief'
+        },
+        report_type: {
+            '$ref': '#/components/schemas/ReportType'
+        },
+        period_start: {
+            type: 'string',
+            format: 'date',
+            title: 'Period Start'
+        },
+        period_end: {
+            type: 'string',
+            format: 'date',
+            title: 'Period End'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        remarks: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Remarks'
+        },
+        submitted_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Submitted At'
+        },
+        counts: {
+            '$ref': '#/components/schemas/DetailCounts'
+        },
+        work_plans: {
+            items: {
+                '$ref': '#/components/schemas/WorkPlanPublic'
+            },
+            type: 'array',
+            title: 'Work Plans'
+        },
+        task_summaries: {
+            items: {
+                '$ref': '#/components/schemas/TaskSummaryPublic'
+            },
+            type: 'array',
+            title: 'Task Summaries'
+        },
+        work_reviews: {
+            items: {
+                '$ref': '#/components/schemas/WorkReviewPublic'
+            },
+            type: 'array',
+            title: 'Work Reviews'
+        }
+    },
+    type: 'object',
+    required: ['id', 'reporter', 'report_type', 'period_start', 'period_end', 'title', 'remarks', 'submitted_at', 'counts', 'work_plans', 'task_summaries', 'work_reviews'],
+    title: 'WorkReportDetail'
+} as const;
+
 export const WorkReportSubmissionResultSchema = {
     properties: {
         id: {
@@ -1691,6 +1919,77 @@ export const WorkReportSubmitSchema = {
     title: 'WorkReportSubmit'
 } as const;
 
+export const WorkReportSummarySchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        reporter: {
+            '$ref': '#/components/schemas/ReporterBrief'
+        },
+        report_type: {
+            '$ref': '#/components/schemas/ReportType'
+        },
+        period_start: {
+            type: 'string',
+            format: 'date',
+            title: 'Period Start'
+        },
+        period_end: {
+            type: 'string',
+            format: 'date',
+            title: 'Period End'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        remarks: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Remarks'
+        },
+        submitted_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Submitted At'
+        },
+        counts: {
+            '$ref': '#/components/schemas/DetailCounts'
+        }
+    },
+    type: 'object',
+    required: ['id', 'reporter', 'report_type', 'period_start', 'period_end', 'title', 'remarks', 'submitted_at', 'counts'],
+    title: 'WorkReportSummary'
+} as const;
+
+export const WorkReportsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/WorkReportSummary'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'WorkReportsPublic'
+} as const;
+
 export const WorkReviewInputSchema = {
     properties: {
         review_module: {
@@ -1718,4 +2017,43 @@ export const WorkReviewInputSchema = {
     },
     type: 'object',
     title: 'WorkReviewInput'
+} as const;
+
+export const WorkReviewPublicSchema = {
+    properties: {
+        review_module: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Review Module'
+        },
+        review_content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Review Content'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        sort_order: {
+            type: 'integer',
+            title: 'Sort Order'
+        }
+    },
+    type: 'object',
+    required: ['id', 'sort_order'],
+    title: 'WorkReviewPublic'
 } as const;

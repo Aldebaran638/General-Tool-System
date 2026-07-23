@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginFeishuLoginCallbackData, LoginExchangeFeishuLoginTicketData, LoginExchangeFeishuLoginTicketResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, NotificationsListNotificationsEndpointData, NotificationsListNotificationsEndpointResponse, NotificationsMarkReadEndpointData, NotificationsMarkReadEndpointResponse, NotificationsMarkAllReadEndpointResponse, NotificationsDeleteNotificationEndpointData, NotificationsDeleteNotificationEndpointResponse, NotificationsUnreadCountEndpointResponse, OkrReadObjectivesResponse, OkrCreateObjectiveData, OkrCreateObjectiveResponse, OkrUpdateObjectiveData, OkrUpdateObjectiveResponse, OkrDeleteObjectiveData, OkrDeleteObjectiveResponse, OkrReadObjectiveKrsData, OkrReadObjectiveKrsResponse, OkrReadOverviewDepartmentsResponse, OkrReadOverviewMembersResponse, OkrCreateKeyResultData, OkrCreateKeyResultResponse, OkrUpdateKeyResultData, OkrUpdateKeyResultResponse, OkrDeleteKeyResultData, OkrDeleteKeyResultResponse, OkrReadMyKrsData, OkrReadMyKrsResponse, OkrUpdateKrProgressData, OkrUpdateKrProgressResponse, OkrReadDepartmentsResponse, OkrCreateDepartmentData, OkrCreateDepartmentResponse, OkrUpdateDepartmentData, OkrUpdateDepartmentResponse, OkrDeleteDepartmentData, OkrDeleteDepartmentResponse, OkrReorderDepartmentsData, OkrReorderDepartmentsResponse, PrivateCreateUserData, PrivateCreateUserResponse, PublicGetPublicStatsResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, UtilsStorageInfoEndpointResponse, WorkReportsReadFieldConfigResponse, WorkReportsUpdateFieldConfigData, WorkReportsUpdateFieldConfigResponse, WorkReportsCreateOrSupplementWorkReportData, WorkReportsCreateOrSupplementWorkReportResponse } from './types.gen';
+import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginFeishuLoginCallbackData, LoginExchangeFeishuLoginTicketData, LoginExchangeFeishuLoginTicketResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, NotificationsListNotificationsEndpointData, NotificationsListNotificationsEndpointResponse, NotificationsMarkReadEndpointData, NotificationsMarkReadEndpointResponse, NotificationsMarkAllReadEndpointResponse, NotificationsDeleteNotificationEndpointData, NotificationsDeleteNotificationEndpointResponse, NotificationsUnreadCountEndpointResponse, OkrReadObjectivesResponse, OkrCreateObjectiveData, OkrCreateObjectiveResponse, OkrUpdateObjectiveData, OkrUpdateObjectiveResponse, OkrDeleteObjectiveData, OkrDeleteObjectiveResponse, OkrReadObjectiveKrsData, OkrReadObjectiveKrsResponse, OkrReadOverviewDepartmentsResponse, OkrReadOverviewMembersResponse, OkrCreateKeyResultData, OkrCreateKeyResultResponse, OkrUpdateKeyResultData, OkrUpdateKeyResultResponse, OkrDeleteKeyResultData, OkrDeleteKeyResultResponse, OkrReadMyKrsData, OkrReadMyKrsResponse, OkrUpdateKrProgressData, OkrUpdateKrProgressResponse, OkrReadDepartmentsResponse, OkrCreateDepartmentData, OkrCreateDepartmentResponse, OkrUpdateDepartmentData, OkrUpdateDepartmentResponse, OkrDeleteDepartmentData, OkrDeleteDepartmentResponse, OkrReorderDepartmentsData, OkrReorderDepartmentsResponse, PrivateCreateUserData, PrivateCreateUserResponse, PublicGetPublicStatsResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, UtilsStorageInfoEndpointResponse, WorkReportsReadMyWorkReportsData, WorkReportsReadMyWorkReportsResponse, WorkReportsReadAllWorkReportsData, WorkReportsReadAllWorkReportsResponse, WorkReportsReadFieldConfigResponse, WorkReportsUpdateFieldConfigData, WorkReportsUpdateFieldConfigResponse, WorkReportsCreateOrSupplementWorkReportData, WorkReportsCreateOrSupplementWorkReportResponse, WorkReportsReadWorkReportData, WorkReportsReadWorkReportResponse } from './types.gen';
 
 export class LoginService {
     /**
@@ -187,7 +187,7 @@ export class NotificationsService {
             }
         });
     }
-    
+
     /**
      * 标记已读
      * @param data The data for the request.
@@ -207,7 +207,7 @@ export class NotificationsService {
             }
         });
     }
-    
+
     /**
      * 标记全部已读
      * @returns unknown Successful Response
@@ -219,7 +219,7 @@ export class NotificationsService {
             url: '/api/v1/notifications/read-all'
         });
     }
-    
+
     /**
      * 删除通知
      * @param data The data for the request.
@@ -239,7 +239,7 @@ export class NotificationsService {
             }
         });
     }
-    
+
     /**
      * 未读通知数量
      * @returns UnreadCountResponse Successful Response
@@ -265,7 +265,7 @@ export class OkrService {
             url: '/api/v1/okr/objectives'
         });
     }
-    
+
     /**
      * Create Objective
      * @param data The data for the request.
@@ -284,7 +284,7 @@ export class OkrService {
             }
         });
     }
-    
+
     /**
      * Update Objective
      * @param data The data for the request.
@@ -307,7 +307,7 @@ export class OkrService {
             }
         });
     }
-    
+
     /**
      * Delete Objective
      * @param data The data for the request.
@@ -327,7 +327,7 @@ export class OkrService {
             }
         });
     }
-    
+
     /**
      * Read Objective Krs
      * @param data The data for the request.
@@ -347,7 +347,7 @@ export class OkrService {
             }
         });
     }
-    
+
     /**
      * Read Overview Departments
      * @returns DepartmentStatsList Successful Response
@@ -359,7 +359,7 @@ export class OkrService {
             url: '/api/v1/okr/overview/departments'
         });
     }
-    
+
     /**
      * Read Overview Members
      * @returns UserStatsList Successful Response
@@ -371,7 +371,7 @@ export class OkrService {
             url: '/api/v1/okr/overview/members'
         });
     }
-    
+
     /**
      * Create Key Result
      * @param data The data for the request.
@@ -390,7 +390,7 @@ export class OkrService {
             }
         });
     }
-    
+
     /**
      * Update Key Result
      * @param data The data for the request.
@@ -413,7 +413,7 @@ export class OkrService {
             }
         });
     }
-    
+
     /**
      * Delete Key Result
      * @param data The data for the request.
@@ -433,7 +433,7 @@ export class OkrService {
             }
         });
     }
-    
+
     /**
      * Read My Krs
      * @param data The data for the request.
@@ -453,7 +453,7 @@ export class OkrService {
             }
         });
     }
-    
+
     /**
      * Update Kr Progress
      * @param data The data for the request.
@@ -476,7 +476,7 @@ export class OkrService {
             }
         });
     }
-    
+
     /**
      * Read Departments
      * @returns DepartmentsPublic Successful Response
@@ -488,7 +488,7 @@ export class OkrService {
             url: '/api/v1/okr/departments'
         });
     }
-    
+
     /**
      * Create Department
      * @param data The data for the request.
@@ -507,7 +507,7 @@ export class OkrService {
             }
         });
     }
-    
+
     /**
      * Update Department
      * @param data The data for the request.
@@ -530,7 +530,7 @@ export class OkrService {
             }
         });
     }
-    
+
     /**
      * Delete Department
      * @param data The data for the request.
@@ -550,7 +550,7 @@ export class OkrService {
             }
         });
     }
-    
+
     /**
      * Reorder Departments
      * @param data The data for the request.
@@ -636,7 +636,7 @@ export class UsersService {
             }
         });
     }
-    
+
     /**
      * Create User
      * Create new user.
@@ -656,7 +656,7 @@ export class UsersService {
             }
         });
     }
-    
+
     /**
      * Read User Me
      * Get current user.
@@ -669,7 +669,7 @@ export class UsersService {
             url: '/api/v1/users/me'
         });
     }
-    
+
     /**
      * Delete User Me
      * Delete own user.
@@ -682,7 +682,7 @@ export class UsersService {
             url: '/api/v1/users/me'
         });
     }
-    
+
     /**
      * Update User Me
      * Update own user.
@@ -702,7 +702,7 @@ export class UsersService {
             }
         });
     }
-    
+
     /**
      * Update Password Me
      * Update own password.
@@ -722,7 +722,7 @@ export class UsersService {
             }
         });
     }
-    
+
     /**
      * Register User
      * Create new user without the need to be logged in.
@@ -742,7 +742,7 @@ export class UsersService {
             }
         });
     }
-    
+
     /**
      * Read User By Id
      * Get a specific user by id.
@@ -763,7 +763,7 @@ export class UsersService {
             }
         });
     }
-    
+
     /**
      * Update User
      * Update a user.
@@ -787,7 +787,7 @@ export class UsersService {
             }
         });
     }
-    
+
     /**
      * Delete User
      * Delete a user.
@@ -831,7 +831,7 @@ export class UtilsService {
             }
         });
     }
-    
+
     /**
      * Health Check
      * @returns boolean Successful Response
@@ -843,7 +843,7 @@ export class UtilsService {
             url: '/api/v1/utils/health-check/'
         });
     }
-    
+
     /**
      * 存储目录配置信息（需超管权限）
      * Return current storage directory configuration and status.
@@ -859,6 +859,76 @@ export class UtilsService {
 }
 
 export class WorkReportsService {
+    /**
+     * Read My Work Reports
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @param data.reportType
+     * @param data.periodFrom
+     * @param data.periodTo
+     * @param data.submittedFrom
+     * @param data.submittedTo
+     * @param data.keyword
+     * @returns WorkReportsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readMyWorkReports(data: WorkReportsReadMyWorkReportsData = {}): CancelablePromise<WorkReportsReadMyWorkReportsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/work-reports/mine',
+            query: {
+                skip: data.skip,
+                limit: data.limit,
+                report_type: data.reportType,
+                period_from: data.periodFrom,
+                period_to: data.periodTo,
+                submitted_from: data.submittedFrom,
+                submitted_to: data.submittedTo,
+                keyword: data.keyword
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
+     * Read All Work Reports
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @param data.reportType
+     * @param data.reporter
+     * @param data.periodFrom
+     * @param data.periodTo
+     * @param data.submittedFrom
+     * @param data.submittedTo
+     * @param data.keyword
+     * @returns WorkReportsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readAllWorkReports(data: WorkReportsReadAllWorkReportsData = {}): CancelablePromise<WorkReportsReadAllWorkReportsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/work-reports/admin',
+            query: {
+                skip: data.skip,
+                limit: data.limit,
+                report_type: data.reportType,
+                reporter: data.reporter,
+                period_from: data.periodFrom,
+                period_to: data.periodTo,
+                submitted_from: data.submittedFrom,
+                submitted_to: data.submittedTo,
+                keyword: data.keyword
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
     /**
      * Read Field Config
      * @returns FieldConfigsPublic Successful Response
@@ -903,6 +973,26 @@ export class WorkReportsService {
             url: '/api/v1/work-reports',
             body: data.requestBody,
             mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
+     * Read Work Report
+     * @param data The data for the request.
+     * @param data.reportId
+     * @returns WorkReportDetail Successful Response
+     * @throws ApiError
+     */
+    public static readWorkReport(data: WorkReportsReadWorkReportData): CancelablePromise<WorkReportsReadWorkReportResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/work-reports/{report_id}',
+            path: {
+                report_id: data.reportId
+            },
             errors: {
                 422: 'Validation Error'
             }

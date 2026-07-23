@@ -280,3 +280,97 @@ def test_transaction_rolls_back_when_commit_fails(
             WorkReport.title == "应完整回滚的汇报"
         )
     ).one() == 0
+
+
+def test_my_history_only_returns_current_users_reports(
+    client: TestClient, db: Session
+) -> None:
+    first_headers, first_user_id = new_user_headers(client, db)
+    second_headers, _ = new_user_headers(client, db)
+    first_title = random_name("mine-history")
+    second_title = random_name("other-history")
+    first = client.post(
+        URL,
+        headers=first_headers,
+        json=_payload("2026-W37", title=first_title),
+    )
+    second = client.post(
+        URL,
+        headers=second_headers,
+        json=_payload("2026-W37", title=second_title),
+    )
+    assert first.status_code == 201
+    assert second.status_code == 201
+
+    response = client.get(
+        f"{URL}/mine",
+        headers=first_headers,
+        params={"keyword": "mine-history", "report_type": "weekly"},
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["count"] == 1
+    assert data["data"][0]["title"] == first_title
+    assert data["data"][0]["reporter"]["id"] == first_user_id
+    assert data["data"][0]["counts"] == {
+        "work_plans": 1,
+        "task_summaries": 1,
+        "work_reviews": 1,
+    }
+
+
+def test_admin_history_supports_reporter_and_date_filters(
+    client: TestClient, db: Session, superuser_token_headers: dict[str, str]
+) -> None:
+    headers, _ = new_user_headers(client, db)
+    me = client.get(f"{settings.API_V1_STR}/users/me", headers=headers).json()
+    title = random_name("admin-filter")
+    created = client.post(
+        URL, headers=headers, json=_payload("2026-W38", title=title)
+    )
+    assert created.status_code == 201
+
+    response = client.get(
+        f"{URL}/admin",
+        headers=superuser_token_headers,
+        params={
+            "reporter": me["email"],
+            "period_from": "2026-09-14",
+            "period_to": "2026-09-20",
+            "keyword": "admin-filter",
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["count"] == 1
+    assert response.json()["data"][0]["title"] == title
+
+    forbidden = client.get(f"{URL}/admin", headers=headers)
+    assert forbidden.status_code == 403
+
+
+def test_report_detail_enforces_owner_or_admin(
+    client: TestClient, db: Session, superuser_token_headers: dict[str, str]
+) -> None:
+    owner_headers, _ = new_user_headers(client, db)
+    other_headers, _ = new_user_headers(client, db)
+    created = client.post(
+        URL,
+        headers=owner_headers,
+        json=_payload("2026-W39", title=random_name("detail")),
+    )
+    assert created.status_code == 201
+    report_id = created.json()["id"]
+
+    owner_response = client.get(f"{URL}/{report_id}", headers=owner_headers)
+    assert owner_response.status_code == 200, owner_response.text
+    assert len(owner_response.json()["work_plans"]) == 1
+    assert len(owner_response.json()["task_summaries"]) == 1
+    assert len(owner_response.json()["work_reviews"]) == 1
+
+    forbidden = client.get(f"{URL}/{report_id}", headers=other_headers)
+    assert forbidden.status_code == 403
+
+    admin_response = client.get(
+        f"{URL}/{report_id}", headers=superuser_token_headers
+    )
+    assert admin_response.status_code == 200

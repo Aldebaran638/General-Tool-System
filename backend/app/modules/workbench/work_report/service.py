@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import calendar
 import re
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Any, Literal
 
 from fastapi import HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlmodel import Session, select
 
 from app.models_core import User
@@ -24,10 +24,16 @@ from app.modules.workbench.work_report.schemas import (
     ReporterBrief,
     ReportType,
     TaskSummaryInput,
+    TaskSummaryPublic,
     WorkPlanInput,
+    WorkPlanPublic,
+    WorkReportDetail,
+    WorkReportsPublic,
     WorkReportSubmissionResult,
     WorkReportSubmit,
+    WorkReportSummary,
     WorkReviewInput,
+    WorkReviewPublic,
 )
 
 FIELD_DEFAULTS: tuple[tuple[str, str, bool], ...] = (
@@ -45,6 +51,121 @@ FIELD_DEFAULTS: tuple[tuple[str, str, bool], ...] = (
     ("work_review", "review_content", True),
 )
 SUPPORTED_FIELDS = {(section, field_key) for section, field_key, _ in FIELD_DEFAULTS}
+
+
+def list_work_reports(
+    *,
+    session: Session,
+    current_user: User,
+    include_all: bool,
+    skip: int,
+    limit: int,
+    report_type: ReportType | None = None,
+    reporter: str | None = None,
+    period_from: date | None = None,
+    period_to: date | None = None,
+    submitted_from: date | None = None,
+    submitted_to: date | None = None,
+    keyword: str | None = None,
+) -> WorkReportsPublic:
+    filters: list[Any] = []
+    if not include_all:
+        filters.append(WorkReport.reporter_id == current_user.id)
+    if report_type is not None:
+        filters.append(WorkReport.report_type == report_type.value)
+    if reporter and reporter.strip():
+        pattern = f"%{reporter.strip()}%"
+        filters.append(
+            or_(
+                WorkReport.reporter_name.ilike(pattern),
+                WorkReport.reporter_email.ilike(pattern),
+            )
+        )
+    if period_from is not None:
+        filters.append(WorkReport.period_start >= period_from)
+    if period_to is not None:
+        filters.append(WorkReport.period_end <= period_to)
+    if submitted_from is not None:
+        filters.append(
+            WorkReport.submitted_at
+            >= datetime.combine(submitted_from, time.min, tzinfo=timezone.utc)
+        )
+    if submitted_to is not None:
+        filters.append(
+            WorkReport.submitted_at
+            < datetime.combine(
+                submitted_to + timedelta(days=1), time.min, tzinfo=timezone.utc
+            )
+        )
+    if keyword and keyword.strip():
+        pattern = f"%{keyword.strip()}%"
+        filters.append(
+            or_(WorkReport.title.ilike(pattern), WorkReport.remarks.ilike(pattern))
+        )
+
+    total = int(
+        session.exec(
+            select(func.count()).select_from(WorkReport).where(*filters)
+        ).one()
+    )
+    reports = session.exec(
+        select(WorkReport)
+        .where(*filters)
+        .order_by(WorkReport.submitted_at.desc())
+        .offset(skip)
+        .limit(limit)
+    ).all()
+    report_ids = [report.id for report in reports]
+    plan_counts = _detail_count_map(session, WorkPlan, report_ids)
+    summary_counts = _detail_count_map(session, TaskSummary, report_ids)
+    review_counts = _detail_count_map(session, WorkReview, report_ids)
+    return WorkReportsPublic(
+        data=[
+            _report_summary_with_counts(
+                report,
+                DetailCounts(
+                    work_plans=plan_counts.get(report.id, 0),
+                    task_summaries=summary_counts.get(report.id, 0),
+                    work_reviews=review_counts.get(report.id, 0),
+                ),
+            )
+            for report in reports
+        ],
+        count=total,
+    )
+
+
+def get_work_report_detail(
+    *, session: Session, report_id: Any, current_user: User
+) -> WorkReportDetail:
+    report = session.get(WorkReport, report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Work report not found")
+    if not current_user.is_superuser and report.reporter_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not allowed to view this report")
+
+    summary = _report_summary(session, report)
+    plans = session.exec(
+        select(WorkPlan)
+        .where(WorkPlan.work_report_id == report.id)
+        .order_by(WorkPlan.sort_order)
+    ).all()
+    summaries = session.exec(
+        select(TaskSummary)
+        .where(TaskSummary.work_report_id == report.id)
+        .order_by(TaskSummary.sort_order)
+    ).all()
+    reviews = session.exec(
+        select(WorkReview)
+        .where(WorkReview.work_report_id == report.id)
+        .order_by(WorkReview.sort_order)
+    ).all()
+    return WorkReportDetail(
+        **summary.model_dump(),
+        work_plans=[WorkPlanPublic.model_validate(item) for item in plans],
+        task_summaries=[TaskSummaryPublic.model_validate(item) for item in summaries],
+        work_reviews=[WorkReviewPublic.model_validate(item) for item in reviews],
+    )
 
 
 def get_field_configs(session: Session) -> list[FieldConfigPublic]:
@@ -272,6 +393,50 @@ def _detail_count(session: Session, model: Any, report_id: Any) -> int:
         session.exec(
             select(func.count()).select_from(model).where(model.work_report_id == report_id)
         ).one()
+    )
+
+
+def _detail_count_map(
+    session: Session, model: Any, report_ids: list[Any]
+) -> dict[Any, int]:
+    if not report_ids:
+        return {}
+    rows = session.exec(
+        select(model.work_report_id, func.count())
+        .where(model.work_report_id.in_(report_ids))
+        .group_by(model.work_report_id)
+    ).all()
+    return {report_id: int(count) for report_id, count in rows}
+
+
+def _report_summary(session: Session, report: WorkReport) -> WorkReportSummary:
+    return _report_summary_with_counts(
+        report,
+        DetailCounts(
+            work_plans=_detail_count(session, WorkPlan, report.id),
+            task_summaries=_detail_count(session, TaskSummary, report.id),
+            work_reviews=_detail_count(session, WorkReview, report.id),
+        ),
+    )
+
+
+def _report_summary_with_counts(
+    report: WorkReport, counts: DetailCounts
+) -> WorkReportSummary:
+    return WorkReportSummary(
+        id=report.id,
+        reporter=ReporterBrief(
+            id=report.reporter_id,
+            name=report.reporter_name,
+            email=report.reporter_email,
+        ),
+        report_type=ReportType(report.report_type),
+        period_start=report.period_start,
+        period_end=report.period_end,
+        title=report.title,
+        remarks=report.remarks,
+        submitted_at=report.submitted_at,
+        counts=counts,
     )
 
 

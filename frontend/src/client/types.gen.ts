@@ -219,7 +219,7 @@ export type PrivateUserCreate = {
 };
 
 export type ReporterBrief = {
-    id: string;
+    id: (string | null);
     name: (string | null);
     email: string;
 };
@@ -232,6 +232,16 @@ export type TaskSummaryInput = {
     progress_description?: (string | null);
     progress?: (number | null);
     incomplete_reason?: (string | null);
+};
+
+export type TaskSummaryPublic = {
+    work_goal?: (string | null);
+    completion_date?: (string | null);
+    progress_description?: (string | null);
+    progress?: (number | null);
+    incomplete_reason?: (string | null);
+    id: string;
+    sort_order: number;
 };
 
 export type Token = {
@@ -325,6 +335,36 @@ export type WorkPlanInput = {
     remarks?: (string | null);
 };
 
+export type WorkPlanPublic = {
+    plan_content?: (string | null);
+    planned_completion_date?: (string | null);
+    expected_result?: (string | null);
+    support_needed?: (string | null);
+    remarks?: (string | null);
+    id: string;
+    sort_order: number;
+};
+
+export type WorkReportDetail = {
+    id: string;
+    reporter: ReporterBrief;
+    report_type: ReportType;
+    period_start: string;
+    period_end: string;
+    title: string;
+    remarks: (string | null);
+    submitted_at: string;
+    counts: DetailCounts;
+    work_plans: Array<WorkPlanPublic>;
+    task_summaries: Array<TaskSummaryPublic>;
+    work_reviews: Array<WorkReviewPublic>;
+};
+
+export type WorkReportsPublic = {
+    data: Array<WorkReportSummary>;
+    count: number;
+};
+
 export type WorkReportSubmissionResult = {
     id: string;
     reporter: ReporterBrief;
@@ -350,9 +390,28 @@ export type WorkReportSubmit = {
     work_reviews?: Array<WorkReviewInput>;
 };
 
+export type WorkReportSummary = {
+    id: string;
+    reporter: ReporterBrief;
+    report_type: ReportType;
+    period_start: string;
+    period_end: string;
+    title: string;
+    remarks: (string | null);
+    submitted_at: string;
+    counts: DetailCounts;
+};
+
 export type WorkReviewInput = {
     review_module?: (string | null);
     review_content?: (string | null);
+};
+
+export type WorkReviewPublic = {
+    review_module?: (string | null);
+    review_content?: (string | null);
+    id: string;
+    sort_order: number;
 };
 
 export type LoginLoginAccessTokenData = {
@@ -593,6 +652,33 @@ export type UtilsStorageInfoEndpointResponse = ({
     [key: string]: unknown;
 });
 
+export type WorkReportsReadMyWorkReportsData = {
+    keyword?: (string | null);
+    limit?: number;
+    periodFrom?: (string | null);
+    periodTo?: (string | null);
+    reportType?: (ReportType | null);
+    skip?: number;
+    submittedFrom?: (string | null);
+    submittedTo?: (string | null);
+};
+
+export type WorkReportsReadMyWorkReportsResponse = (WorkReportsPublic);
+
+export type WorkReportsReadAllWorkReportsData = {
+    keyword?: (string | null);
+    limit?: number;
+    periodFrom?: (string | null);
+    periodTo?: (string | null);
+    reporter?: (string | null);
+    reportType?: (ReportType | null);
+    skip?: number;
+    submittedFrom?: (string | null);
+    submittedTo?: (string | null);
+};
+
+export type WorkReportsReadAllWorkReportsResponse = (WorkReportsPublic);
+
 export type WorkReportsReadFieldConfigResponse = (FieldConfigsPublic);
 
 export type WorkReportsUpdateFieldConfigData = {
@@ -606,3 +692,9 @@ export type WorkReportsCreateOrSupplementWorkReportData = {
 };
 
 export type WorkReportsCreateOrSupplementWorkReportResponse = (WorkReportSubmissionResult);
+
+export type WorkReportsReadWorkReportData = {
+    reportId: string;
+};
+
+export type WorkReportsReadWorkReportResponse = (WorkReportDetail);
