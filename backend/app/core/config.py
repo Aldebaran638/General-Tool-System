@@ -40,6 +40,13 @@ class Settings(BaseSettings):
     FEISHU_APP_ID: str | None = None
     FEISHU_APP_SECRET: str | None = None
     FEISHU_REDIRECT_URI: str | None = None
+    AUTH_COOKIE_SECURE: bool | None = None
+
+    @property
+    def auth_cookie_secure(self) -> bool:
+        if self.AUTH_COOKIE_SECURE is not None:
+            return self.AUTH_COOKIE_SECURE
+        return self.ENVIRONMENT != "local"
 
     BACKEND_CORS_ORIGINS: Annotated[
         list[AnyUrl] | str, BeforeValidator(parse_cors)

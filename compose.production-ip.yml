@@ -1,0 +1,45 @@
+services:
+  proxy:
+    image: traefik:3.6
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - --providers.docker
+      - --providers.docker.constraints=Label(`traefik.constraint-label`, `traefik-public`)
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.http.address=:80
+      - --entrypoints.https.address=:443
+      - --accesslog
+      - --log
+    labels:
+      - traefik.enable=true
+      - traefik.constraint-label=traefik-public
+      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
+    networks:
+      - traefik-public
+
+  adminer:
+    profiles:
+      - ops
+
+  backend:
+    labels:
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-ip.rule=PathPrefix(`/api`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-ip.entrypoints=http
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-ip.priority=100
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-ip.service=${STACK_NAME?Variable not set}-backend
+
+  frontend:
+    build:
+      args:
+        VITE_API_URL: ""
+        NODE_ENV: production
+    labels:
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-ip.rule=PathPrefix(`/`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-ip.entrypoints=http
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-ip.priority=1
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-ip.service=${STACK_NAME?Variable not set}-frontend

@@ -200,6 +200,8 @@ def test_feishu_login_creates_user_and_exchanges_ticket(
     with (
         patch.object(settings, "FEISHU_APP_ID", "cli_test"),
         patch.object(settings, "FEISHU_APP_SECRET", "secret"),
+        patch.object(settings, "ENVIRONMENT", "production"),
+        patch.object(settings, "AUTH_COOKIE_SECURE", False),
         patch.object(
             settings,
             "FEISHU_REDIRECT_URI",
@@ -214,6 +216,7 @@ def test_feishu_login_creates_user_and_exchanges_ticket(
         authorize_query = parse_qs(urlparse(authorize_response.headers["location"]).query)
         state = authorize_query["state"][0]
         assert "scope" not in authorize_query
+        assert "secure" not in authorize_response.headers["set-cookie"].lower()
 
         with patch(
             "app.api.routes.login.fetch_feishu_profile", return_value=profile

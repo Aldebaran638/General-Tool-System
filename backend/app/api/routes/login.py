@@ -84,7 +84,7 @@ def authorize_feishu_login() -> RedirectResponse:
         state,
         max_age=600,
         httponly=True,
-        secure=settings.ENVIRONMENT != "local",
+        secure=settings.auth_cookie_secure,
         samesite="lax",
         path=FEISHU_COOKIE_PATH,
     )
