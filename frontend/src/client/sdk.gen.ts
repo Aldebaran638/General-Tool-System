@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, NotificationsListNotificationsEndpointData, NotificationsListNotificationsEndpointResponse, NotificationsMarkReadEndpointData, NotificationsMarkReadEndpointResponse, NotificationsMarkAllReadEndpointResponse, NotificationsDeleteNotificationEndpointData, NotificationsDeleteNotificationEndpointResponse, NotificationsUnreadCountEndpointResponse, OkrReadObjectivesResponse, OkrCreateObjectiveData, OkrCreateObjectiveResponse, OkrUpdateObjectiveData, OkrUpdateObjectiveResponse, OkrDeleteObjectiveData, OkrDeleteObjectiveResponse, OkrReadObjectiveKrsData, OkrReadObjectiveKrsResponse, OkrReadOverviewDepartmentsResponse, OkrReadOverviewMembersResponse, OkrCreateKeyResultData, OkrCreateKeyResultResponse, OkrUpdateKeyResultData, OkrUpdateKeyResultResponse, OkrDeleteKeyResultData, OkrDeleteKeyResultResponse, OkrReadMyKrsData, OkrReadMyKrsResponse, OkrUpdateKrProgressData, OkrUpdateKrProgressResponse, OkrReadDepartmentsResponse, OkrCreateDepartmentData, OkrCreateDepartmentResponse, OkrUpdateDepartmentData, OkrUpdateDepartmentResponse, OkrDeleteDepartmentData, OkrDeleteDepartmentResponse, OkrReorderDepartmentsData, OkrReorderDepartmentsResponse, PrivateCreateUserData, PrivateCreateUserResponse, PublicGetPublicStatsResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, UtilsStorageInfoEndpointResponse } from './types.gen';
+import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginFeishuLoginCallbackData, LoginExchangeFeishuLoginTicketData, LoginExchangeFeishuLoginTicketResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, NotificationsListNotificationsEndpointData, NotificationsListNotificationsEndpointResponse, NotificationsMarkReadEndpointData, NotificationsMarkReadEndpointResponse, NotificationsMarkAllReadEndpointResponse, NotificationsDeleteNotificationEndpointData, NotificationsDeleteNotificationEndpointResponse, NotificationsUnreadCountEndpointResponse, OkrReadObjectivesResponse, OkrCreateObjectiveData, OkrCreateObjectiveResponse, OkrUpdateObjectiveData, OkrUpdateObjectiveResponse, OkrDeleteObjectiveData, OkrDeleteObjectiveResponse, OkrReadObjectiveKrsData, OkrReadObjectiveKrsResponse, OkrReadOverviewDepartmentsResponse, OkrReadOverviewMembersResponse, OkrCreateKeyResultData, OkrCreateKeyResultResponse, OkrUpdateKeyResultData, OkrUpdateKeyResultResponse, OkrDeleteKeyResultData, OkrDeleteKeyResultResponse, OkrReadMyKrsData, OkrReadMyKrsResponse, OkrUpdateKrProgressData, OkrUpdateKrProgressResponse, OkrReadDepartmentsResponse, OkrCreateDepartmentData, OkrCreateDepartmentResponse, OkrUpdateDepartmentData, OkrUpdateDepartmentResponse, OkrDeleteDepartmentData, OkrDeleteDepartmentResponse, OkrReorderDepartmentsData, OkrReorderDepartmentsResponse, PrivateCreateUserData, PrivateCreateUserResponse, PublicGetPublicStatsResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, UtilsStorageInfoEndpointResponse } from './types.gen';
 
 export class LoginService {
     /**
@@ -20,6 +20,67 @@ export class LoginService {
             url: '/api/v1/login/access-token',
             formData: data.formData,
             mediaType: 'application/x-www-form-urlencoded',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
+     * Authorize Feishu Login
+     * @throws ApiError
+     */
+    public static authorizeFeishuLogin(): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/login/feishu/authorize',
+            errors: {
+                307: 'Successful Response'
+            }
+        });
+    }
+
+    /**
+     * Feishu Login Callback
+     * @param data The data for the request.
+     * @param data.state
+     * @param data.code
+     * @param data.error
+     * @param data.feishuOauthState
+     * @throws ApiError
+     */
+    public static feishuLoginCallback(data: LoginFeishuLoginCallbackData): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/login/feishu/callback',
+            cookies: {
+                feishu_oauth_state: data.feishuOauthState
+            },
+            query: {
+                state: data.state,
+                code: data.code,
+                error: data.error
+            },
+            errors: {
+                307: 'Successful Response',
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
+     * Exchange Feishu Login Ticket
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns Token Successful Response
+     * @throws ApiError
+     */
+    public static exchangeFeishuLoginTicket(data: LoginExchangeFeishuLoginTicketData): CancelablePromise<LoginExchangeFeishuLoginTicketResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/login/feishu/exchange',
+            body: data.requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: 'Validation Error'
             }

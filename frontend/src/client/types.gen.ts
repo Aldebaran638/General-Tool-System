@@ -63,6 +63,10 @@ export type DepartmentUpdate = {
     description?: (string | null);
 };
 
+export type FeishuTicketExchange = {
+    ticket: string;
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -198,7 +202,7 @@ export type UnreadCountResponse = {
 };
 
 export type UpdatePassword = {
-    current_password: string;
+    current_password?: (string | null);
     new_password: string;
 };
 
@@ -222,6 +226,7 @@ export type UserPublic = {
     language?: string;
     department_id?: (string | null);
     created_at?: (string | null);
+    is_feishu_user?: boolean;
 };
 
 export type UserRegister = {
@@ -275,6 +280,19 @@ export type LoginLoginAccessTokenData = {
 };
 
 export type LoginLoginAccessTokenResponse = (Token);
+
+export type LoginFeishuLoginCallbackData = {
+    code?: (string | null);
+    error?: (string | null);
+    feishuOauthState?: (string | null);
+    state: string;
+};
+
+export type LoginExchangeFeishuLoginTicketData = {
+    requestBody: FeishuTicketExchange;
+};
+
+export type LoginExchangeFeishuLoginTicketResponse = (Token);
 
 export type LoginTestTokenResponse = (UserPublic);
 

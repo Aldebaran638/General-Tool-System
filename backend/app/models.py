@@ -18,6 +18,8 @@ This file will be removed in a future major version once all legacy code is migr
 
 # Re-export core models only
 from app.models_core import (
+    FeishuLoginTicket,
+    FeishuTicketExchange,
     Message,
     NewPassword,
     Token,
@@ -36,6 +38,8 @@ from app.models_core import (
 
 __all__ = [
     "get_datetime_utc",
+    "FeishuLoginTicket",
+    "FeishuTicketExchange",
     "UserBase",
     "UserCreate",
     "UserRegister",

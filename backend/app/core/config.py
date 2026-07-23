@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     FRONTEND_HOST: str = "http://localhost:5173"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
     UPLOAD_DIR: str = "backend/app/uploads/"
+    FEISHU_APP_ID: str | None = None
+    FEISHU_APP_SECRET: str | None = None
+    FEISHU_REDIRECT_URI: str | None = None
 
     BACKEND_CORS_ORIGINS: Annotated[
         list[AnyUrl] | str, BeforeValidator(parse_cors)

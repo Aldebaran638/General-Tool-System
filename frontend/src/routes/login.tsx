@@ -12,6 +12,7 @@ import { z } from "zod"
 import type { Body_login_login_access_token as AccessToken } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
@@ -93,6 +94,10 @@ function Login() {
     loginMutation.mutate(data)
   }
   const submitLogin = form.handleSubmit(onSubmit, toastFirstFormError)
+  const startFeishuLogin = () => {
+    const apiBase = import.meta.env.VITE_API_URL || ""
+    window.location.assign(`${apiBase}/api/v1/login/feishu/authorize`)
+  }
 
   return (
     <AuthLayout>
@@ -175,6 +180,27 @@ function Login() {
             >
               {t("auth.login")}
             </LoadingButton>
+
+            <div className="relative my-1">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  {t("auth.or")}
+                </span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={startFeishuLogin}
+              data-testid="feishu-login"
+              className="h-11 font-normal tracking-wide"
+            >
+              {t("auth.feishuLogin")}
+            </Button>
           </div>
 
           <div className="text-center text-sm text-muted-foreground">

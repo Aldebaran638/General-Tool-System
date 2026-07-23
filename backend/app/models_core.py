@@ -63,23 +63,31 @@ class UserUpdateMe(SQLModel):
 
 
 class UpdatePassword(SQLModel):
-    current_password: str = Field(min_length=8, max_length=128)
+    current_password: str | None = Field(default=None, min_length=8, max_length=128)
     new_password: str = Field(min_length=8, max_length=128)
 
 
 # Database model - this stays in core because authentication is platform-level
 # id 定义在 UserBase 顶部，保证落库后永远是表的第一列
 class User(UserBase, table=True):
+    feishu_open_id: str | None = Field(
+        default=None, max_length=128, unique=True, index=True
+    )
     hashed_password: str
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
         sa_type=DateTime(timezone=True),  # type: ignore
     )
 
+    @property
+    def is_feishu_user(self) -> bool:
+        return self.feishu_open_id is not None
+
 
 class UserPublic(UserBase):
     id: uuid.UUID
     created_at: datetime | None = None
+    is_feishu_user: bool = False
 
 
 class UsersPublic(SQLModel):
@@ -103,6 +111,28 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str = Field(min_length=8, max_length=128)
+
+
+class FeishuTicketExchange(SQLModel):
+    ticket: str = Field(min_length=32, max_length=255)
+
+
+class FeishuLoginTicket(SQLModel, table=True):
+    __tablename__ = "feishu_login_ticket"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(
+        foreign_key="user.id", index=True, ondelete="CASCADE"
+    )
+    token_hash: str = Field(max_length=64, unique=True, index=True)
+    expires_at: datetime = Field(sa_type=DateTime(timezone=True))  # type: ignore
+    used_at: datetime | None = Field(
+        default=None, sa_type=DateTime(timezone=True)  # type: ignore
+    )
+    created_at: datetime = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
 
 
 # =============================================================================

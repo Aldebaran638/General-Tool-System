@@ -105,6 +105,9 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
+      - FEISHU_APP_ID=${FEISHU_APP_ID}
+      - FEISHU_APP_SECRET=${FEISHU_APP_SECRET}
+      - FEISHU_REDIRECT_URI=${FEISHU_REDIRECT_URI}
       - UPLOAD_DIR=${UPLOAD_DIR:-backend/app/uploads/}
     # When UPLOAD_DIR is an absolute path on the host, bind-mount it into the
     # container so the backend can read and write files.  Example:

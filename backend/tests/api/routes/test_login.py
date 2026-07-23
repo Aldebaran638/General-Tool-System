@@ -1,13 +1,15 @@
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlparse
 
 from fastapi.testclient import TestClient
 from pwdlib.hashers.bcrypt import BcryptHasher
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.crud import create_user
 from app.models import User, UserCreate
+from app.services.feishu_auth import FeishuProfile
 from app.utils import generate_password_reset_token
 from tests.utils.user import user_authentication_headers
 from tests.utils.utils import random_email, random_lower_string
@@ -189,3 +191,124 @@ def test_login_with_argon2_password_keeps_hash(client: TestClient, db: Session) 
 
     assert user.hashed_password == original_hash
     assert user.hashed_password.startswith("$argon2")
+
+
+def test_feishu_login_creates_user_and_exchanges_ticket(
+    client: TestClient, db: Session
+) -> None:
+    profile = FeishuProfile(open_id="feishu-user-new", name="Feishu User")
+    with (
+        patch.object(settings, "FEISHU_APP_ID", "cli_test"),
+        patch.object(settings, "FEISHU_APP_SECRET", "secret"),
+        patch.object(
+            settings,
+            "FEISHU_REDIRECT_URI",
+            "http://localhost:10304/api/v1/login/feishu/callback",
+        ),
+    ):
+        authorize_response = client.get(
+            f"{settings.API_V1_STR}/login/feishu/authorize",
+            follow_redirects=False,
+        )
+        assert authorize_response.status_code == 302
+        authorize_query = parse_qs(urlparse(authorize_response.headers["location"]).query)
+        state = authorize_query["state"][0]
+        assert "scope" not in authorize_query
+
+        with patch(
+            "app.api.routes.login.fetch_feishu_profile", return_value=profile
+        ):
+            callback_response = client.get(
+                f"{settings.API_V1_STR}/login/feishu/callback",
+                params={"code": "valid-code", "state": state},
+                follow_redirects=False,
+            )
+
+    assert callback_response.status_code == 302
+    callback_query = parse_qs(urlparse(callback_response.headers["location"]).query)
+    ticket = callback_query["ticket"][0]
+    created_user = db.exec(
+        select(User).where(User.feishu_open_id == profile.open_id)
+    ).one()
+    assert created_user.feishu_open_id == profile.open_id
+    assert created_user.full_name == profile.name
+    assert created_user.hashed_password
+    assert created_user.is_active is True
+    assert created_user.is_superuser is False
+
+    exchange_response = client.post(
+        f"{settings.API_V1_STR}/login/feishu/exchange", json={"ticket": ticket}
+    )
+    assert exchange_response.status_code == 200
+    assert exchange_response.json()["access_token"]
+
+    replay_response = client.post(
+        f"{settings.API_V1_STR}/login/feishu/exchange", json={"ticket": ticket}
+    )
+    assert replay_response.status_code == 400
+
+
+def test_feishu_login_user_is_returned_by_user_list(
+    client: TestClient, db: Session, superuser_token_headers: dict[str, str]
+) -> None:
+    profile = FeishuProfile(open_id="feishu-user-without-email", name="Feishu User")
+    with (
+        patch.object(settings, "FEISHU_APP_ID", "cli_test"),
+        patch.object(settings, "FEISHU_APP_SECRET", "secret"),
+        patch.object(
+            settings,
+            "FEISHU_REDIRECT_URI",
+            "http://localhost:10304/api/v1/login/feishu/callback",
+        ),
+    ):
+        authorize_response = client.get(
+            f"{settings.API_V1_STR}/login/feishu/authorize",
+            follow_redirects=False,
+        )
+        state = parse_qs(urlparse(authorize_response.headers["location"]).query)[
+            "state"
+        ][0]
+        with patch(
+            "app.api.routes.login.fetch_feishu_profile", return_value=profile
+        ):
+            callback_response = client.get(
+                f"{settings.API_V1_STR}/login/feishu/callback",
+                params={"code": "valid-code", "state": state},
+                follow_redirects=False,
+            )
+
+    ticket = parse_qs(urlparse(callback_response.headers["location"]).query)[
+        "ticket"
+    ][0]
+    created_user = db.exec(
+        select(User).where(User.feishu_open_id == profile.open_id)
+    ).one()
+    assert created_user.email.endswith("@users.feishu.internal")
+
+    exchange_response = client.post(
+        f"{settings.API_V1_STR}/login/feishu/exchange", json={"ticket": ticket}
+    )
+    assert exchange_response.status_code == 200
+    access_token = exchange_response.json()["access_token"]
+
+    current_user_response = client.get(
+        f"{settings.API_V1_STR}/users/me",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert current_user_response.status_code == 200
+    assert current_user_response.json()["is_feishu_user"] is True
+
+    users_response = client.get(
+        f"{settings.API_V1_STR}/users/", headers=superuser_token_headers
+    )
+    assert users_response.status_code == 200
+
+
+def test_feishu_callback_rejects_invalid_state(client: TestClient) -> None:
+    response = client.get(
+        f"{settings.API_V1_STR}/login/feishu/callback",
+        params={"code": "code", "state": "invalid-state-value"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert "error=invalid_state" in response.headers["location"]

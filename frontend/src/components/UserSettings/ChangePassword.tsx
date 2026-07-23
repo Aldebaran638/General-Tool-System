@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/form"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
+import useAuth from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import {
   toastFirstFormError,
@@ -32,13 +33,17 @@ import { handleError } from "@/utils"
 const ChangePassword = () => {
   const { t } = useTranslation()
   const { showSuccessToast, showErrorToast } = useCustomToast()
+  const { user } = useAuth()
+  const isFeishuUser = user?.is_feishu_user ?? false
 
   const formSchema = z
     .object({
-      current_password: z
-        .string()
-        .min(1, { message: t("errors.required") })
-        .min(8, { message: t("errors.passwordMin", { count: 8 }) }),
+      current_password: isFeishuUser
+        ? z.string().optional()
+        : z
+            .string()
+            .min(1, { message: t("errors.required") })
+            .min(8, { message: t("errors.passwordMin", { count: 8 }) }),
       new_password: z
         .string()
         .min(1, { message: t("errors.required") })
@@ -75,7 +80,10 @@ const ChangePassword = () => {
   })
 
   const onSubmit = async (data: FormData) => {
-    mutation.mutate(data)
+    mutation.mutate({
+      new_password: data.new_password,
+      ...(!isFeishuUser && { current_password: data.current_password }),
+    })
   }
 
   return (
@@ -93,26 +101,28 @@ const ChangePassword = () => {
             onSubmit={form.handleSubmit(onSubmit, toastFirstFormError)}
             className="flex flex-col gap-5"
           >
-            <FormField
-              control={form.control}
-              name="current_password"
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5">
-                    <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
-                    {t("password.current")}
-                  </FormLabel>
-                  <FormControl>
-                    <PasswordInput
-                      data-testid="current-password-input"
-                      placeholder={t("password.current")}
-                      aria-invalid={fieldState.invalid}
-                      {...field}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+            {!isFeishuUser && (
+              <FormField
+                control={form.control}
+                name="current_password"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1.5">
+                      <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
+                      {t("password.current")}
+                    </FormLabel>
+                    <FormControl>
+                      <PasswordInput
+                        data-testid="current-password-input"
+                        placeholder={t("password.current")}
+                        aria-invalid={fieldState.invalid}
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

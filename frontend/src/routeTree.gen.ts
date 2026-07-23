@@ -18,6 +18,7 @@ import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutOkrRouteImport } from './routes/_layout/okr'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LoginFeishuCallbackRouteImport } from './routes/login_.feishu.callback'
 import { Route as LayoutOkrPeopleBoardRouteImport } from './routes/_layout/okr.people-board'
 import { Route as LayoutOkrMyRouteImport } from './routes/_layout/okr.my'
 import { Route as LayoutOkrDepartmentsRouteImport } from './routes/_layout/okr.departments'
@@ -67,6 +68,11 @@ const LayoutAdminRoute = LayoutAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LoginFeishuCallbackRoute = LoginFeishuCallbackRouteImport.update({
+  id: '/login_/feishu/callback',
+  path: '/login/feishu/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LayoutOkrPeopleBoardRoute = LayoutOkrPeopleBoardRouteImport.update({
   id: '/people-board',
   path: '/people-board',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/okr/departments': typeof LayoutOkrDepartmentsRoute
   '/okr/my': typeof LayoutOkrMyRoute
   '/okr/people-board': typeof LayoutOkrPeopleBoardRoute
+  '/login/feishu/callback': typeof LoginFeishuCallbackRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/okr/departments': typeof LayoutOkrDepartmentsRoute
   '/okr/my': typeof LayoutOkrMyRoute
   '/okr/people-board': typeof LayoutOkrPeopleBoardRoute
+  '/login/feishu/callback': typeof LoginFeishuCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/_layout/okr/departments': typeof LayoutOkrDepartmentsRoute
   '/_layout/okr/my': typeof LayoutOkrMyRoute
   '/_layout/okr/people-board': typeof LayoutOkrPeopleBoardRoute
+  '/login_/feishu/callback': typeof LoginFeishuCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/okr/departments'
     | '/okr/my'
     | '/okr/people-board'
+    | '/login/feishu/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/okr/departments'
     | '/okr/my'
     | '/okr/people-board'
+    | '/login/feishu/callback'
   id:
     | '__root__'
     | '/_layout'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/_layout/okr/departments'
     | '/_layout/okr/my'
     | '/_layout/okr/people-board'
+    | '/login_/feishu/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -185,6 +197,7 @@ export interface RootRouteChildren {
   RecoverPasswordRoute: typeof RecoverPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  LoginFeishuCallbackRoute: typeof LoginFeishuCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -251,6 +264,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
+    }
+    '/login_/feishu/callback': {
+      id: '/login_/feishu/callback'
+      path: '/login/feishu/callback'
+      fullPath: '/login/feishu/callback'
+      preLoaderRoute: typeof LoginFeishuCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_layout/okr/people-board': {
       id: '/_layout/okr/people-board'
@@ -324,6 +344,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecoverPasswordRoute: RecoverPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  LoginFeishuCallbackRoute: LoginFeishuCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

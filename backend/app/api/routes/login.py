@@ -1,15 +1,33 @@
+import hmac
+import secrets
 from datetime import timedelta
 from typing import Annotated, Any
+from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Query
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.core import security
 from app.core.config import settings
-from app.models import Message, NewPassword, Token, UserPublic, UserUpdate
+from app.models import (
+    FeishuTicketExchange,
+    Message,
+    NewPassword,
+    Token,
+    UserPublic,
+    UserUpdate,
+)
+from app.services.feishu_auth import (
+    FeishuAuthError,
+    build_authorization_url,
+    consume_login_ticket,
+    fetch_feishu_profile,
+    get_or_create_feishu_user,
+    issue_login_ticket,
+)
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
@@ -18,6 +36,22 @@ from app.utils import (
 )
 
 router = APIRouter(tags=["login"])
+FEISHU_STATE_COOKIE = "feishu_oauth_state"
+FEISHU_COOKIE_PATH = f"{settings.API_V1_STR}/login/feishu"
+
+
+def _create_app_token(user_id: Any) -> Token:
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    return Token(
+        access_token=security.create_access_token(
+            user_id, expires_delta=access_token_expires
+        )
+    )
+
+
+def _feishu_frontend_callback(**params: str) -> str:
+    callback_url = f"{settings.FRONTEND_HOST.rstrip('/')}/login/feishu/callback"
+    return f"{callback_url}?{urlencode(params)}"
 
 
 @router.post("/login/access-token")
@@ -34,12 +68,78 @@ def login_access_token(
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return Token(
-        access_token=security.create_access_token(
-            user.id, expires_delta=access_token_expires
-        )
+    return _create_app_token(user.id)
+
+
+@router.get("/login/feishu/authorize", response_class=RedirectResponse)
+def authorize_feishu_login() -> RedirectResponse:
+    state = secrets.token_urlsafe(32)
+    try:
+        authorization_url = build_authorization_url(state)
+    except FeishuAuthError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    response = RedirectResponse(authorization_url, status_code=302)
+    response.set_cookie(
+        FEISHU_STATE_COOKIE,
+        state,
+        max_age=600,
+        httponly=True,
+        secure=settings.ENVIRONMENT != "local",
+        samesite="lax",
+        path=FEISHU_COOKIE_PATH,
     )
+    return response
+
+
+@router.get("/login/feishu/callback", response_class=RedirectResponse)
+def feishu_login_callback(
+    session: SessionDep,
+    state: Annotated[str, Query(min_length=16)],
+    code: str | None = None,
+    error: str | None = None,
+    state_cookie: Annotated[str | None, Cookie(alias=FEISHU_STATE_COOKIE)] = None,
+) -> RedirectResponse:
+    if not state_cookie or not hmac.compare_digest(state, state_cookie):
+        response = RedirectResponse(
+            _feishu_frontend_callback(error="invalid_state"), status_code=302
+        )
+        response.delete_cookie(FEISHU_STATE_COOKIE, path=FEISHU_COOKIE_PATH)
+        return response
+    if error or not code:
+        response = RedirectResponse(
+            _feishu_frontend_callback(error=error or "authorization_failed"),
+            status_code=302,
+        )
+        response.delete_cookie(FEISHU_STATE_COOKIE, path=FEISHU_COOKIE_PATH)
+        return response
+    try:
+        profile = fetch_feishu_profile(code)
+        user = get_or_create_feishu_user(session=session, profile=profile)
+        if not user.is_active:
+            raise FeishuAuthError("Inactive user")
+        ticket = issue_login_ticket(session=session, user=user)
+        response = RedirectResponse(
+            _feishu_frontend_callback(ticket=ticket), status_code=302
+        )
+    except FeishuAuthError as exc:
+        response = RedirectResponse(
+            _feishu_frontend_callback(error=str(exc)), status_code=302
+        )
+    response.delete_cookie(FEISHU_STATE_COOKIE, path=FEISHU_COOKIE_PATH)
+    return response
+
+
+@router.post("/login/feishu/exchange", response_model=Token)
+def exchange_feishu_login_ticket(
+    *, session: SessionDep, body: FeishuTicketExchange
+) -> Token:
+    try:
+        user = consume_login_ticket(session=session, raw_ticket=body.ticket)
+    except FeishuAuthError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return _create_app_token(user.id)
 
 
 @router.post("/login/test-token", response_model=UserPublic)

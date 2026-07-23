@@ -1,4 +1,5 @@
 import uuid
+from datetime import timedelta
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -6,8 +7,9 @@ from sqlmodel import Session, select
 
 from app import crud
 from app.core.config import settings
-from app.core.security import verify_password
-from app.models import User, UserCreate
+from app.core.security import create_access_token, get_password_hash, verify_password
+from app.models import FeishuLoginTicket, User, UserCreate
+from app.services.feishu_auth import issue_login_ticket
 from tests.utils.user import create_random_user
 from tests.utils.utils import random_email, random_lower_string
 
@@ -281,6 +283,36 @@ def test_update_password_me_incorrect_password(
     assert updated_user["detail"] == "Incorrect password"
 
 
+def test_feishu_user_can_set_password_without_current_password(
+    client: TestClient, db: Session
+) -> None:
+    user = User(
+        email=f"{random_lower_string()}@users.feishu.internal",
+        feishu_open_id=f"ou_{random_lower_string()}",
+        hashed_password=get_password_hash(random_lower_string()),
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    new_password = random_lower_string()
+    headers = {
+        "Authorization": (
+            f"Bearer {create_access_token(user.id, expires_delta=timedelta(minutes=5))}"
+        )
+    }
+
+    response = client.patch(
+        f"{settings.API_V1_STR}/users/me/password",
+        headers=headers,
+        json={"new_password": new_password},
+    )
+
+    assert response.status_code == 200
+    db.refresh(user)
+    verified, _ = verify_password(new_password, user.hashed_password)
+    assert verified
+
+
 def test_update_user_me_email_exists(
     client: TestClient, normal_user_token_headers: dict[str, str], db: Session
 ) -> None:
@@ -479,6 +511,33 @@ def test_delete_user_super_user(
     assert deleted_user["message"] == "User deleted successfully"
     result = db.exec(select(User).where(User.id == user_id)).first()
     assert result is None
+
+
+def test_delete_feishu_user_cascades_login_tickets(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    user = User(
+        email=f"{random_lower_string()}@users.feishu.internal",
+        feishu_open_id=f"ou_{random_lower_string()}",
+        hashed_password=get_password_hash(random_lower_string()),
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    issue_login_ticket(session=db, user=user)
+    ticket = db.exec(
+        select(FeishuLoginTicket).where(FeishuLoginTicket.user_id == user.id)
+    ).one()
+    ticket_id = ticket.id
+
+    response = client.delete(
+        f"{settings.API_V1_STR}/users/{user.id}",
+        headers=superuser_token_headers,
+    )
+
+    assert response.status_code == 200
+    db.expire_all()
+    assert db.get(FeishuLoginTicket, ticket_id) is None
 
 
 def test_delete_user_not_found(

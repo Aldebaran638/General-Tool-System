@@ -282,6 +282,20 @@ export const DepartmentsPublicSchema = {
     title: 'DepartmentsPublic'
 } as const;
 
+export const FeishuTicketExchangeSchema = {
+    properties: {
+        ticket: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 32,
+            title: 'Ticket'
+        }
+    },
+    type: 'object',
+    required: ['ticket'],
+    title: 'FeishuTicketExchange'
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {
@@ -879,9 +893,16 @@ export const UnreadCountResponseSchema = {
 export const UpdatePasswordSchema = {
     properties: {
         current_password: {
-            type: 'string',
-            maxLength: 128,
-            minLength: 8,
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 128,
+                    minLength: 8
+                },
+                {
+                    type: 'null'
+                }
+            ],
             title: 'Current Password'
         },
         new_password: {
@@ -892,7 +913,7 @@ export const UpdatePasswordSchema = {
         }
     },
     type: 'object',
-    required: ['current_password', 'new_password'],
+    required: ['new_password'],
     title: 'UpdatePassword'
 } as const;
 
@@ -1025,6 +1046,11 @@ export const UserPublicSchema = {
                 }
             ],
             title: 'Created At'
+        },
+        is_feishu_user: {
+            type: 'boolean',
+            title: 'Is Feishu User',
+            default: false
         }
     },
     type: 'object',
