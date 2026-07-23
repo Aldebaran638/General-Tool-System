@@ -18,7 +18,8 @@
     "fillWorkReport": "填写汇报",
     "myWorkReports": "我的汇报",
     "allWorkReports": "全部汇报",
-    "workReportConfig": "字段配置"
+    "workReportConfig": "字段配置",
+    "workReportReminders": "汇报提醒"
   },
   "auth": {
     "welcomeBack": "欢迎回来",

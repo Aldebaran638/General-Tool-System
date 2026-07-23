@@ -6,6 +6,7 @@ import type {
 export type { NavigationEntry, NavigationGroup, NavigationTool }
 
 import {
+  BellRing,
   Building2,
   ClipboardList,
   FilePlus2,
@@ -67,6 +68,7 @@ const PLATFORM_NAVIGATION: NavigationEntry[] = [
     kind: "group",
     icon: ClipboardList,
     title: "nav.workReports",
+    path: "/work-reports/new",
     children: [
       {
         kind: "tool",
@@ -92,6 +94,13 @@ const PLATFORM_NAVIGATION: NavigationEntry[] = [
         icon: SlidersHorizontal,
         title: "nav.workReportConfig",
         path: "/work-reports/config",
+        requiresSuperuser: true,
+      },
+      {
+        kind: "tool",
+        icon: BellRing,
+        title: "nav.workReportReminders",
+        path: "/work-reports/reminders",
         requiresSuperuser: true,
       },
     ],

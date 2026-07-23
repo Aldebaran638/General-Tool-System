@@ -61,11 +61,30 @@ const currentPeriod = (reportType: ReportType) => {
   return `${date.getUTCFullYear()}-W${String(week).padStart(2, "0")}`
 }
 
-const WorkReportForm = () => {
+type WorkReportFormProps = {
+  initialReportType?: ReportType
+  initialPeriodKey?: string
+}
+
+const validInitialPeriod = (
+  reportType: ReportType,
+  periodKey: string | undefined,
+) => {
+  if (!periodKey) return currentPeriod(reportType)
+  const pattern = reportType === "weekly" ? /^\d{4}-W\d{2}$/ : /^\d{4}-\d{2}$/
+  return pattern.test(periodKey) ? periodKey : currentPeriod(reportType)
+}
+
+const WorkReportForm = ({
+  initialReportType = "weekly",
+  initialPeriodKey,
+}: WorkReportFormProps) => {
   const { user } = useAuth()
   const { showSuccessToast, showErrorToast } = useCustomToast()
-  const [reportType, setReportType] = useState<ReportType>("weekly")
-  const [periodKey, setPeriodKey] = useState(currentPeriod("weekly"))
+  const [reportType, setReportType] = useState<ReportType>(initialReportType)
+  const [periodKey, setPeriodKey] = useState(
+    validInitialPeriod(initialReportType, initialPeriodKey),
+  )
   const [title, setTitle] = useState("")
   const [remarks, setRemarks] = useState("")
   const [plans, setPlans] = useState<PlanRow[]>([])

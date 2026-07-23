@@ -19,6 +19,7 @@ import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutOkrRouteImport } from './routes/_layout/okr'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LoginFeishuCallbackRouteImport } from './routes/login_.feishu.callback'
+import { Route as LayoutWorkReportsRemindersRouteImport } from './routes/_layout/work-reports.reminders'
 import { Route as LayoutWorkReportsNewRouteImport } from './routes/_layout/work-reports.new'
 import { Route as LayoutWorkReportsMineRouteImport } from './routes/_layout/work-reports.mine'
 import { Route as LayoutWorkReportsConfigRouteImport } from './routes/_layout/work-reports.config'
@@ -78,6 +79,12 @@ const LoginFeishuCallbackRoute = LoginFeishuCallbackRouteImport.update({
   path: '/login/feishu/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LayoutWorkReportsRemindersRoute =
+  LayoutWorkReportsRemindersRouteImport.update({
+    id: '/work-reports/reminders',
+    path: '/work-reports/reminders',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 const LayoutWorkReportsNewRoute = LayoutWorkReportsNewRouteImport.update({
   id: '/work-reports/new',
   path: '/work-reports/new',
@@ -144,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/work-reports/config': typeof LayoutWorkReportsConfigRoute
   '/work-reports/mine': typeof LayoutWorkReportsMineRoute
   '/work-reports/new': typeof LayoutWorkReportsNewRoute
+  '/work-reports/reminders': typeof LayoutWorkReportsRemindersRoute
   '/login/feishu/callback': typeof LoginFeishuCallbackRoute
 }
 export interface FileRoutesByTo {
@@ -164,6 +172,7 @@ export interface FileRoutesByTo {
   '/work-reports/config': typeof LayoutWorkReportsConfigRoute
   '/work-reports/mine': typeof LayoutWorkReportsMineRoute
   '/work-reports/new': typeof LayoutWorkReportsNewRoute
+  '/work-reports/reminders': typeof LayoutWorkReportsRemindersRoute
   '/login/feishu/callback': typeof LoginFeishuCallbackRoute
 }
 export interface FileRoutesById {
@@ -186,6 +195,7 @@ export interface FileRoutesById {
   '/_layout/work-reports/config': typeof LayoutWorkReportsConfigRoute
   '/_layout/work-reports/mine': typeof LayoutWorkReportsMineRoute
   '/_layout/work-reports/new': typeof LayoutWorkReportsNewRoute
+  '/_layout/work-reports/reminders': typeof LayoutWorkReportsRemindersRoute
   '/login_/feishu/callback': typeof LoginFeishuCallbackRoute
 }
 export interface FileRouteTypes {
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/work-reports/config'
     | '/work-reports/mine'
     | '/work-reports/new'
+    | '/work-reports/reminders'
     | '/login/feishu/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/work-reports/config'
     | '/work-reports/mine'
     | '/work-reports/new'
+    | '/work-reports/reminders'
     | '/login/feishu/callback'
   id:
     | '__root__'
@@ -249,6 +261,7 @@ export interface FileRouteTypes {
     | '/_layout/work-reports/config'
     | '/_layout/work-reports/mine'
     | '/_layout/work-reports/new'
+    | '/_layout/work-reports/reminders'
     | '/login_/feishu/callback'
   fileRoutesById: FileRoutesById
 }
@@ -332,6 +345,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/login/feishu/callback'
       preLoaderRoute: typeof LoginFeishuCallbackRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_layout/work-reports/reminders': {
+      id: '/_layout/work-reports/reminders'
+      path: '/work-reports/reminders'
+      fullPath: '/work-reports/reminders'
+      preLoaderRoute: typeof LayoutWorkReportsRemindersRouteImport
+      parentRoute: typeof LayoutRoute
     }
     '/_layout/work-reports/new': {
       id: '/_layout/work-reports/new'
@@ -427,6 +447,7 @@ interface LayoutRouteChildren {
   LayoutWorkReportsConfigRoute: typeof LayoutWorkReportsConfigRoute
   LayoutWorkReportsMineRoute: typeof LayoutWorkReportsMineRoute
   LayoutWorkReportsNewRoute: typeof LayoutWorkReportsNewRoute
+  LayoutWorkReportsRemindersRoute: typeof LayoutWorkReportsRemindersRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
@@ -439,6 +460,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutWorkReportsConfigRoute: LayoutWorkReportsConfigRoute,
   LayoutWorkReportsMineRoute: LayoutWorkReportsMineRoute,
   LayoutWorkReportsNewRoute: LayoutWorkReportsNewRoute,
+  LayoutWorkReportsRemindersRoute: LayoutWorkReportsRemindersRoute,
 }
 
 const LayoutRouteWithChildren =

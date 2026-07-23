@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginFeishuLoginCallbackData, LoginExchangeFeishuLoginTicketData, LoginExchangeFeishuLoginTicketResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, NotificationsListNotificationsEndpointData, NotificationsListNotificationsEndpointResponse, NotificationsMarkReadEndpointData, NotificationsMarkReadEndpointResponse, NotificationsMarkAllReadEndpointResponse, NotificationsDeleteNotificationEndpointData, NotificationsDeleteNotificationEndpointResponse, NotificationsUnreadCountEndpointResponse, OkrReadObjectivesResponse, OkrCreateObjectiveData, OkrCreateObjectiveResponse, OkrUpdateObjectiveData, OkrUpdateObjectiveResponse, OkrDeleteObjectiveData, OkrDeleteObjectiveResponse, OkrReadObjectiveKrsData, OkrReadObjectiveKrsResponse, OkrReadOverviewDepartmentsResponse, OkrReadOverviewMembersResponse, OkrCreateKeyResultData, OkrCreateKeyResultResponse, OkrUpdateKeyResultData, OkrUpdateKeyResultResponse, OkrDeleteKeyResultData, OkrDeleteKeyResultResponse, OkrReadMyKrsData, OkrReadMyKrsResponse, OkrUpdateKrProgressData, OkrUpdateKrProgressResponse, OkrReadDepartmentsResponse, OkrCreateDepartmentData, OkrCreateDepartmentResponse, OkrUpdateDepartmentData, OkrUpdateDepartmentResponse, OkrDeleteDepartmentData, OkrDeleteDepartmentResponse, OkrReorderDepartmentsData, OkrReorderDepartmentsResponse, PrivateCreateUserData, PrivateCreateUserResponse, PublicGetPublicStatsResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, UtilsStorageInfoEndpointResponse, WorkReportsReadMyWorkReportsData, WorkReportsReadMyWorkReportsResponse, WorkReportsReadAllWorkReportsData, WorkReportsReadAllWorkReportsResponse, WorkReportsReadFieldConfigResponse, WorkReportsUpdateFieldConfigData, WorkReportsUpdateFieldConfigResponse, WorkReportsCreateOrSupplementWorkReportData, WorkReportsCreateOrSupplementWorkReportResponse, WorkReportsReadWorkReportData, WorkReportsReadWorkReportResponse } from './types.gen';
+import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginFeishuLoginCallbackData, LoginExchangeFeishuLoginTicketData, LoginExchangeFeishuLoginTicketResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, NotificationsListNotificationsEndpointData, NotificationsListNotificationsEndpointResponse, NotificationsMarkReadEndpointData, NotificationsMarkReadEndpointResponse, NotificationsMarkAllReadEndpointResponse, NotificationsDeleteNotificationEndpointData, NotificationsDeleteNotificationEndpointResponse, NotificationsUnreadCountEndpointResponse, OkrReadObjectivesResponse, OkrCreateObjectiveData, OkrCreateObjectiveResponse, OkrUpdateObjectiveData, OkrUpdateObjectiveResponse, OkrDeleteObjectiveData, OkrDeleteObjectiveResponse, OkrReadObjectiveKrsData, OkrReadObjectiveKrsResponse, OkrReadOverviewDepartmentsResponse, OkrReadOverviewMembersResponse, OkrCreateKeyResultData, OkrCreateKeyResultResponse, OkrUpdateKeyResultData, OkrUpdateKeyResultResponse, OkrDeleteKeyResultData, OkrDeleteKeyResultResponse, OkrReadMyKrsData, OkrReadMyKrsResponse, OkrUpdateKrProgressData, OkrUpdateKrProgressResponse, OkrReadDepartmentsResponse, OkrCreateDepartmentData, OkrCreateDepartmentResponse, OkrUpdateDepartmentData, OkrUpdateDepartmentResponse, OkrDeleteDepartmentData, OkrDeleteDepartmentResponse, OkrReorderDepartmentsData, OkrReorderDepartmentsResponse, PrivateCreateUserData, PrivateCreateUserResponse, PublicGetPublicStatsResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, UtilsStorageInfoEndpointResponse, WorkReportsReadMyWorkReportsData, WorkReportsReadMyWorkReportsResponse, WorkReportsReadAllWorkReportsData, WorkReportsReadAllWorkReportsResponse, WorkReportsReadFieldConfigResponse, WorkReportsUpdateFieldConfigData, WorkReportsUpdateFieldConfigResponse, WorkReportsCreateOrSupplementWorkReportData, WorkReportsCreateOrSupplementWorkReportResponse, WorkReportsReadReminderRulesResponse, WorkReportsCreateReminderRuleData, WorkReportsCreateReminderRuleResponse, WorkReportsUpdateReminderRuleData, WorkReportsUpdateReminderRuleResponse, WorkReportsDeleteReminderRuleData, WorkReportsDeleteReminderRuleResponse, WorkReportsTestReminderData, WorkReportsTestReminderResponse, WorkReportsReadReminderTestRecipientsResponse, WorkReportsReadReminderRecipientsResponse, WorkReportsReadReminderRunsData, WorkReportsReadReminderRunsResponse, WorkReportsReadReminderUnboundUsersResponse, WorkReportsReadReminderTimezonesResponse, WorkReportsReadWorkReportData, WorkReportsReadWorkReportResponse } from './types.gen';
 
 export class LoginService {
     /**
@@ -976,6 +976,169 @@ export class WorkReportsService {
             errors: {
                 422: 'Validation Error'
             }
+        });
+    }
+
+    /**
+     * Read Reminder Rules
+     * @returns ReminderRulesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readReminderRules(): CancelablePromise<WorkReportsReadReminderRulesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/work-reports/reminder-rules'
+        });
+    }
+
+    /**
+     * Create Reminder Rule
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ReminderRulePublic Successful Response
+     * @throws ApiError
+     */
+    public static createReminderRule(data: WorkReportsCreateReminderRuleData): CancelablePromise<WorkReportsCreateReminderRuleResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/work-reports/reminder-rules',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
+     * Update Reminder Rule
+     * @param data The data for the request.
+     * @param data.ruleId
+     * @param data.requestBody
+     * @returns ReminderRulePublic Successful Response
+     * @throws ApiError
+     */
+    public static updateReminderRule(data: WorkReportsUpdateReminderRuleData): CancelablePromise<WorkReportsUpdateReminderRuleResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/work-reports/reminder-rules/{rule_id}',
+            path: {
+                rule_id: data.ruleId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
+     * Delete Reminder Rule
+     * @param data The data for the request.
+     * @param data.ruleId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteReminderRule(data: WorkReportsDeleteReminderRuleData): CancelablePromise<WorkReportsDeleteReminderRuleResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/work-reports/reminder-rules/{rule_id}',
+            path: {
+                rule_id: data.ruleId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
+     * Test Reminder
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ReminderTestResult Successful Response
+     * @throws ApiError
+     */
+    public static testReminder(data: WorkReportsTestReminderData): CancelablePromise<WorkReportsTestReminderResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/work-reports/reminder-test',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
+     * Read Reminder Test Recipients
+     * @returns ReminderTestRecipientsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readReminderTestRecipients(): CancelablePromise<WorkReportsReadReminderTestRecipientsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/work-reports/reminder-test-recipients'
+        });
+    }
+
+    /**
+     * Read Reminder Recipients
+     * @returns ReminderRecipientsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readReminderRecipients(): CancelablePromise<WorkReportsReadReminderRecipientsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/work-reports/reminder-recipients'
+        });
+    }
+
+    /**
+     * Read Reminder Runs
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns ReminderRunsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readReminderRuns(data: WorkReportsReadReminderRunsData = {}): CancelablePromise<WorkReportsReadReminderRunsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/work-reports/reminder-runs',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
+     * Read Reminder Unbound Users
+     * @returns ReminderUnboundUsersPublic Successful Response
+     * @throws ApiError
+     */
+    public static readReminderUnboundUsers(): CancelablePromise<WorkReportsReadReminderUnboundUsersResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/work-reports/reminder-unbound-users'
+        });
+    }
+
+    /**
+     * Read Reminder Timezones
+     * @returns ReminderTimezonesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readReminderTimezones(): CancelablePromise<WorkReportsReadReminderTimezonesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/work-reports/reminder-timezones'
         });
     }
 

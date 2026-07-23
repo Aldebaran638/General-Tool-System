@@ -18,7 +18,8 @@
     "fillWorkReport": "New Report",
     "myWorkReports": "My Reports",
     "allWorkReports": "All Reports",
-    "workReportConfig": "Field Settings"
+    "workReportConfig": "Field Settings",
+    "workReportReminders": "Report Reminders"
   },
   "auth": {
     "welcomeBack": "Welcome back",

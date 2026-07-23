@@ -8,6 +8,8 @@ node_modules/
 .env
 .claude/
 .claude/**
+.codex
+.codex/**
 backend/.claude/**
 cloudflared.deb.claude/
 bin/cloudflared

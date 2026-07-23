@@ -218,6 +218,115 @@ export type PrivateUserCreate = {
     is_verified?: boolean;
 };
 
+export type ReminderDeliveryPublic = {
+    id: string;
+    user_id: (string | null);
+    user_name: (string | null);
+    status: string;
+    attempts: number;
+    error_code: (string | null);
+    error_message: (string | null);
+    sent_at: (string | null);
+};
+
+export type ReminderRecipient = {
+    id: string;
+    name: (string | null);
+    email: string;
+    department_id: (string | null);
+    is_feishu_linked: boolean;
+};
+
+export type ReminderRecipientsPublic = {
+    data: Array<ReminderRecipient>;
+};
+
+export type ReminderRuleInput = {
+    report_type: ReportType;
+    weekday?: (number | null);
+    month_day?: (number | null);
+    is_last_day?: boolean;
+    local_time: string;
+    timezone?: string;
+    enabled?: boolean;
+    recipient_user_ids: Array<(string)>;
+};
+
+export type ReminderRulePublic = {
+    report_type: ReportType;
+    weekday?: (number | null);
+    month_day?: (number | null);
+    is_last_day?: boolean;
+    local_time: string;
+    timezone?: string;
+    enabled?: boolean;
+    recipient_user_ids?: Array<(string)>;
+    id: string;
+    created_by_id: (string | null);
+    created_at: string;
+    updated_at: string;
+};
+
+export type ReminderRulesPublic = {
+    data: Array<ReminderRulePublic>;
+};
+
+export type ReminderRunPublic = {
+    id: string;
+    rule_id: (string | null);
+    report_type: ReportType;
+    period_start: string;
+    period_end: string;
+    scheduled_for: string;
+    status: string;
+    target_count: number;
+    sent_count: number;
+    failed_count: number;
+    skipped_count: number;
+    created_at: string;
+    finished_at: (string | null);
+    deliveries: Array<ReminderDeliveryPublic>;
+};
+
+export type ReminderRunsPublic = {
+    data: Array<ReminderRunPublic>;
+    count: number;
+};
+
+export type ReminderTestRecipient = {
+    id: string;
+    name: (string | null);
+    email: string;
+};
+
+export type ReminderTestRecipientsPublic = {
+    data: Array<ReminderTestRecipient>;
+};
+
+export type ReminderTestRequest = {
+    user_id: string;
+};
+
+export type ReminderTestResult = {
+    message_id: string;
+};
+
+export type ReminderTimezonesPublic = {
+    data: Array<(string)>;
+};
+
+export type ReminderUnboundUser = {
+    id: string;
+    name: (string | null);
+    email: string;
+    is_superuser: boolean;
+};
+
+export type ReminderUnboundUsersPublic = {
+    data: Array<ReminderUnboundUser>;
+    count: number;
+};
+
 export type ReporterBrief = {
     id: (string | null);
     name: (string | null);
@@ -692,6 +801,48 @@ export type WorkReportsCreateOrSupplementWorkReportData = {
 };
 
 export type WorkReportsCreateOrSupplementWorkReportResponse = (WorkReportSubmissionResult);
+
+export type WorkReportsReadReminderRulesResponse = (ReminderRulesPublic);
+
+export type WorkReportsCreateReminderRuleData = {
+    requestBody: ReminderRuleInput;
+};
+
+export type WorkReportsCreateReminderRuleResponse = (ReminderRulePublic);
+
+export type WorkReportsUpdateReminderRuleData = {
+    requestBody: ReminderRuleInput;
+    ruleId: string;
+};
+
+export type WorkReportsUpdateReminderRuleResponse = (ReminderRulePublic);
+
+export type WorkReportsDeleteReminderRuleData = {
+    ruleId: string;
+};
+
+export type WorkReportsDeleteReminderRuleResponse = (Message);
+
+export type WorkReportsTestReminderData = {
+    requestBody: ReminderTestRequest;
+};
+
+export type WorkReportsTestReminderResponse = (ReminderTestResult);
+
+export type WorkReportsReadReminderTestRecipientsResponse = (ReminderTestRecipientsPublic);
+
+export type WorkReportsReadReminderRecipientsResponse = (ReminderRecipientsPublic);
+
+export type WorkReportsReadReminderRunsData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type WorkReportsReadReminderRunsResponse = (ReminderRunsPublic);
+
+export type WorkReportsReadReminderUnboundUsersResponse = (ReminderUnboundUsersPublic);
+
+export type WorkReportsReadReminderTimezonesResponse = (ReminderTimezonesPublic);
 
 export type WorkReportsReadWorkReportData = {
     reportId: string;

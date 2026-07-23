@@ -955,6 +955,560 @@ export const PrivateUserCreateSchema = {
     title: 'PrivateUserCreate'
 } as const;
 
+export const ReminderDeliveryPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        user_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Id'
+        },
+        user_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Name'
+        },
+        status: {
+            type: 'string',
+            title: 'Status'
+        },
+        attempts: {
+            type: 'integer',
+            title: 'Attempts'
+        },
+        error_code: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error Code'
+        },
+        error_message: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error Message'
+        },
+        sent_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Sent At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'user_id', 'user_name', 'status', 'attempts', 'error_code', 'error_message', 'sent_at'],
+    title: 'ReminderDeliveryPublic'
+} as const;
+
+export const ReminderRecipientSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        email: {
+            type: 'string',
+            title: 'Email'
+        },
+        department_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Department Id'
+        },
+        is_feishu_linked: {
+            type: 'boolean',
+            title: 'Is Feishu Linked'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'email', 'department_id', 'is_feishu_linked'],
+    title: 'ReminderRecipient'
+} as const;
+
+export const ReminderRecipientsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ReminderRecipient'
+            },
+            type: 'array',
+            title: 'Data'
+        }
+    },
+    type: 'object',
+    required: ['data'],
+    title: 'ReminderRecipientsPublic'
+} as const;
+
+export const ReminderRuleInputSchema = {
+    properties: {
+        report_type: {
+            '$ref': '#/components/schemas/ReportType'
+        },
+        weekday: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 7,
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Weekday'
+        },
+        month_day: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 31,
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Month Day'
+        },
+        is_last_day: {
+            type: 'boolean',
+            title: 'Is Last Day',
+            default: false
+        },
+        local_time: {
+            type: 'string',
+            format: 'time',
+            title: 'Local Time'
+        },
+        timezone: {
+            type: 'string',
+            maxLength: 64,
+            minLength: 1,
+            title: 'Timezone',
+            default: 'Asia/Shanghai'
+        },
+        enabled: {
+            type: 'boolean',
+            title: 'Enabled',
+            default: true
+        },
+        recipient_user_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            minItems: 1,
+            title: 'Recipient User Ids'
+        }
+    },
+    type: 'object',
+    required: ['report_type', 'local_time', 'recipient_user_ids'],
+    title: 'ReminderRuleInput'
+} as const;
+
+export const ReminderRulePublicSchema = {
+    properties: {
+        report_type: {
+            '$ref': '#/components/schemas/ReportType'
+        },
+        weekday: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 7,
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Weekday'
+        },
+        month_day: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 31,
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Month Day'
+        },
+        is_last_day: {
+            type: 'boolean',
+            title: 'Is Last Day',
+            default: false
+        },
+        local_time: {
+            type: 'string',
+            format: 'time',
+            title: 'Local Time'
+        },
+        timezone: {
+            type: 'string',
+            maxLength: 64,
+            minLength: 1,
+            title: 'Timezone',
+            default: 'Asia/Shanghai'
+        },
+        enabled: {
+            type: 'boolean',
+            title: 'Enabled',
+            default: true
+        },
+        recipient_user_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'Recipient User Ids'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        created_by_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created By Id'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    required: ['report_type', 'local_time', 'id', 'created_by_id', 'created_at', 'updated_at'],
+    title: 'ReminderRulePublic'
+} as const;
+
+export const ReminderRulesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ReminderRulePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        }
+    },
+    type: 'object',
+    required: ['data'],
+    title: 'ReminderRulesPublic'
+} as const;
+
+export const ReminderRunPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        rule_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rule Id'
+        },
+        report_type: {
+            '$ref': '#/components/schemas/ReportType'
+        },
+        period_start: {
+            type: 'string',
+            format: 'date',
+            title: 'Period Start'
+        },
+        period_end: {
+            type: 'string',
+            format: 'date',
+            title: 'Period End'
+        },
+        scheduled_for: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Scheduled For'
+        },
+        status: {
+            type: 'string',
+            title: 'Status'
+        },
+        target_count: {
+            type: 'integer',
+            title: 'Target Count'
+        },
+        sent_count: {
+            type: 'integer',
+            title: 'Sent Count'
+        },
+        failed_count: {
+            type: 'integer',
+            title: 'Failed Count'
+        },
+        skipped_count: {
+            type: 'integer',
+            title: 'Skipped Count'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        finished_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Finished At'
+        },
+        deliveries: {
+            items: {
+                '$ref': '#/components/schemas/ReminderDeliveryPublic'
+            },
+            type: 'array',
+            title: 'Deliveries'
+        }
+    },
+    type: 'object',
+    required: ['id', 'rule_id', 'report_type', 'period_start', 'period_end', 'scheduled_for', 'status', 'target_count', 'sent_count', 'failed_count', 'skipped_count', 'created_at', 'finished_at', 'deliveries'],
+    title: 'ReminderRunPublic'
+} as const;
+
+export const ReminderRunsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ReminderRunPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ReminderRunsPublic'
+} as const;
+
+export const ReminderTestRecipientSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        email: {
+            type: 'string',
+            title: 'Email'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'email'],
+    title: 'ReminderTestRecipient'
+} as const;
+
+export const ReminderTestRecipientsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ReminderTestRecipient'
+            },
+            type: 'array',
+            title: 'Data'
+        }
+    },
+    type: 'object',
+    required: ['data'],
+    title: 'ReminderTestRecipientsPublic'
+} as const;
+
+export const ReminderTestRequestSchema = {
+    properties: {
+        user_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'User Id'
+        }
+    },
+    type: 'object',
+    required: ['user_id'],
+    title: 'ReminderTestRequest'
+} as const;
+
+export const ReminderTestResultSchema = {
+    properties: {
+        message_id: {
+            type: 'string',
+            title: 'Message Id'
+        }
+    },
+    type: 'object',
+    required: ['message_id'],
+    title: 'ReminderTestResult'
+} as const;
+
+export const ReminderTimezonesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Data'
+        }
+    },
+    type: 'object',
+    required: ['data'],
+    title: 'ReminderTimezonesPublic'
+} as const;
+
+export const ReminderUnboundUserSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        email: {
+            type: 'string',
+            title: 'Email'
+        },
+        is_superuser: {
+            type: 'boolean',
+            title: 'Is Superuser'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'email', 'is_superuser'],
+    title: 'ReminderUnboundUser'
+} as const;
+
+export const ReminderUnboundUsersPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ReminderUnboundUser'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ReminderUnboundUsersPublic'
+} as const;
+
 export const ReportTypeSchema = {
     type: 'string',
     enum: ['weekly', 'monthly'],
