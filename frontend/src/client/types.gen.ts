@@ -63,8 +63,34 @@ export type DepartmentUpdate = {
     description?: (string | null);
 };
 
+export type DetailCounts = {
+    work_plans: number;
+    task_summaries: number;
+    work_reviews: number;
+};
+
 export type FeishuTicketExchange = {
     ticket: string;
+};
+
+export type FieldConfigPublic = {
+    section: string;
+    field_key: string;
+    is_required: boolean;
+};
+
+export type FieldConfigsPublic = {
+    data: Array<FieldConfigPublic>;
+};
+
+export type FieldConfigsUpdate = {
+    data: Array<FieldConfigUpdate>;
+};
+
+export type FieldConfigUpdate = {
+    section: string;
+    field_key: string;
+    is_required: boolean;
 };
 
 export type HTTPValidationError = {
@@ -192,6 +218,22 @@ export type PrivateUserCreate = {
     is_verified?: boolean;
 };
 
+export type ReporterBrief = {
+    id: string;
+    name: (string | null);
+    email: string;
+};
+
+export type ReportType = 'weekly' | 'monthly';
+
+export type TaskSummaryInput = {
+    work_goal?: (string | null);
+    completion_date?: (string | null);
+    progress_description?: (string | null);
+    progress?: (number | null);
+    incomplete_reason?: (string | null);
+};
+
 export type Token = {
     access_token: string;
     token_type?: string;
@@ -273,6 +315,44 @@ export type ValidationError = {
     loc: Array<(string | number)>;
     msg: string;
     type: string;
+};
+
+export type WorkPlanInput = {
+    plan_content?: (string | null);
+    planned_completion_date?: (string | null);
+    expected_result?: (string | null);
+    support_needed?: (string | null);
+    remarks?: (string | null);
+};
+
+export type WorkReportSubmissionResult = {
+    id: string;
+    reporter: ReporterBrief;
+    report_type: ReportType;
+    period_start: string;
+    period_end: string;
+    title: string;
+    remarks: (string | null);
+    submitted_at: string;
+    submission_mode: 'created' | 'supplemented';
+    counts: DetailCounts;
+};
+
+export type submission_mode = 'created' | 'supplemented';
+
+export type WorkReportSubmit = {
+    report_type: ReportType;
+    period_key: string;
+    title: string;
+    remarks?: (string | null);
+    work_plans?: Array<WorkPlanInput>;
+    task_summaries?: Array<TaskSummaryInput>;
+    work_reviews?: Array<WorkReviewInput>;
+};
+
+export type WorkReviewInput = {
+    review_module?: (string | null);
+    review_content?: (string | null);
 };
 
 export type LoginLoginAccessTokenData = {
@@ -512,3 +592,17 @@ export type UtilsHealthCheckResponse = (boolean);
 export type UtilsStorageInfoEndpointResponse = ({
     [key: string]: unknown;
 });
+
+export type WorkReportsReadFieldConfigResponse = (FieldConfigsPublic);
+
+export type WorkReportsUpdateFieldConfigData = {
+    requestBody: FieldConfigsUpdate;
+};
+
+export type WorkReportsUpdateFieldConfigResponse = (FieldConfigsPublic);
+
+export type WorkReportsCreateOrSupplementWorkReportData = {
+    requestBody: WorkReportSubmit;
+};
+
+export type WorkReportsCreateOrSupplementWorkReportResponse = (WorkReportSubmissionResult);

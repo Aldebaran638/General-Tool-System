@@ -7,6 +7,7 @@ import { LoginService } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Button } from "@/components/ui/button"
 import i18n from "@/i18n"
+import { consumeLoginReturnTo } from "@/lib/auth-redirect"
 
 const searchSchema = z.object({
   ticket: z.string().catch(""),
@@ -38,7 +39,7 @@ function FeishuLoginCallback() {
     LoginService.exchangeFeishuLoginTicket({ requestBody: { ticket } })
       .then((response) => {
         localStorage.setItem("access_token", response.access_token)
-        window.location.replace("/")
+        window.location.replace(consumeLoginReturnTo())
       })
       .catch(() => setFailed(true))
   }, [error, ticket])

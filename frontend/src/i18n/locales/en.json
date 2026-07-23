@@ -13,7 +13,10 @@
     "myTasks": "My Tasks",
     "departmentBoard": "Department OKR",
     "peopleBoard": "Member OKR",
-    "departments": "Departments"
+    "departments": "Departments",
+    "workReports": "Work Reports",
+    "fillWorkReport": "New Report",
+    "workReportConfig": "Field Settings"
   },
   "auth": {
     "welcomeBack": "Welcome back",

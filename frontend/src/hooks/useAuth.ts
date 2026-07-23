@@ -10,6 +10,7 @@ import {
   type UserUpdateMe,
 } from "@/client"
 import i18n from "@/i18n"
+import { consumeLoginReturnTo } from "@/lib/auth-redirect"
 import { handleError } from "@/utils"
 import useCustomToast from "./useCustomToast"
 
@@ -77,7 +78,7 @@ const useAuth = () => {
         i18n.changeLanguage(currentUser.language)
       }
       queryClient.invalidateQueries({ queryKey: ["currentUser"] })
-      navigate({ to: "/" })
+      window.location.replace(consumeLoginReturnTo())
     },
     onError: handleError.bind(showErrorToast),
   })

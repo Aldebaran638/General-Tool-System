@@ -7,10 +7,13 @@ export type { NavigationEntry, NavigationGroup, NavigationTool }
 
 import {
   Building2,
+  ClipboardList,
+  FilePlus2,
   FolderKanban,
   Home,
   ListTodo,
   Settings,
+  SlidersHorizontal,
   Target,
   Users,
   UsersRound,
@@ -57,6 +60,26 @@ const PLATFORM_NAVIGATION: NavigationEntry[] = [
     icon: ListTodo,
     title: "nav.myTasks",
     path: "/okr/my",
+  },
+  {
+    kind: "group",
+    icon: ClipboardList,
+    title: "nav.workReports",
+    children: [
+      {
+        kind: "tool",
+        icon: FilePlus2,
+        title: "nav.fillWorkReport",
+        path: "/work-reports/new",
+      },
+      {
+        kind: "tool",
+        icon: SlidersHorizontal,
+        title: "nav.workReportConfig",
+        path: "/work-reports/config",
+        requiresSuperuser: true,
+      },
+    ],
   },
   {
     kind: "tool",

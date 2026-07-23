@@ -13,7 +13,10 @@
     "myTasks": "我的任务",
     "departmentBoard": "部门项目管理",
     "peopleBoard": "人员项目管理",
-    "departments": "部门管理"
+    "departments": "部门管理",
+    "workReports": "工作汇报",
+    "fillWorkReport": "填写汇报",
+    "workReportConfig": "字段配置"
   },
   "auth": {
     "welcomeBack": "欢迎回来",

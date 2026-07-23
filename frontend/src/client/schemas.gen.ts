@@ -282,6 +282,26 @@ export const DepartmentsPublicSchema = {
     title: 'DepartmentsPublic'
 } as const;
 
+export const DetailCountsSchema = {
+    properties: {
+        work_plans: {
+            type: 'integer',
+            title: 'Work Plans'
+        },
+        task_summaries: {
+            type: 'integer',
+            title: 'Task Summaries'
+        },
+        work_reviews: {
+            type: 'integer',
+            title: 'Work Reviews'
+        }
+    },
+    type: 'object',
+    required: ['work_plans', 'task_summaries', 'work_reviews'],
+    title: 'DetailCounts'
+} as const;
+
 export const FeishuTicketExchangeSchema = {
     properties: {
         ticket: {
@@ -294,6 +314,80 @@ export const FeishuTicketExchangeSchema = {
     type: 'object',
     required: ['ticket'],
     title: 'FeishuTicketExchange'
+} as const;
+
+export const FieldConfigPublicSchema = {
+    properties: {
+        section: {
+            type: 'string',
+            title: 'Section'
+        },
+        field_key: {
+            type: 'string',
+            title: 'Field Key'
+        },
+        is_required: {
+            type: 'boolean',
+            title: 'Is Required'
+        }
+    },
+    type: 'object',
+    required: ['section', 'field_key', 'is_required'],
+    title: 'FieldConfigPublic'
+} as const;
+
+export const FieldConfigUpdateSchema = {
+    properties: {
+        section: {
+            type: 'string',
+            maxLength: 32,
+            title: 'Section'
+        },
+        field_key: {
+            type: 'string',
+            maxLength: 64,
+            title: 'Field Key'
+        },
+        is_required: {
+            type: 'boolean',
+            title: 'Is Required'
+        }
+    },
+    type: 'object',
+    required: ['section', 'field_key', 'is_required'],
+    title: 'FieldConfigUpdate'
+} as const;
+
+export const FieldConfigsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/FieldConfigPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        }
+    },
+    type: 'object',
+    required: ['data'],
+    title: 'FieldConfigsPublic'
+} as const;
+
+export const FieldConfigsUpdateSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/FieldConfigUpdate'
+            },
+            type: 'array',
+            maxItems: 20,
+            minItems: 1,
+            title: 'Data'
+        }
+    },
+    type: 'object',
+    required: ['data'],
+    title: 'FieldConfigsUpdate'
 } as const;
 
 export const HTTPValidationErrorSchema = {
@@ -861,6 +955,105 @@ export const PrivateUserCreateSchema = {
     title: 'PrivateUserCreate'
 } as const;
 
+export const ReportTypeSchema = {
+    type: 'string',
+    enum: ['weekly', 'monthly'],
+    title: 'ReportType'
+} as const;
+
+export const ReporterBriefSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        email: {
+            type: 'string',
+            title: 'Email'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'email'],
+    title: 'ReporterBrief'
+} as const;
+
+export const TaskSummaryInputSchema = {
+    properties: {
+        work_goal: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Work Goal'
+        },
+        completion_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Completion Date'
+        },
+        progress_description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Progress Description'
+        },
+        progress: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 100,
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Progress'
+        },
+        incomplete_reason: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Incomplete Reason'
+        }
+    },
+    type: 'object',
+    title: 'TaskSummaryInput'
+} as const;
+
 export const TokenSchema = {
     properties: {
         access_token: {
@@ -1317,4 +1510,212 @@ export const ValidationErrorSchema = {
     type: 'object',
     required: ['loc', 'msg', 'type'],
     title: 'ValidationError'
+} as const;
+
+export const WorkPlanInputSchema = {
+    properties: {
+        plan_content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Plan Content'
+        },
+        planned_completion_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Planned Completion Date'
+        },
+        expected_result: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Expected Result'
+        },
+        support_needed: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Support Needed'
+        },
+        remarks: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Remarks'
+        }
+    },
+    type: 'object',
+    title: 'WorkPlanInput'
+} as const;
+
+export const WorkReportSubmissionResultSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        reporter: {
+            '$ref': '#/components/schemas/ReporterBrief'
+        },
+        report_type: {
+            '$ref': '#/components/schemas/ReportType'
+        },
+        period_start: {
+            type: 'string',
+            format: 'date',
+            title: 'Period Start'
+        },
+        period_end: {
+            type: 'string',
+            format: 'date',
+            title: 'Period End'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        remarks: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Remarks'
+        },
+        submitted_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Submitted At'
+        },
+        submission_mode: {
+            type: 'string',
+            enum: ['created', 'supplemented'],
+            title: 'Submission Mode'
+        },
+        counts: {
+            '$ref': '#/components/schemas/DetailCounts'
+        }
+    },
+    type: 'object',
+    required: ['id', 'reporter', 'report_type', 'period_start', 'period_end', 'title', 'remarks', 'submitted_at', 'submission_mode', 'counts'],
+    title: 'WorkReportSubmissionResult'
+} as const;
+
+export const WorkReportSubmitSchema = {
+    properties: {
+        report_type: {
+            '$ref': '#/components/schemas/ReportType'
+        },
+        period_key: {
+            type: 'string',
+            maxLength: 8,
+            minLength: 7,
+            title: 'Period Key'
+        },
+        title: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Title'
+        },
+        remarks: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Remarks'
+        },
+        work_plans: {
+            items: {
+                '$ref': '#/components/schemas/WorkPlanInput'
+            },
+            type: 'array',
+            maxItems: 100,
+            title: 'Work Plans'
+        },
+        task_summaries: {
+            items: {
+                '$ref': '#/components/schemas/TaskSummaryInput'
+            },
+            type: 'array',
+            maxItems: 100,
+            title: 'Task Summaries'
+        },
+        work_reviews: {
+            items: {
+                '$ref': '#/components/schemas/WorkReviewInput'
+            },
+            type: 'array',
+            maxItems: 100,
+            title: 'Work Reviews'
+        }
+    },
+    additionalProperties: false,
+    type: 'object',
+    required: ['report_type', 'period_key', 'title'],
+    title: 'WorkReportSubmit'
+} as const;
+
+export const WorkReviewInputSchema = {
+    properties: {
+        review_module: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Review Module'
+        },
+        review_content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Review Content'
+        }
+    },
+    type: 'object',
+    title: 'WorkReviewInput'
 } as const;

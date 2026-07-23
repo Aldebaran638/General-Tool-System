@@ -12,11 +12,14 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { isLoggedIn } from "@/hooks/useAuth"
+import { rememberLoginReturnTo } from "@/lib/auth-redirect"
 
 export const Route = createFileRoute("/_layout")({
   component: Layout,
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     if (isLoggedIn()) return
+
+    rememberLoginReturnTo(location.pathname)
 
     throw redirect({ to: "/login" })
   },

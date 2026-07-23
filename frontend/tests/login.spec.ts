@@ -99,6 +99,17 @@ test("Logged-out user cannot access protected routes", async ({ page }) => {
   await page.waitForURL("/login")
 })
 
+test("Returns to the requested report form after login", async ({ page }) => {
+  await page.goto("/work-reports/new")
+  await page.waitForURL("/login")
+
+  await fillForm(page, firstSuperuser, firstSuperuserPassword)
+  await page.getByTestId("login-submit").click()
+
+  await page.waitForURL("/work-reports/new")
+  await expect(page.getByText("填写工作汇报", { exact: true })).toBeVisible()
+})
+
 test("Redirects to /login when token is wrong", async ({ page }) => {
   await page.goto("/settings")
   await page.evaluate(() => {

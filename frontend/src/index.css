@@ -353,3 +353,51 @@
     animation: shimmer 1.5s infinite;
   }
 }
+
+/* Thin translucent scrollbars. Chromium uses the legacy overlay value when
+   available, so scrollbars float above content instead of changing layout. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(194, 122, 91, 0.42) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(194, 122, 91, 0.42);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(194, 122, 91, 0.68);
+}
+
+@supports (overflow: overlay) {
+  html,
+  body {
+    overflow-y: overlay;
+  }
+
+  .overflow-auto {
+    overflow: overlay;
+  }
+
+  .overflow-x-auto,
+  .overlay-scrollbar {
+    overflow-x: overlay;
+  }
+
+  .overflow-y-auto {
+    overflow-y: overlay;
+  }
+}

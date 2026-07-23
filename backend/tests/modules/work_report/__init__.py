@@ -1,0 +1,1 @@
+"""Work report module tests."""

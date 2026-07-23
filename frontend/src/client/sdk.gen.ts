@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginFeishuLoginCallbackData, LoginExchangeFeishuLoginTicketData, LoginExchangeFeishuLoginTicketResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, NotificationsListNotificationsEndpointData, NotificationsListNotificationsEndpointResponse, NotificationsMarkReadEndpointData, NotificationsMarkReadEndpointResponse, NotificationsMarkAllReadEndpointResponse, NotificationsDeleteNotificationEndpointData, NotificationsDeleteNotificationEndpointResponse, NotificationsUnreadCountEndpointResponse, OkrReadObjectivesResponse, OkrCreateObjectiveData, OkrCreateObjectiveResponse, OkrUpdateObjectiveData, OkrUpdateObjectiveResponse, OkrDeleteObjectiveData, OkrDeleteObjectiveResponse, OkrReadObjectiveKrsData, OkrReadObjectiveKrsResponse, OkrReadOverviewDepartmentsResponse, OkrReadOverviewMembersResponse, OkrCreateKeyResultData, OkrCreateKeyResultResponse, OkrUpdateKeyResultData, OkrUpdateKeyResultResponse, OkrDeleteKeyResultData, OkrDeleteKeyResultResponse, OkrReadMyKrsData, OkrReadMyKrsResponse, OkrUpdateKrProgressData, OkrUpdateKrProgressResponse, OkrReadDepartmentsResponse, OkrCreateDepartmentData, OkrCreateDepartmentResponse, OkrUpdateDepartmentData, OkrUpdateDepartmentResponse, OkrDeleteDepartmentData, OkrDeleteDepartmentResponse, OkrReorderDepartmentsData, OkrReorderDepartmentsResponse, PrivateCreateUserData, PrivateCreateUserResponse, PublicGetPublicStatsResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, UtilsStorageInfoEndpointResponse } from './types.gen';
+import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginFeishuLoginCallbackData, LoginExchangeFeishuLoginTicketData, LoginExchangeFeishuLoginTicketResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, NotificationsListNotificationsEndpointData, NotificationsListNotificationsEndpointResponse, NotificationsMarkReadEndpointData, NotificationsMarkReadEndpointResponse, NotificationsMarkAllReadEndpointResponse, NotificationsDeleteNotificationEndpointData, NotificationsDeleteNotificationEndpointResponse, NotificationsUnreadCountEndpointResponse, OkrReadObjectivesResponse, OkrCreateObjectiveData, OkrCreateObjectiveResponse, OkrUpdateObjectiveData, OkrUpdateObjectiveResponse, OkrDeleteObjectiveData, OkrDeleteObjectiveResponse, OkrReadObjectiveKrsData, OkrReadObjectiveKrsResponse, OkrReadOverviewDepartmentsResponse, OkrReadOverviewMembersResponse, OkrCreateKeyResultData, OkrCreateKeyResultResponse, OkrUpdateKeyResultData, OkrUpdateKeyResultResponse, OkrDeleteKeyResultData, OkrDeleteKeyResultResponse, OkrReadMyKrsData, OkrReadMyKrsResponse, OkrUpdateKrProgressData, OkrUpdateKrProgressResponse, OkrReadDepartmentsResponse, OkrCreateDepartmentData, OkrCreateDepartmentResponse, OkrUpdateDepartmentData, OkrUpdateDepartmentResponse, OkrDeleteDepartmentData, OkrDeleteDepartmentResponse, OkrReorderDepartmentsData, OkrReorderDepartmentsResponse, PrivateCreateUserData, PrivateCreateUserResponse, PublicGetPublicStatsResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, UtilsStorageInfoEndpointResponse, WorkReportsReadFieldConfigResponse, WorkReportsUpdateFieldConfigData, WorkReportsUpdateFieldConfigResponse, WorkReportsCreateOrSupplementWorkReportData, WorkReportsCreateOrSupplementWorkReportResponse } from './types.gen';
 
 export class LoginService {
     /**
@@ -86,7 +86,7 @@ export class LoginService {
             }
         });
     }
-    
+
     /**
      * Test Token
      * Test access token
@@ -99,7 +99,7 @@ export class LoginService {
             url: '/api/v1/login/test-token'
         });
     }
-    
+
     /**
      * Recover Password
      * Password Recovery
@@ -120,7 +120,7 @@ export class LoginService {
             }
         });
     }
-    
+
     /**
      * Reset Password
      * Reset password
@@ -140,7 +140,7 @@ export class LoginService {
             }
         });
     }
-    
+
     /**
      * Recover Password Html Content
      * HTML Content for Password Recovery
@@ -854,6 +854,58 @@ export class UtilsService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/utils/storage-info/'
+        });
+    }
+}
+
+export class WorkReportsService {
+    /**
+     * Read Field Config
+     * @returns FieldConfigsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readFieldConfig(): CancelablePromise<WorkReportsReadFieldConfigResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/work-reports/field-config'
+        });
+    }
+
+    /**
+     * Update Field Config
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns FieldConfigsPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateFieldConfig(data: WorkReportsUpdateFieldConfigData): CancelablePromise<WorkReportsUpdateFieldConfigResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/work-reports/field-config',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
+     * Create Or Supplement Work Report
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns WorkReportSubmissionResult Successful Response
+     * @throws ApiError
+     */
+    public static createOrSupplementWorkReport(data: WorkReportsCreateOrSupplementWorkReportData): CancelablePromise<WorkReportsCreateOrSupplementWorkReportResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/work-reports',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
 }
